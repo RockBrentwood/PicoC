@@ -82,7 +82,7 @@ include csmith/Makefile
 		exit 1; \
 	fi; \
        	rm -f $*.output
-	
+
 all: test
 
 test: $(TESTS)
@@ -90,4 +90,3 @@ test: $(TESTS)
 
 csmith: $(CSMITH_TESTS)
 	@echo "CSmith test passed"
-

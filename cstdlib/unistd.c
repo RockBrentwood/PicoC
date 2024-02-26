@@ -502,4 +502,3 @@ void UnistdSetupFunc(Picoc *pc)
 }
 
 #endif /* !BUILTIN_MINI_STDLIB */
-

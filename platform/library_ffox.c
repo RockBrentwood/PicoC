@@ -10,4 +10,3 @@ void PlatformLibraryInit()
 {
     LibraryAdd(&GlobalTable, "platform library", &PlatformLibrary);
 }
-

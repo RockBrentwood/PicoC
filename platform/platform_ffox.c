@@ -29,7 +29,7 @@ void PlatformPutc(unsigned char OutCh, union OutputStreamInfo *Stream)
 char *PlatformReadFile(const char *FileName)
 {
     // XXX - unimplemented so far
-    return NULL;    
+    return NULL;
 }
 
 /* read and scan a file for definitions */
@@ -48,4 +48,3 @@ void PlatformExit()
 {
     longjmp(ExitBuf, 1);
 }
-

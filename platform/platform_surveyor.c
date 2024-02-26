@@ -14,12 +14,12 @@ char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt)
 {
     int ix;
     char ch, *cp;
-    
+
     printf(Prompt);
-    
+
     ix = 0;
     cp = 0;
-    
+
     // If the first character is \n or \r, eat it
     ch = getch();
     if (ch == '\n' || ch == '\r')
@@ -27,7 +27,7 @@ char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt)
         // And get the next character
         ch = getch();
     }
-    
+
     while (ix++ < MaxLen) {
 
         if (ch == 0x1B || ch == 0x03) { // ESC character or ctrl-c (to avoid problem with TeraTerm) - exit
@@ -51,7 +51,7 @@ void PlatformPutc(unsigned char OutCh, union OutputStreamInfo *Stream)
 {
     if (OutCh == '\n')
         putchar('\r');
-        
+
     putchar(OutCh);
 }
 
@@ -68,4 +68,3 @@ void PlatformExit(int RetVal)
     PicocExitBuf[40] = 1;
     longjmp(PicocExitBuf, 1);
 }
-
