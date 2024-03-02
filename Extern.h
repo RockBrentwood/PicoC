@@ -411,13 +411,12 @@ struct State {
 
 // Table.c:
 void TableInit(State pc);
-char *TableStrRegister(State pc, const char *Str);
-char *TableStrRegister2(State pc, const char *Str, int Len);
 void TableInitTable(Table Tbl, TableEntry *HashTable, int Size, bool OnHeap);
 bool TableSet(State pc, Table Tbl, char *Key, Value Val, const char *DeclFileName, int DeclLine, int DeclColumn);
 bool TableGet(Table Tbl, const char *Key, Value *Val, const char **DeclFileName, int *DeclLine, int *DeclColumn);
 Value TableDelete(State pc, Table Tbl, const char *Key);
-char *TableSetIdentifier(State pc, Table Tbl, const char *Ident, int IdentLen);
+char *TableStrRegister2(State pc, const char *Str, int Len);
+char *TableStrRegister(State pc, const char *Str);
 void TableStrFree(State pc);
 
 // Lex.c:
@@ -435,26 +434,25 @@ void LexInteractiveStatementPrompt(State pc);
 
 // Syn.c:
 #if 0
-// The following are defined in Main.h:
+// The following are declared in Main.h:
 void PicocParse(State pc, const char *FileName, const char *Source, int SourceLen, bool RunIt, bool CleanupNow, bool CleanupSource, bool EnableDebugger);
 void PicocParseInteractive(State pc);
 #endif
-void PicocParseInteractiveNoStartPrompt(State pc, bool EnableDebugger);
-ParseResult ParseStatement(ParseState Parser, bool CheckTrailingSemicolon);
-Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Identifier);
 void ParseCleanup(State pc);
-void ParserCopyPos(ParseState To, ParseState From);
+Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Identifier);
 void ParserCopy(ParseState To, ParseState From);
+ParseResult ParseStatement(ParseState Parser, bool CheckTrailingSemicolon);
+void PicocParseInteractiveNoStartPrompt(State pc, bool EnableDebugger);
 
 // Exp.c:
-bool ExpressionParse(ParseState Parser, Value *Result);
-long ExpressionParseInt(ParseState Parser);
-void ExpressionAssign(ParseState Parser, Value DestValue, Value SourceValue, bool Force, const char *FuncName, int ParamNo, bool AllowPointerCoercion);
 long ExpressionCoerceInteger(Value Val);
 unsigned long ExpressionCoerceUnsignedInteger(Value Val);
 #ifndef NO_FP
 double ExpressionCoerceFP(Value Val);
 #endif
+void ExpressionAssign(ParseState Parser, Value DestValue, Value SourceValue, bool Force, const char *FuncName, int ParamNo, bool AllowPointerCoercion);
+bool ExpressionParse(ParseState Parser, Value *Result);
+long ExpressionParseInt(ParseState Parser);
 
 // Type.c:
 void TypeInit(State pc);
@@ -462,7 +460,10 @@ void TypeCleanup(State pc);
 int TypeSize(ValueType Typ, int ArraySize, bool Compact);
 int TypeSizeValue(Value Val, bool Compact);
 int TypeStackSizeValue(Value Val);
+#if 0
+// Isn't defined anywhere.
 int TypeLastAccessibleOffset(State pc, Value Val);
+#endif
 bool TypeParseFront(ParseState Parser, ValueType *Typ, bool *IsStatic);
 void TypeParseIdentPart(ParseState Parser, ValueType BasicTyp, ValueType *Typ, char **Identifier);
 void TypeParse(ParseState Parser, ValueType *Typ, char **Identifier, bool *IsStatic);
@@ -474,8 +475,8 @@ bool TypeIsForwardDeclared(ParseState Parser, ValueType Typ);
 void HeapInit(State pc, int StackOrHeapSize);
 void HeapCleanup(State pc);
 void *HeapAllocStack(State pc, int Size);
-bool HeapPopStack(State pc, void *Addr, int Size);
 void HeapUnpopStack(State pc, int Size);
+bool HeapPopStack(State pc, void *Addr, int Size);
 void HeapPushStackFrame(State pc);
 bool HeapPopStackFrame(State pc);
 void *HeapAllocMem(State pc, int Size);
@@ -483,83 +484,105 @@ void HeapFreeMem(State pc, void *Mem);
 
 // Var.c:
 void VariableInit(State pc);
-void VariableCleanup(State pc);
 void VariableFree(State pc, Value Val);
 void VariableTableCleanup(State pc, Table HashTable);
+void VariableCleanup(State pc);
 void *VariableAlloc(State pc, ParseState Parser, int Size, bool OnHeap);
-void VariableStackPop(ParseState Parser, Value Var);
 Value VariableAllocValueAndData(State pc, ParseState Parser, int DataSize, bool IsLValue, Value LValueFrom, bool OnHeap);
-Value VariableAllocValueAndCopy(State pc, ParseState Parser, Value FromValue, bool OnHeap);
 Value VariableAllocValueFromType(State pc, ParseState Parser, ValueType Typ, bool IsLValue, Value LValueFrom, bool OnHeap);
+Value VariableAllocValueAndCopy(State pc, ParseState Parser, Value FromValue, bool OnHeap);
 Value VariableAllocValueFromExistingData(ParseState Parser, ValueType Typ, AnyValue FromValue, bool IsLValue, Value LValueFrom);
 Value VariableAllocValueShared(ParseState Parser, Value FromValue);
+void VariableRealloc(ParseState Parser, Value FromValue, int NewSize);
+int VariableScopeBegin(ParseState Parser, int *OldScopeID);
+void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID);
+bool VariableDefinedAndOutOfScope(State pc, const char *Ident);
 Value VariableDefine(State pc, ParseState Parser, char *Ident, Value InitValue, ValueType Typ, bool MakeWritable);
 Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType Typ, bool IsStatic, bool *FirstVisit);
 bool VariableDefined(State pc, const char *Ident);
-bool VariableDefinedAndOutOfScope(State pc, const char *Ident);
-void VariableRealloc(ParseState Parser, Value FromValue, int NewSize);
 void VariableGet(State pc, ParseState Parser, const char *Ident, Value *LVal);
 void VariableDefinePlatformVar(State pc, ParseState Parser, char *Ident, ValueType Typ, AnyValue FromValue, bool IsWritable);
+void VariableStackPop(ParseState Parser, Value Var);
 void VariableStackFrameAdd(ParseState Parser, const char *FuncName, int NumParams);
 void VariableStackFramePop(ParseState Parser);
 Value VariableStringLiteralGet(State pc, char *Ident);
 void VariableStringLiteralDefine(State pc, char *Ident, Value Val);
 void *VariableDereferencePointer(ParseState Parser, Value PointerValue, Value *DerefVal, int *DerefOffset, ValueType *DerefType, bool *DerefIsLValue);
-int VariableScopeBegin(ParseState Parser, int *OldScopeID);
-void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID);
 
 // Lib.c:
-void BasicIOInit(State pc);
 void LibraryInit(State pc);
 void LibraryAdd(State pc, Table GlobalTable, const char *LibraryName, LibraryFunction FuncList);
+void PrintType(ValueType Typ, OutFile Stream);
+void BasicIOInit(State pc);
 void CLibraryInit(State pc);
 void PrintCh(char OutCh, OutFile Stream);
-void PrintSimpleInt(long Num, OutFile Stream);
-void PrintInt(long Num, int FieldWidth, bool ZeroPad, bool LeftJustify, OutFile Stream);
 void PrintStr(const char *Str, OutFile Stream);
+void PrintSimpleInt(long Num, OutFile Stream);
 void PrintFP(double Num, OutFile Stream);
-void PrintType(ValueType Typ, OutFile Stream);
 void LibPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs);
+// May be defined in Lib.c or in Lib/stdio.c:
+// BasicIOInit
+// PrintCh
+// PrintStr
+// PrintSimpleInt
+// PrintFP
 
 // Sys.c:
 #if 0
-// The following are defined in Main.h:
-void PicocCallMain(State pc, int argc, char **argv);
-int PicocPlatformSetExitPoint();
+// The following are declared in Main.h:
 void PicocInitialize(State pc, int StackSize);
 void PicocCleanup(State pc);
+void PicocCallMain(State pc, int argc, char **argv);
+// Defined in the following places:
+// PicocPlatformSetExitPoint	Main.h as a macro.
+// PicocPlatformScanFile	Sys/Sys{UNIX,MSVC,FFox}.c
+int PicocPlatformSetExitPoint(State pc);
 void PicocPlatformScanFile(State pc, const char *FileName);
-extern int PicocExitValue;
 #endif
+void PrintSourceTextErrorLine(OutFile Stream, const char *FileName, const char *SourceText, int Line, int CharacterPos);
 void ProgramFail(ParseState Parser, const char *Message, ...);
 void ProgramFailNoParser(State pc, const char *Message, ...);
 void AssignFail(ParseState Parser, const char *Format, ValueType Type1, ValueType Type2, int Num1, int Num2, const char *FuncName, int ParamNo);
 void LexFail(State pc, LexState Lexer, const char *Message, ...);
+void PlatformPrintf(OutFile Stream, const char *Format, ...);
+char *PlatformMakeTempName(State pc, char *TempNameBuffer);
+// Defined in the following places:
+// PlatformInit		Sys/Sys{UNIX,MSVC}.c
+// PlatformCleanup	Sys/Sys{UNIX,MSVC,FFox,Surveyor}.c
+// PlatformGetLine	Sys/Sys{UNIX,MSVC,FFox,Surveyor}.c
+// PlatformGetCharacter	Sys/Sys{UNIX,MSVC,FFox,Surveyor}.c
+// PlatformPutc		Sys/Sys{UNIX,MSVC,FFox,Surveyor}.c
+// PlatformExit		Sys/Sys{UNIX,MSVC,FFox,Surveyor}.c
+// PlatformLibraryInit	Sys/Lib{UNIX,MSVC,FFox,Surveyor,Srv1}.c
 void PlatformInit(State pc);
 void PlatformCleanup(State pc);
 char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt);
 int PlatformGetCharacter();
 void PlatformPutc(unsigned char OutCh, OutputStreamInfo Stream);
-void PlatformPrintf(OutFile Stream, const char *Format, ...);
-void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args);
 void PlatformExit(State pc, int RetVal);
-char *PlatformMakeTempName(State pc, char *TempNameBuffer);
 void PlatformLibraryInit(State pc);
 
 // Inc.c:
+#if 0
+// The following is declared in Main.h:
+void PicocIncludeAllSystemHeaders(State pc);
+#endif
 void IncludeInit(State pc);
 void IncludeCleanup(State pc);
 void IncludeRegister(State pc, const char *IncludeName, void (*SetupFunction)(State pc), LibraryFunction FuncList, const char *SetupCSource);
 void IncludeFile(State pc, char *FileName);
-#if 0
-// The following is defined in Main.h:
-void PicocIncludeAllSystemHeaders(State pc);
-#endif
 
+#ifndef NO_DEBUGGER
 // Debug.c:
 void DebugInit(State pc);
 void DebugCleanup(State pc);
+#if 0
+DebugSetBreakpoint(ParseState Parser);
+DebugClearBreakpoint(ParseState Parser);
+void DebugStep();
+#endif
 void DebugCheckStatement(ParseState Parser);
+#endif
 
 // Lib/stdio.c:
 extern const char StdioDefs[];

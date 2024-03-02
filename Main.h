@@ -34,9 +34,15 @@ void PicocParse(State pc, const char *FileName, const char *Source, int SourceLe
 void PicocParseInteractive(State pc);
 
 // Sys.c:
-void PicocCallMain(State pc, int argc, char **argv);
 void PicocInitialize(State pc, int StackSize);
 void PicocCleanup(State pc);
+void PicocCallMain(State pc, int argc, char **argv);
+// Defined in the following places:
+// PicocPlatformSetExitPoint	Main.h as a macro.
+// PicocPlatformScanFile	Sys/Sys{UNIX,MSVC,FFox}.c
+#if 0
+int PicocPlatformSetExitPoint(State pc);
+#endif
 void PicocPlatformScanFile(State pc, const char *FileName);
 
 // Inc.c:

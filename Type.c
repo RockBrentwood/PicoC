@@ -7,7 +7,7 @@ static int PointerAlignBytes;
 static int IntAlignBytes;
 
 // Add a new type to the set of types we know about.
-ValueType TypeAdd(State pc, ParseState Parser, ValueType ParentType, BaseType Base, int ArraySize, const char *Identifier, int Sizeof, int AlignBytes) {
+static ValueType TypeAdd(State pc, ParseState Parser, ValueType ParentType, BaseType Base, int ArraySize, const char *Identifier, int Sizeof, int AlignBytes) {
    ValueType NewType = VariableAlloc(pc, Parser, sizeof(struct ValueType), true);
    NewType->Base = Base;
    NewType->ArraySize = ArraySize;
@@ -87,7 +87,7 @@ int TypeSize(ValueType Typ, int ArraySize, bool Compact) {
 }
 
 // Add a base type.
-void TypeAddBaseType(State pc, ValueType TypeNode, BaseType Base, int Sizeof, int AlignBytes) {
+static void TypeAddBaseType(State pc, ValueType TypeNode, BaseType Base, int Sizeof, int AlignBytes) {
    TypeNode->Base = Base;
    TypeNode->ArraySize = 0;
    TypeNode->Sizeof = Sizeof;
@@ -157,7 +157,7 @@ void TypeInit(State pc) {
 }
 
 // Deallocate heap-allocated types.
-void TypeCleanupNode(State pc, ValueType Typ) {
+static void TypeCleanupNode(State pc, ValueType Typ) {
    ValueType SubType;
    ValueType NextSubType;
 // Clean up and free all the sub-nodes.
@@ -181,7 +181,7 @@ void TypeCleanup(State pc) {
 }
 
 // Parse a struct or union declaration.
-void TypeParseStruct(ParseState Parser, ValueType *Typ, bool IsStruct) {
+static void TypeParseStruct(ParseState Parser, ValueType *Typ, bool IsStruct) {
    Value LexValue;
    ValueType MemberType;
    char *MemberIdentifier;
@@ -264,7 +264,7 @@ ValueType TypeCreateOpaqueStruct(State pc, ParseState Parser, const char *Struct
 }
 
 // Parse an enum declaration.
-void TypeParseEnum(ParseState Parser, ValueType *Typ) {
+static void TypeParseEnum(ParseState Parser, ValueType *Typ) {
    Value LexValue;
    struct Value InitValue;
    LexToken Token;
@@ -390,7 +390,7 @@ bool TypeParseFront(ParseState Parser, ValueType *Typ, bool *IsStatic) {
 }
 
 // Parse a type - the part at the end after the identifier. e.g. array specifications etc.
-ValueType TypeParseBack(ParseState Parser, ValueType FromType) {
+static ValueType TypeParseBack(ParseState Parser, ValueType FromType) {
    LexToken Token;
    struct ParseState Before;
    ParserCopy(&Before, Parser);

@@ -1,8 +1,11 @@
 #include "../Extern.h"
 #include "../Main.h"
 
+#if 0
+// This was moved into the top-level system structure in Extern.h.
 // Mark where to end the program for platforms which require this.
 int PicocExitBuf[41];
+#endif
 
 // Deallocate any storage.
 void PlatformCleanup(State pc) {

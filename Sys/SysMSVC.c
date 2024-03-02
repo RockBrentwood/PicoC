@@ -1,8 +1,11 @@
 #include "../Main.h"
 #include "../Extern.h"
 
+#if 0
 // Mark where to end the program for platforms which require this.
+// This was moved into the top-level system structure in Extern.h.
 jmp_buf PicocExitBuf;
+#endif
 
 void PlatformInit(State pc) {
 }

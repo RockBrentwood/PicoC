@@ -16,7 +16,7 @@ void ParseCleanup(State pc) {
 }
 
 // Parse a statement, but only run it if Condition is true.
-ParseResult ParseStatementMaybeRun(ParseState Parser, bool Condition, bool CheckTrailingSemicolon) {
+static ParseResult ParseStatementMaybeRun(ParseState Parser, bool Condition, bool CheckTrailingSemicolon) {
    if (Parser->Mode != RunModeSkip && !Condition) {
       RunMode OldMode = Parser->Mode;
       int Result;
@@ -29,7 +29,7 @@ ParseResult ParseStatementMaybeRun(ParseState Parser, bool Condition, bool Check
 }
 
 // Count the number of parameters to a function or macro.
-int ParseCountParams(ParseState Parser) {
+static int ParseCountParams(ParseState Parser) {
    int ParamCount = 0;
    LexToken Token = LexGetToken(Parser, NULL, true);
    if (Token != TokenCloseBracket && Token != TokenEOF) {
@@ -128,7 +128,7 @@ Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Ide
 }
 
 // Parse an array initializer and assign to a variable.
-int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAssignment) {
+static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAssignment) {
    int ArrayIndex = 0;
    LexToken Token;
    Value CValue;
@@ -218,7 +218,7 @@ int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAssignmen
 }
 
 // Assign an initial value to a variable.
-void ParseDeclarationAssignment(ParseState Parser, Value NewVariable, bool DoAssignment) {
+static void ParseDeclarationAssignment(ParseState Parser, Value NewVariable, bool DoAssignment) {
    Value CValue;
    if (LexGetToken(Parser, NULL, false) == TokenLeftBrace) {
    // This is an array initializer.
@@ -236,7 +236,7 @@ void ParseDeclarationAssignment(ParseState Parser, Value NewVariable, bool DoAss
 }
 
 // Declare a variable or function.
-bool ParseDeclaration(ParseState Parser, LexToken Token) {
+static bool ParseDeclaration(ParseState Parser, LexToken Token) {
    char *Identifier;
    ValueType BasicType;
    ValueType Typ;
@@ -274,7 +274,7 @@ bool ParseDeclaration(ParseState Parser, LexToken Token) {
 }
 
 // Parse a #define macro definition and store it for later.
-void ParseMacroDefinition(ParseState Parser) {
+static void ParseMacroDefinition(ParseState Parser) {
    Value MacroName;
    char *MacroNameStr;
    Value ParamName;
@@ -326,7 +326,7 @@ void ParserCopy(ParseState To, ParseState From) {
 }
 
 // Copy where we're at in the parsing.
-void ParserCopyPos(ParseState To, ParseState From) {
+static void ParserCopyPos(ParseState To, ParseState From) {
    To->Pos = From->Pos;
    To->Line = From->Line;
    To->HashIfLevel = From->HashIfLevel;
@@ -335,7 +335,7 @@ void ParserCopyPos(ParseState To, ParseState From) {
 }
 
 // Parse a "for" statement.
-void ParseFor(ParseState Parser) {
+static void ParseFor(ParseState Parser) {
    bool Condition;
    struct ParseState PreConditional;
    struct ParseState PreIncrement;
@@ -386,7 +386,7 @@ void ParseFor(ParseState Parser) {
 }
 
 // Parse a block of code and return what mode it returned in.
-RunMode ParseBlock(ParseState Parser, bool AbsorbOpenBrace, bool Condition) {
+static RunMode ParseBlock(ParseState Parser, bool AbsorbOpenBrace, bool Condition) {
    int PrevScopeID = 0, ScopeID = VariableScopeBegin(Parser, &PrevScopeID);
    if (AbsorbOpenBrace && LexGetToken(Parser, NULL, true) != TokenLeftBrace)
       ProgramFail(Parser, "'{' expected");
@@ -409,7 +409,7 @@ RunMode ParseBlock(ParseState Parser, bool AbsorbOpenBrace, bool Condition) {
 }
 
 // Parse a typedef declaration.
-void ParseTypedef(ParseState Parser) {
+static void ParseTypedef(ParseState Parser) {
    ValueType Typ;
    ValueType *TypPtr;
    char *TypeName;

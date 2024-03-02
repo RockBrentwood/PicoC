@@ -108,7 +108,7 @@ static TableEntry TableSearchIdentifier(Table Tbl, const char *Key, int Len, int
 
 // Set an identifier and return the identifier.
 // Share if possible.
-char *TableSetIdentifier(State pc, Table Tbl, const char *Ident, int IdentLen) {
+static char *TableSetIdentifier(State pc, Table Tbl, const char *Ident, int IdentLen) {
    int AddAt;
    TableEntry FoundEntry = TableSearchIdentifier(Tbl, Ident, IdentLen, &AddAt);
    if (FoundEntry != NULL)

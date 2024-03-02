@@ -99,7 +99,7 @@ void LexCleanup(State pc) {
 }
 
 // Check if a word is a reserved word - used while scanning.
-LexToken LexCheckReservedWord(State pc, const char *Word) {
+static LexToken LexCheckReservedWord(State pc, const char *Word) {
    Value val;
    if (TableGet(&pc->ReservedWordTable, Word, &val, NULL, NULL, NULL))
       return ((ReservedWord)val)->Token;
@@ -108,7 +108,7 @@ LexToken LexCheckReservedWord(State pc, const char *Word) {
 }
 
 // Get a numeric literal - used while scanning.
-LexToken LexGetNumber(State pc, LexState Lexer, Value Val) {
+static LexToken LexGetNumber(State pc, LexState Lexer, Value Val) {
    long Result = 0;
    long Base = 10;
    LexToken ResultToken;
@@ -194,7 +194,7 @@ LexToken LexGetNumber(State pc, LexState Lexer, Value Val) {
 }
 
 // Get a reserved word or identifier - used while scanning.
-LexToken LexGetWord(State pc, LexState Lexer, Value Val) {
+static LexToken LexGetWord(State pc, LexState Lexer, Value Val) {
    const char *StartPos = Lexer->Pos;
    LexToken Token;
    do {
@@ -221,7 +221,7 @@ LexToken LexGetWord(State pc, LexState Lexer, Value Val) {
 }
 
 // Unescape a character from an octal character constant.
-unsigned char LexUnEscapeCharacterConstant(const char **From, const char *End, unsigned char FirstChar, int Base) {
+static unsigned char LexUnEscapeCharacterConstant(const char **From, const char *End, unsigned char FirstChar, int Base) {
    unsigned char Total = GET_BASE_DIGIT(FirstChar);
    int CCount;
    for (CCount = 0; IS_BASE_DIGIT(**From, Base) && CCount < 2; CCount++, (*From)++)
@@ -230,7 +230,7 @@ unsigned char LexUnEscapeCharacterConstant(const char **From, const char *End, u
 }
 
 // Unescape a character from a string or character constant.
-unsigned char LexUnEscapeCharacter(const char **From, const char *End) {
+static unsigned char LexUnEscapeCharacter(const char **From, const char *End) {
    unsigned char ThisChar;
    while (*From != End && **From == '\\' && &(*From)[1] != End && (*From)[1] == '\n')
       (*From) += 2; // Skip escaped end of lines with LF line termination.
@@ -280,7 +280,7 @@ unsigned char LexUnEscapeCharacter(const char **From, const char *End) {
 }
 
 // Get a string constant - used while scanning.
-LexToken LexGetStringConstant(State pc, LexState Lexer, Value Val, char EndChar) {
+static LexToken LexGetStringConstant(State pc, LexState Lexer, Value Val, char EndChar) {
    bool Escape = false;
    const char *StartPos = Lexer->Pos;
    const char *EndPos;
@@ -330,7 +330,7 @@ LexToken LexGetStringConstant(State pc, LexState Lexer, Value Val, char EndChar)
 }
 
 // Get a character constant - used while scanning.
-LexToken LexGetCharacterConstant(State pc, LexState Lexer, Value Val) {
+static LexToken LexGetCharacterConstant(State pc, LexState Lexer, Value Val) {
    Val->Typ = &pc->CharType;
    Val->Val->Character = LexUnEscapeCharacter(&Lexer->Pos, Lexer->End);
    if (Lexer->Pos != Lexer->End && *Lexer->Pos != '\'')
@@ -359,7 +359,7 @@ void LexSkipComment(LexState Lexer, char NextChar, LexToken *ReturnToken) {
 }
 
 // Get a single token from the source - used while scanning.
-LexToken LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
+static LexToken LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
    char ThisChar;
    char NextChar;
    LexToken GotToken = TokenNone;
@@ -489,7 +489,7 @@ LexToken LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
 }
 
 // What size value goes with each token.
-int LexTokenSize(LexToken Token) {
+static int LexTokenSize(LexToken Token) {
    switch (Token) {
       case TokenIdentifier:
       case TokenStringConstant:
@@ -506,7 +506,7 @@ int LexTokenSize(LexToken Token) {
 }
 
 // Produce tokens from the lexer and return a heap buffer with the result - used for scanning.
-void *LexTokenize(State pc, LexState Lexer, int *TokenLen) {
+static void *LexTokenize(State pc, LexState Lexer, int *TokenLen) {
    LexToken Token;
    void *HeapMem;
    Value GotValue;
@@ -589,7 +589,7 @@ void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *To
 }
 
 // Get the next token, without pre-processing.
-LexToken LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
+static LexToken LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
    LexToken Token = TokenNone;
    int ValueSize;
    char *Prompt = NULL;
@@ -698,13 +698,13 @@ LexToken LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
 }
 
 // Correct the token position depending if we already incremented the position.
-void LexHashIncPos(ParseState Parser, int IncPos) {
+static void LexHashIncPos(ParseState Parser, int IncPos) {
    if (!IncPos)
       LexGetRawToken(Parser, NULL, true);
 }
 
 // Handle a #ifdef directive.
-void LexHashIfdef(ParseState Parser, bool IfNot) {
+static void LexHashIfdef(ParseState Parser, bool IfNot) {
 // Get symbol to check.
    Value IdentValue;
    Value SavedValue;
@@ -722,7 +722,7 @@ void LexHashIfdef(ParseState Parser, bool IfNot) {
 }
 
 // Handle a #if directive.
-void LexHashIf(ParseState Parser) {
+static void LexHashIf(ParseState Parser) {
 // Get symbol to check.
    Value IdentValue;
    Value SavedValue = NULL;
@@ -748,7 +748,7 @@ void LexHashIf(ParseState Parser) {
 }
 
 // Handle a #else directive.
-void LexHashElse(ParseState Parser) {
+static void LexHashElse(ParseState Parser) {
    if (Parser->HashIfEvaluateToLevel == Parser->HashIfLevel - 1)
       Parser->HashIfEvaluateToLevel++; // #if was not active, make this next section active.
    else if (Parser->HashIfEvaluateToLevel == Parser->HashIfLevel) {
@@ -760,7 +760,7 @@ void LexHashElse(ParseState Parser) {
 }
 
 // Handle a #endif directive.
-void LexHashEndif(ParseState Parser) {
+static void LexHashEndif(ParseState Parser) {
    if (Parser->HashIfLevel == 0)
       ProgramFail(Parser, "#endif without #if");
    Parser->HashIfLevel--;

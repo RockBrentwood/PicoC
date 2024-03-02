@@ -134,7 +134,7 @@ void CLibraryInit(State pc) {
 }
 
 // Stream for writing into strings.
-void SPutc(unsigned char Ch, OutputStreamInfo Stream) {
+static void SPutc(unsigned char Ch, OutputStreamInfo Stream) {
    *Stream->WritePos++ = Ch;
 }
 
@@ -150,13 +150,13 @@ void PrintStr(const char *Str, OutputStream Stream) {
 }
 
 // Print a single character a given number of times.
-void PrintRepeatedChar(State pc, char ShowChar, int Length, OutputStream Stream) {
+static void PrintRepeatedChar(State pc, char ShowChar, int Length, OutputStream Stream) {
    while (Length-- > 0)
       PrintCh(ShowChar, Stream);
 }
 
 // Print an unsigned integer to a stream without using printf/sprintf.
-void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputStream Stream) {
+static void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputStream Stream) {
    char Result[33];
    int ResPos = sizeof(Result);
    Result[--ResPos] = '\0';
@@ -179,12 +179,7 @@ void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, bool Ze
 }
 
 // Print an integer to a stream without using printf/sprintf.
-void PrintSimpleInt(long Num, OutputStream Stream) {
-   PrintInt(Num, -1, false, false, Stream);
-}
-
-// Print an integer to a stream without using printf/sprintf.
-void PrintInt(long Num, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputStream Stream) {
+static void PrintInt(long Num, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputStream Stream) {
    if (Num < 0) {
       PrintCh('-', Stream);
       Num = -Num;
@@ -192,6 +187,11 @@ void PrintInt(long Num, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputSt
          FieldWidth--;
    }
    PrintUnsigned((unsigned long)Num, 10, FieldWidth, ZeroPad, LeftJustify, Stream);
+}
+
+// Print an integer to a stream without using printf/sprintf.
+void PrintSimpleInt(long Num, OutputStream Stream) {
+   PrintInt(Num, -1, false, false, Stream);
 }
 
 #ifndef NO_FP
@@ -224,7 +224,7 @@ void PrintFP(double Num, OutputStream Stream) {
 #endif
 
 // Intrinsic functions made available to the language.
-void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs, OutputStream Stream) {
+static void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs, OutputStream Stream) {
    char *FPos;
    Value NextArg = Param[0];
    ValueType FormatType;
@@ -340,7 +340,7 @@ void LibPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
 }
 
 // sprintf(): print to a string.
-void LibSPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibSPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    struct OutputStream StrStream;
    StrStream.Putch = &SPutc;
    StrStream.StrI.Parser = Parser;
@@ -352,7 +352,7 @@ void LibSPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs)
 
 // Get a line of input.
 // Protected from buffer overrun.
-void LibGets(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibGets(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = PlatformGetLine(Param[0]->Val->Pointer, GETS_BUF_MAX, NULL);
    if (ReturnValue->Val->Pointer != NULL) {
       char *EOLPos = strchr(Param[0]->Val->Pointer, '\n');
@@ -361,110 +361,110 @@ void LibGets(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    }
 }
 
-void LibGetc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibGetc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = PlatformGetCharacter();
 }
 
-void LibExit(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibExit(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    PlatformExit(Param[0]->Val->Integer);
 }
 
 #ifdef PICOC_LIBRARY
-void LibSin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibSin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = sin(Param[0]->Val->FP);
 }
 
-void LibCos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibCos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = cos(Param[0]->Val->FP);
 }
 
-void LibTan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibTan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = tan(Param[0]->Val->FP);
 }
 
-void LibAsin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibAsin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = asin(Param[0]->Val->FP);
 }
 
-void LibAcos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibAcos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = acos(Param[0]->Val->FP);
 }
 
-void LibAtan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibAtan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = atan(Param[0]->Val->FP);
 }
 
-void LibSinh(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibSinh(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = sinh(Param[0]->Val->FP);
 }
 
-void LibCosh(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibCosh(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = cosh(Param[0]->Val->FP);
 }
 
-void LibTanh(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibTanh(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = tanh(Param[0]->Val->FP);
 }
 
-void LibExp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibExp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = exp(Param[0]->Val->FP);
 }
 
-void LibFabs(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibFabs(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = fabs(Param[0]->Val->FP);
 }
 
-void LibLog(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibLog(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = log(Param[0]->Val->FP);
 }
 
-void LibLog10(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibLog10(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = log10(Param[0]->Val->FP);
 }
 
-void LibPow(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibPow(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = pow(Param[0]->Val->FP, Param[1]->Val->FP);
 }
 
-void LibSqrt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibSqrt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = sqrt(Param[0]->Val->FP);
 }
 
-void LibRound(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibRound(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = floor(Param[0]->Val->FP + 0.5); // XXX - fix for soft float.
 }
 
-void LibCeil(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibCeil(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = ceil(Param[0]->Val->FP);
 }
 
-void LibFloor(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibFloor(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->FP = floor(Param[0]->Val->FP);
 }
 #endif
 
 #ifndef NO_STRING_FUNCTIONS
-void LibMalloc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibMalloc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = malloc(Param[0]->Val->Integer);
 }
 
 #   ifndef NO_CALLOC
-void LibCalloc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibCalloc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = calloc(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
 #   endif
 
 #   ifndef NO_REALLOC
-void LibRealloc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibRealloc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = realloc(Param[0]->Val->Pointer, Param[1]->Val->Integer);
 }
 #   endif
 
-void LibFree(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibFree(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    free(Param[0]->Val->Pointer);
 }
 
-void LibStrcpy(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibStrcpy(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *To = (char *)Param[0]->Val->Pointer;
    char *From = (char *)Param[1]->Val->Pointer;
    while (*From != '\0')
@@ -472,7 +472,7 @@ void LibStrcpy(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
    *To = '\0';
 }
 
-void LibStrncpy(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibStrncpy(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *To = (char *)Param[0]->Val->Pointer;
    char *From = (char *)Param[1]->Val->Pointer;
    int Len = Param[2]->Val->Integer;
@@ -482,7 +482,7 @@ void LibStrncpy(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs)
       *To = '\0';
 }
 
-void LibStrcmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibStrcmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *Str1 = (char *)Param[0]->Val->Pointer;
    char *Str2 = (char *)Param[1]->Val->Pointer;
    bool StrEnded;
@@ -498,7 +498,7 @@ void LibStrcmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
    ReturnValue->Val->Integer = 0;
 }
 
-void LibStrncmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibStrncmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *Str1 = (char *)Param[0]->Val->Pointer;
    char *Str2 = (char *)Param[1]->Val->Pointer;
    int Len = Param[2]->Val->Integer;
@@ -515,7 +515,7 @@ void LibStrncmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs)
    ReturnValue->Val->Integer = 0;
 }
 
-void LibStrcat(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibStrcat(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *To = (char *)Param[0]->Val->Pointer;
    char *From = (char *)Param[1]->Val->Pointer;
    while (*To != '\0')
@@ -525,7 +525,7 @@ void LibStrcat(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
    *To = '\0';
 }
 
-void LibIndex(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibIndex(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *Pos = (char *)Param[0]->Val->Pointer;
    int SearchChar = Param[1]->Val->Integer;
    while (*Pos != '\0' && *Pos != SearchChar)
@@ -536,7 +536,7 @@ void LibIndex(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
       ReturnValue->Val->Pointer = Pos;
 }
 
-void LibRindex(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibRindex(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *Pos = (char *)Param[0]->Val->Pointer;
    int SearchChar = Param[1]->Val->Integer;
    ReturnValue->Val->Pointer = NULL;
@@ -546,7 +546,7 @@ void LibRindex(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
    }
 }
 
-void LibStrlen(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibStrlen(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *Pos = (char *)Param[0]->Val->Pointer;
    int Len;
    for (Len = 0; *Pos != '\0'; Pos++)
@@ -554,17 +554,17 @@ void LibStrlen(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
    ReturnValue->Val->Integer = Len;
 }
 
-void LibMemset(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibMemset(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 // We can use the system memset().
    memset(Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Integer);
 }
 
-void LibMemcpy(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibMemcpy(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 // We can use the system memcpy().
    memcpy(Param[0]->Val->Pointer, Param[1]->Val->Pointer, Param[2]->Val->Integer);
 }
 
-void LibMemcmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
+static void LibMemcmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char *Mem1 = (unsigned char *)Param[0]->Val->Pointer;
    unsigned char *Mem2 = (unsigned char *)Param[1]->Val->Pointer;
    int Len = Param[2]->Val->Integer;

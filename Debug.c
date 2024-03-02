@@ -73,6 +73,9 @@ bool DebugClearBreakpoint(ParseState Parser) {
    return false;
 }
 
+void DebugStep() {
+}
+
 // Before we run a statement, check if there's anything we have to do with the debugger here.
 void DebugCheckStatement(ParseState Parser) {
    bool DoBreak = false;
@@ -92,9 +95,6 @@ void DebugCheckStatement(ParseState Parser) {
       PlatformPrintf(pc->CStdOut, "Handling a break\n");
       PicocParseInteractiveNoStartPrompt(pc, false);
    }
-}
-
-void DebugStep() {
 }
 
 #endif // !NO_DEBUGGER.

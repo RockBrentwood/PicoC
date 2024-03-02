@@ -36,8 +36,11 @@ void PicocPlatformScanFile(State pc, const char *FileName) {
 #endif
 }
 
+#if 0
 // Mark where to end the program for platforms which require this.
+// This conflicts with the declaration in Sys.h.
 jmp_buf ExitBuf;
+#endif
 
 // Exit the program.
 void PlatformExit(State pc, int RetVal) {

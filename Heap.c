@@ -6,7 +6,7 @@
 #include "Extern.h"
 
 #ifdef DEBUG_HEAP
-void ShowBigList(State pc) {
+static void ShowBigList(State pc) {
    AllocNode LPos;
    printf("Heap: bottom=0x%lx 0x%lx-0x%lx, big freelist=", (long)pc->HeapBottom, (long)&(pc->HeapMemory)[0], (long)&(pc->HeapMemory)[HEAP_SIZE]);
    for (LPos = pc->FreeListBig; LPos != NULL; LPos = LPos->NextFree)

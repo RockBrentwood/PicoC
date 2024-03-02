@@ -105,6 +105,41 @@ void PrintSourceTextErrorLine(OutFile Stream, const char *FileName, const char *
    PlatformPrintf(Stream, "^\n%s:%d:%d ", FileName, Line, CharacterPos);
 }
 
+static void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args) {
+   const char *FPos;
+   for (FPos = Format; *FPos != '\0'; FPos++) {
+      if (*FPos == '%') {
+         FPos++;
+         switch (*FPos) {
+            case 's':
+               PrintStr(va_arg(Args, char *), Stream);
+            break;
+            case 'd':
+               PrintSimpleInt(va_arg(Args, int), Stream);
+            break;
+            case 'c':
+               PrintCh(va_arg(Args, int), Stream);
+            break;
+            case 't':
+               PrintType(va_arg(Args, ValueType), Stream);
+            break;
+#ifndef NO_FP
+            case 'f':
+               PrintFP(va_arg(Args, double), Stream);
+            break;
+#endif
+            case '%':
+               PrintCh('%', Stream);
+            break;
+            case '\0':
+               FPos--;
+            break;
+         }
+      } else
+         PrintCh(*FPos, Stream);
+   }
+}
+
 // Exit with a message.
 void ProgramFail(ParseState Parser, const char *Message, ...) {
    va_list Args;
@@ -158,41 +193,6 @@ void PlatformPrintf(OutFile Stream, const char *Format, ...) {
    va_start(Args, Format);
    PlatformVPrintf(Stream, Format, Args);
    va_end(Args);
-}
-
-void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args) {
-   const char *FPos;
-   for (FPos = Format; *FPos != '\0'; FPos++) {
-      if (*FPos == '%') {
-         FPos++;
-         switch (*FPos) {
-            case 's':
-               PrintStr(va_arg(Args, char *), Stream);
-            break;
-            case 'd':
-               PrintSimpleInt(va_arg(Args, int), Stream);
-            break;
-            case 'c':
-               PrintCh(va_arg(Args, int), Stream);
-            break;
-            case 't':
-               PrintType(va_arg(Args, ValueType), Stream);
-            break;
-#ifndef NO_FP
-            case 'f':
-               PrintFP(va_arg(Args, double), Stream);
-            break;
-#endif
-            case '%':
-               PrintCh('%', Stream);
-            break;
-            case '\0':
-               FPos--;
-            break;
-         }
-      } else
-         PrintCh(*FPos, Stream);
-   }
 }
 
 // Make a new temporary name.
