@@ -1,4 +1,5 @@
-/* stdlib.h library for large systems - small embedded systems use Lib.c instead */
+// unistd.h library for large systems:
+// Small embedded systems use Lib.c instead.
 #include <stdio.h>
 #include <unistd.h>
 #include <limits.h>
@@ -70,7 +71,7 @@ void UnistdFchdir(struct ParseState *Parser, struct Value *ReturnValue, struct V
 void UnistdFdatasync(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
 #ifndef F_FULLSYNC
    ReturnValue->Val->Integer = fdatasync(Param[0]->Val->Integer);
-#else /* Mac OS X equivalent */
+#else // Mac OS X equivalent.
    ReturnValue->Val->Integer = fcntl(Param[0]->Val->Integer, F_FULLFSYNC);
 #endif
 }
@@ -311,39 +312,44 @@ void UnistdWrite(struct ParseState *Parser, struct Value *ReturnValue, struct Va
    ReturnValue->Val->Integer = write(Param[0]->Val->Integer, Param[1]->Val->Pointer, Param[2]->Val->Integer);
 }
 
-/* handy structure definitions */
-const char UnistdDefs[] = "\
-typedef int uid_t; \
-typedef int gid_t; \
-typedef int pid_t; \
-typedef int off_t; \
-typedef int size_t; \
-typedef int ssize_t; \
-typedef int useconds_t;\
-typedef int intptr_t;\
-";
+// Handy structure definitions.
+const char UnistdDefs[] =
+   "typedef int uid_t; "
+   "typedef int gid_t; "
+   "typedef int pid_t; "
+   "typedef int off_t; "
+   "typedef int size_t; "
+   "typedef int ssize_t; "
+   "typedef int useconds_t;"
+   "typedef int intptr_t;";
 
-/* all unistd.h functions */
+// All unistd.h functions.
 struct LibraryFunction UnistdFunctions[] = {
    { UnistdAccess, "int access(char *, int);" },
    { UnistdAlarm, "unsigned int alarm(unsigned int);" },
-/* { UnistdBrk, "int brk(void *);" }, */
+#if 0
+   { UnistdBrk, "int brk(void *);" },
+#endif
    { UnistdChdir, "int chdir(char *);" },
    { UnistdChroot, "int chroot(char *);" },
    { UnistdChown, "int chown(char *, uid_t, gid_t);" },
    { UnistdClose, "int close(int);" },
    { UnistdConfstr, "size_t confstr(int, char *, size_t);" },
    { UnistdCtermid, "char *ctermid(char *);" },
-/* { UnistdCuserid, "char *cuserid(char *);" }, */
+#if 0
+   { UnistdCuserid, "char *cuserid(char *);" },
+#endif
    { UnistdDup, "int dup(int);" },
    { UnistdDup2, "int dup2(int, int);" },
-/* { UnistdEncrypt, "void encrypt(char[64], int);" }, */
-/* { UnistdExecl, "int execl(char *, char *, ...);" }, */
-/* { UnistdExecle, "int execle(char *, char *, ...);" }, */
-/* { UnistdExeclp, "int execlp(char *, char *, ...);" }, */
-/* { UnistdExecv, "int execv(char *, char *[]);" }, */
-/* { UnistdExecve, "int execve(char *, char *[], char *[]);" }, */
-/* { UnistdExecvp, "int execvp(char *, char *[]);" }, */
+#if 0
+   { UnistdEncrypt, "void encrypt(char[64], int);" },
+   { UnistdExecl, "int execl(char *, char *, ...);" },
+   { UnistdExecle, "int execle(char *, char *, ...);" },
+   { UnistdExeclp, "int execlp(char *, char *, ...);" },
+   { UnistdExecv, "int execv(char *, char *[]);" },
+   { UnistdExecve, "int execve(char *, char *[], char *[]);" },
+   { UnistdExecvp, "int execvp(char *, char *[]);" },
+#endif
    { Unistd_Exit, "void _exit(int);" },
    { UnistdFchown, "int fchown(int, uid_t, gid_t);" },
    { UnistdFchdir, "int fchdir(int);" },
@@ -357,18 +363,26 @@ struct LibraryFunction UnistdFunctions[] = {
    { UnistdGetegid, "gid_t getegid(void);" },
    { UnistdGeteuid, "uid_t geteuid(void);" },
    { UnistdGetgid, "gid_t getgid(void);" },
-/* { UnistdGetgroups, "int getgroups(int, gid_t []);" }, */
+#if 0
+   { UnistdGetgroups, "int getgroups(int, gid_t []);" },
+#endif
    { UnistdGethostid, "long gethostid(void);" },
    { UnistdGetlogin, "char *getlogin(void);" },
    { UnistdGetlogin_r, "int getlogin_r(char *, size_t);" },
-/* { UnistdGetopt, "int getopt(int, char * [], char *);" }, */
+#if 0
+   { UnistdGetopt, "int getopt(int, char * [], char *);" },
+#endif
    { UnistdGetpagesize, "int getpagesize(void);" },
    { UnistdGetpass, "char *getpass(char *);" },
-/* { UnistdGetpgid, "pid_t getpgid(pid_t);" }, */
+#if 0
+   { UnistdGetpgid, "pid_t getpgid(pid_t);" },
+#endif
    { UnistdGetpgrp, "pid_t getpgrp(void);" },
    { UnistdGetpid, "pid_t getpid(void);" },
    { UnistdGetppid, "pid_t getppid(void);" },
-/* { UnistdGetsid, "pid_t getsid(pid_t);" }, */
+#if 0
+   { UnistdGetsid, "pid_t getsid(pid_t);" },
+#endif
    { UnistdGetuid, "uid_t getuid(void);" },
    { UnistdGetwd, "char *getwd(char *);" },
    { UnistdIsatty, "int isatty(int);" },
@@ -379,10 +393,12 @@ struct LibraryFunction UnistdFunctions[] = {
    { UnistdNice, "int nice(int);" },
    { UnistdPathconf, "long pathconf(char *, int);" },
    { UnistdPause, "int pause(void);" },
-/* { UnistdPipe, "int pipe(int [2]);" }, */
-/* { UnistdPread, "ssize_t pread(int, void *, size_t, off_t);" }, */
-/* { UnistdPthread_atfork, "int pthread_atfork(void (*)(void), void (*)(void), void(*)(void));" }, */
-/* { UnistdPwrite, "ssize_t pwrite(int, void *, size_t, off_t);" }, */
+#if 0
+   { UnistdPipe, "int pipe(int [2]);" },
+   { UnistdPread, "ssize_t pread(int, void *, size_t, off_t);" },
+   { UnistdPthread_atfork, "int pthread_atfork(void (*)(void), void (*)(void), void(*)(void));" },
+   { UnistdPwrite, "ssize_t pwrite(int, void *, size_t, off_t);" },
+#endif
    { UnistdRead, "ssize_t read(int, void *, size_t);" },
    { UnistdReadlink, "int readlink(char *, char *, size_t);" },
    { UnistdRmdir, "int rmdir(char *);" },
@@ -395,7 +411,9 @@ struct LibraryFunction UnistdFunctions[] = {
    { UnistdSetsid, "pid_t setsid(void);" },
    { UnistdSetuid, "int setuid(uid_t);" },
    { UnistdSleep, "unsigned int sleep(unsigned int);" },
-/* { UnistdSwab, "void swab(void *, void *, ssize_t);" }, */
+#if 0
+   { UnistdSwab, "void swab(void *, void *, ssize_t);" },
+#endif
    { UnistdSymlink, "int symlink(char *, char *);" },
    { UnistdSync, "void sync(void);" },
    { UnistdSysconf, "long sysconf(int);" },
@@ -412,16 +430,16 @@ struct LibraryFunction UnistdFunctions[] = {
    { NULL, NULL }
 };
 
-/* creates various system-dependent definitions */
+// Creates various system-dependent definitions.
 void UnistdSetupFunc(Picoc *pc) {
-/* define NULL */
+// Define NULL.
    if (!VariableDefined(pc, TableStrRegister(pc, "NULL")))
       VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (union AnyValue *)&ZeroValue, FALSE);
-/* define optarg and friends */
+// Define optarg and friends.
    VariableDefinePlatformVar(pc, NULL, "optarg", pc->CharPtrType, (union AnyValue *)&optarg, TRUE);
    VariableDefinePlatformVar(pc, NULL, "optind", &pc->IntType, (union AnyValue *)&optind, TRUE);
    VariableDefinePlatformVar(pc, NULL, "opterr", &pc->IntType, (union AnyValue *)&opterr, TRUE);
    VariableDefinePlatformVar(pc, NULL, "optopt", &pc->IntType, (union AnyValue *)&optopt, TRUE);
 }
 
-#endif /* !BUILTIN_MINI_STDLIB */
+#endif // !BUILTIN_MINI_STDLIB.

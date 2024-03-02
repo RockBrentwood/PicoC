@@ -1,22 +1,23 @@
-/* stdio.h library for large systems - small embedded systems use Lib.c instead */
+// math.h library for large systems:
+// Small embedded systems use Lib.c instead.
 #include "../Extern.h"
 
 #ifndef BUILTIN_MINI_STDLIB
 #ifndef NO_FP
 
-static double M_EValue = 2.7182818284590452354; /* e */
-static double M_LOG2EValue = 1.4426950408889634074; /* log_2 e */
-static double M_LOG10EValue = 0.43429448190325182765; /* log_10 e */
-static double M_LN2Value = 0.69314718055994530942; /* log_e 2 */
-static double M_LN10Value = 2.30258509299404568402; /* log_e 10 */
-static double M_PIValue = 3.14159265358979323846; /* pi */
-static double M_PI_2Value = 1.57079632679489661923; /* pi/2 */
-static double M_PI_4Value = 0.78539816339744830962; /* pi/4 */
-static double M_1_PIValue = 0.31830988618379067154; /* 1/pi */
-static double M_2_PIValue = 0.63661977236758134308; /* 2/pi */
-static double M_2_SQRTPIValue = 1.12837916709551257390; /* 2/sqrt(pi) */
-static double M_SQRT2Value = 1.41421356237309504880; /* sqrt(2) */
-static double M_SQRT1_2Value = 0.70710678118654752440; /* 1/sqrt(2) */
+static double M_EValue = 2.7182818284590452354; // e.
+static double M_LOG2EValue = 1.4426950408889634074; // log_2 e.
+static double M_LOG10EValue = 0.43429448190325182765; // log_10 e.
+static double M_LN2Value = 0.69314718055994530942; // log_e 2.
+static double M_LN10Value = 2.30258509299404568402; // log_e 10.
+static double M_PIValue = 3.14159265358979323846; // pi.
+static double M_PI_2Value = 1.57079632679489661923; // pi/2.
+static double M_PI_4Value = 0.78539816339744830962; // pi/4.
+static double M_1_PIValue = 0.31830988618379067154; // 1/pi.
+static double M_2_PIValue = 0.63661977236758134308; // 2/pi.
+static double M_2_SQRTPIValue = 1.12837916709551257390; // 2/sqrt(pi).
+static double M_SQRT2Value = 1.41421356237309504880; // sqrt(2).
+static double M_SQRT1_2Value = 0.70710678118654752440; // 1/sqrt(2).
 
 void MathSin(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
    ReturnValue->Val->FP = sin(Param[0]->Val->FP);
@@ -99,8 +100,7 @@ void MathSqrt(struct ParseState *Parser, struct Value *ReturnValue, struct Value
 }
 
 void MathRound(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
-/* this awkward definition of "round()" due to it being inconsistently
- * declared in math.h */
+// This awkward definition of "round()" due to it being inconsistently declared in math.h.
    ReturnValue->Val->FP = ceil(Param[0]->Val->FP - 0.5);
 }
 
@@ -112,7 +112,7 @@ void MathFloor(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
    ReturnValue->Val->FP = floor(Param[0]->Val->FP);
 }
 
-/* all math.h functions */
+// All math.h functions.
 struct LibraryFunction MathFunctions[] = {
    { MathAcos, "float acos(float);" },
    { MathAsin, "float asin(float);" },
@@ -140,7 +140,7 @@ struct LibraryFunction MathFunctions[] = {
    { NULL, NULL }
 };
 
-/* creates various system-dependent definitions */
+// Creates various system-dependent definitions.
 void MathSetupFunc(Picoc *pc) {
    VariableDefinePlatformVar(pc, NULL, "M_E", &pc->FPType, (union AnyValue *)&M_EValue, FALSE);
    VariableDefinePlatformVar(pc, NULL, "M_LOG2E", &pc->FPType, (union AnyValue *)&M_LOG2EValue, FALSE);
@@ -157,5 +157,5 @@ void MathSetupFunc(Picoc *pc) {
    VariableDefinePlatformVar(pc, NULL, "M_SQRT1_2", &pc->FPType, (union AnyValue *)&M_SQRT1_2Value, FALSE);
 }
 
-#endif /* !NO_FP */
-#endif /* !BUILTIN_MINI_STDLIB */
+#endif // !NO_FP.
+#endif // !BUILTIN_MINI_STDLIB.

@@ -1,4 +1,5 @@
-/* stdlib.h library for large systems - small embedded systems use Lib.c instead */
+// stdlib.h library for large systems:
+// Small embedded systems use Lib.c instead.
 #include "../Extern.h"
 
 #ifndef BUILTIN_MINI_STDLIB
@@ -98,19 +99,18 @@ void StdlibLdiv(struct ParseState *Parser, struct Value *ReturnValue, struct Val
 #endif
 
 #if 0
-/* handy structure definitions */
-const char StdlibDefs[] = "\
-typedef struct { \
-    int quot, rem; \
-} div_t; \
-\
-typedef struct { \
-    int quot, rem; \
-} ldiv_t; \
-";
+// Handy structure definitions.
+const char StdlibDefs[] =
+   "typedef struct { "
+   "    int quot, rem; "
+   "} div_t; "
+   ""
+   "typedef struct { "
+   "    int quot, rem; "
+   "} ldiv_t; ";
 #endif
 
-/* all stdlib.h functions */
+// All stdlib.h functions.
 struct LibraryFunction StdlibFunctions[] = {
 #ifndef NO_FP
    { StdlibAtof, "float atof(char *);" },
@@ -130,8 +130,10 @@ struct LibraryFunction StdlibFunctions[] = {
    { StdlibExit, "void exit(int);" },
    { StdlibGetenv, "char *getenv(char *);" },
    { StdlibSystem, "int system(char *);" },
-/* { StdlibBsearch, "void *bsearch(void *, void *, int, int, int (*)());" }, */
-/* { StdlibQsort, "void *qsort(void *, int, int, int (*)());" }, */
+#if 0
+   { StdlibBsearch, "void *bsearch(void *, void *, int, int, int (*)());" },
+   { StdlibQsort, "void *qsort(void *, int, int, int (*)());" },
+#endif
    { StdlibAbs, "int abs(int);" },
    { StdlibLabs, "int labs(int);" },
 #if 0
@@ -141,11 +143,11 @@ struct LibraryFunction StdlibFunctions[] = {
    { NULL, NULL }
 };
 
-/* creates various system-dependent definitions */
+// Creates various system-dependent definitions.
 void StdlibSetupFunc(Picoc *pc) {
-/* define NULL, TRUE and FALSE */
+// Define NULL, TRUE and FALSE.
    if (!VariableDefined(pc, TableStrRegister(pc, "NULL")))
       VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (union AnyValue *)&Stdlib_ZeroValue, FALSE);
 }
 
-#endif /* !BUILTIN_MINI_STDLIB */
+#endif // !BUILTIN_MINI_STDLIB.

@@ -1,39 +1,40 @@
-/* all platform-specific includes and defines go in this file */
+// All platform-specific includes and defines go in this file.
 #ifndef SYS_H
 #define SYS_H
 
-/* configurable options */
-/* select your host type (or do it in the Makefile):
- * #define  UNIX_HOST
- * #define  FLYINGFOX_HOST
- * #define  SURVEYOR_HOST
- * #define  SRV1_UNIX_HOST
- * #define  UMON_HOST
- * #define  WIN32  (predefined on MSVC)
- */
-
-#define LARGE_INT_POWER_OF_TEN 1000000000 /* the largest power of ten which fits in an int on this architecture */
-#if defined(__hppa__) || defined(__sparc__)
-#   define ALIGN_TYPE double /* the default data type to use for alignment */
-#else
-#   define ALIGN_TYPE void * /* the default data type to use for alignment */
+// Configurable options.
+// Select your host type (or do it in the Makefile):
+#if 0
+#define UNIX_HOST
+#define FLYINGFOX_HOST
+#define SURVEYOR_HOST
+#define SRV1_UNIX_HOST
+#define UMON_HOST
+#define WIN32 // (predefined on MSVC.)
 #endif
-#define GLOBAL_TABLE_SIZE 97 /* global variable table */
-#define STRING_TABLE_SIZE 97 /* shared string table size */
-#define STRING_LITERAL_TABLE_SIZE 97 /* string literal table size */
-#define RESERVED_WORD_TABLE_SIZE 97 /* reserved word table size */
-#define PARAMETER_MAX 16 /* maximum number of parameters to a function */
-#define LINEBUFFER_MAX 256 /* maximum number of characters on a line */
-#define LOCAL_TABLE_SIZE 11 /* size of local variable table (can expand) */
-#define STRUCT_TABLE_SIZE 11 /* size of struct/union member table (can expand) */
+
+#define LARGE_INT_POWER_OF_TEN 1000000000 // The largest power of ten which fits in an int on this architecture.
+#if defined(__hppa__) || defined(__sparc__)
+#   define ALIGN_TYPE double // The default data type to use for alignment.
+#else
+#   define ALIGN_TYPE void * // The default data type to use for alignment.
+#endif
+#define GLOBAL_TABLE_SIZE 97 // Global variable table.
+#define STRING_TABLE_SIZE 97 // Shared string table size.
+#define STRING_LITERAL_TABLE_SIZE 97 // String literal table size.
+#define RESERVED_WORD_TABLE_SIZE 97 // Reserved word table size.
+#define PARAMETER_MAX 16 // Maximum number of parameters to a function.
+#define LINEBUFFER_MAX 256 // Maximum number of characters on a line.
+#define LOCAL_TABLE_SIZE 11 // Size of local variable table (can expand).
+#define STRUCT_TABLE_SIZE 11 // Size of struct/union member table (can expand).
 #define INTERACTIVE_PROMPT_START "starting picoc " PICOC_VERSION "\n"
 #define INTERACTIVE_PROMPT_STATEMENT "picoc> "
 #define INTERACTIVE_PROMPT_LINE "     > "
 
-/* host platform includes */
+// Host platform includes.
 #ifdef UNIX_HOST
-#   define USE_MALLOC_STACK /* stack is allocated using malloc() */
-#   define USE_MALLOC_HEAP /* heap is allocated using malloc() */
+#   define USE_MALLOC_STACK // Stack is allocated using malloc().
+#   define USE_MALLOC_HEAP // Heap is allocated using malloc().
 #   include <stdio.h>
 #   include <stdlib.h>
 #   include <ctype.h>
@@ -56,8 +57,8 @@
 extern jmp_buf ExitBuf;
 #else
 #ifdef WIN32
-#   define USE_MALLOC_STACK /* stack is allocated using malloc() */
-#   define USE_MALLOC_HEAP /* heap is allocated using malloc() */
+#   define USE_MALLOC_STACK // Stack is allocated using malloc().
+#   define USE_MALLOC_HEAP // Heap is allocated using malloc().
 #   include <stdio.h>
 #   include <stdlib.h>
 #   include <ctype.h>
@@ -73,7 +74,7 @@ extern jmp_buf ExitBuf;
 extern jmp_buf ExitBuf;
 #else
 #   ifdef FLYINGFOX_HOST
-#      define HEAP_SIZE (16*1024) /* space for the heap and the stack */
+#      define HEAP_SIZE (16*1024) // Space for the heap and the stack.
 #      define NO_HASH_INCLUDE
 #      include <stdlib.h>
 #      include <ctype.h>
@@ -113,7 +114,7 @@ extern jmp_buf ExitBuf;
 #      define BUILTIN_MINI_STDLIB
 #   else
 #   ifdef UMON_HOST
-#      define HEAP_SIZE (128*1024) /* space for the heap and the stack */
+#      define HEAP_SIZE (128*1024) // Space for the heap and the stack.
 #      define NO_FP
 #      define BUILTIN_MINI_STDLIB
 #      include <stdlib.h>
@@ -135,4 +136,4 @@ extern int ExitBuf[];
 #endif
 #endif
 
-#endif /* SYS_H */
+#endif // SYS_H.

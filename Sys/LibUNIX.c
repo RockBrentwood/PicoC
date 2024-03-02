@@ -12,7 +12,7 @@ void Clineno(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
    ReturnValue->Val->Integer = Parser->Line;
 }
 
-/* list of all library functions and their prototypes */
+// List of all library functions and their prototypes.
 struct LibraryFunction UnixFunctions[] = {
    { Ctest, "void test(int);" },
    { Clineno, "int lineno();" },

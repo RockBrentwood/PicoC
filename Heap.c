@@ -1,8 +1,8 @@
-/* picoc heap memory allocation. This is a complete (but small) memory
- * allocator for embedded systems which have no memory allocator. Alternatively
- * you can define USE_MALLOC_HEAP to use your system's own malloc() allocator */
+// picoc heap memory allocation.
+// This is a complete (but small) memory allocator for embedded systems which have no memory allocator.
+// Alternatively you can define USE_MALLOC_HEAP to use your system's own malloc() allocator.
 
-/* stack grows up from the bottom and heap grows down from the top of heap space */
+// Stack grows up from the bottom and heap grows down from the top of heap space.
 #include "Extern.h"
 
 #ifdef DEBUG_HEAP
@@ -15,26 +15,26 @@ void ShowBigList(Picoc *pc) {
 }
 #endif
 
-/* initialise the stack and heap storage */
+// Initialize the stack and heap storage.
 void HeapInit(Picoc *pc, int StackOrHeapSize) {
    int Count;
    int AlignOffset = 0;
 #ifdef USE_MALLOC_STACK
    pc->HeapMemory = malloc(StackOrHeapSize);
-   pc->HeapBottom = NULL; /* the bottom of the (downward-growing) heap */
-   pc->StackFrame = NULL; /* the current stack frame */
-   pc->HeapStackTop = NULL; /* the top of the stack */
+   pc->HeapBottom = NULL; // The bottom of the (downward-growing) heap.
+   pc->StackFrame = NULL; // The current stack frame.
+   pc->HeapStackTop = NULL; // The top of the stack.
 #else
 #ifdef SURVEYOR_HOST
-   pc->HeapMemory = (unsigned char *)C_HEAPSTART; /* all memory - stack and heap */
-   pc->HeapBottom = (void *)C_HEAPSTART + HEAP_SIZE; /* the bottom of the (downward-growing) heap */
-   pc->StackFrame = (void *)C_HEAPSTART; /* the current stack frame */
-   pc->HeapStackTop = (void *)C_HEAPSTART; /* the top of the stack */
+   pc->HeapMemory = (unsigned char *)C_HEAPSTART; // All memory - stack and heap.
+   pc->HeapBottom = (void *)C_HEAPSTART + HEAP_SIZE; // The bottom of the (downward-growing) heap.
+   pc->StackFrame = (void *)C_HEAPSTART; // The current stack frame.
+   pc->HeapStackTop = (void *)C_HEAPSTART; // The top of the stack.
    pc->HeapMemStart = (void *)C_HEAPSTART;
 #else
-   pc->HeapBottom = &HeapMemory[HEAP_SIZE]; /* the bottom of the (downward-growing) heap */
-   pc->StackFrame = &HeapMemory[0]; /* the current stack frame */
-   pc->HeapStackTop = &HeapMemory[0]; /* the top of the stack */
+   pc->HeapBottom = &HeapMemory[HEAP_SIZE]; // The bottom of the (downward-growing) heap.
+   pc->StackFrame = &HeapMemory[0]; // The current stack frame.
+   pc->HeapStackTop = &HeapMemory[0]; // The top of the stack.
 #endif
 #endif
    while (((unsigned long)&pc->HeapMemory[AlignOffset]&(sizeof(ALIGN_TYPE) - 1)) != 0)
@@ -54,8 +54,9 @@ void HeapCleanup(Picoc *pc) {
 #endif
 }
 
-/* allocate some space on the stack, in the current stack frame
- * clears memory. can return NULL if out of stack space */
+// Allocate some space on the stack, in the current stack frame.
+// Clears memory.
+// Can return NULL if out of stack space.
 void *HeapAllocStack(Picoc *pc, int Size) {
    char *NewMem = pc->HeapStackTop;
    char *NewTop = (char *)pc->HeapStackTop + MEM_ALIGN(Size);
@@ -69,7 +70,7 @@ void *HeapAllocStack(Picoc *pc, int Size) {
    return NewMem;
 }
 
-/* allocate some space on the stack, in the current stack frame */
+// Allocate some space on the stack, in the current stack frame.
 void HeapUnpopStack(Picoc *pc, int Size) {
 #ifdef DEBUG_HEAP
    printf("HeapUnpopStack(%ld) at 0x%lx\n", (unsigned long)MEM_ALIGN(Size), (unsigned long)pc->HeapStackTop);
@@ -77,7 +78,7 @@ void HeapUnpopStack(Picoc *pc, int Size) {
    pc->HeapStackTop = (void *)((char *)pc->HeapStackTop + MEM_ALIGN(Size));
 }
 
-/* free some space at the top of the stack */
+// Free some space at the top of the stack.
 int HeapPopStack(Picoc *pc, void *Addr, int Size) {
    int ToLose = MEM_ALIGN(Size);
    if (ToLose > ((char *)pc->HeapStackTop - (char *)&(pc->HeapMemory)[0]))
@@ -90,7 +91,7 @@ int HeapPopStack(Picoc *pc, void *Addr, int Size) {
    return TRUE;
 }
 
-/* push a new stack frame on to the stack */
+// Push a new stack frame on to the stack.
 void HeapPushStackFrame(Picoc *pc) {
 #ifdef DEBUG_HEAP
    printf("Adding stack frame at 0x%lx\n", (unsigned long)pc->HeapStackTop);
@@ -100,7 +101,8 @@ void HeapPushStackFrame(Picoc *pc) {
    pc->HeapStackTop = (void *)((char *)pc->HeapStackTop + MEM_ALIGN(sizeof(ALIGN_TYPE)));
 }
 
-/* pop the current stack frame, freeing all memory in the frame. can return NULL */
+// Pop the current stack frame, freeing all memory in the frame.
+// Can return NULL.
 int HeapPopStackFrame(Picoc *pc) {
    if (*(void **)pc->StackFrame != NULL) {
       pc->HeapStackTop = pc->StackFrame;
@@ -113,7 +115,9 @@ int HeapPopStackFrame(Picoc *pc) {
       return FALSE;
 }
 
-/* allocate some dynamically allocated memory. memory is cleared. can return NULL if out of memory */
+// Allocate some dynamically allocated memory.
+// Memory is cleared.
+// Can return NULL if out of memory.
 void *HeapAllocMem(Picoc *pc, int Size) {
 #ifdef USE_MALLOC_HEAP
    return calloc(Size, 1);
@@ -126,12 +130,12 @@ void *HeapAllocMem(Picoc *pc, int Size) {
    if (Size == 0)
       return NULL;
    assert(Size > 0);
-/* make sure we have enough space for an AllocNode */
+// Make sure we have enough space for an AllocNode.
    if (AllocSize < sizeof(struct AllocNode))
       AllocSize = sizeof(struct AllocNode);
    Bucket = AllocSize >> 2;
    if (Bucket < FREELIST_BUCKETS && pc->FreeListBucket[Bucket] != NULL) {
-   /* try to allocate from a freelist bucket first */
+   // Try to allocate from a freelist bucket first.
 #   ifdef DEBUG_HEAP
       printf("allocating %d(%d) from bucket", Size, AllocSize);
 #   endif
@@ -141,14 +145,14 @@ void *HeapAllocMem(Picoc *pc, int Size) {
       assert(pc->FreeListBucket[Bucket] == NULL || ((unsigned long)pc->FreeListBucket[Bucket] >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)pc->FreeListBucket[Bucket] - &(pc->HeapMemory)[0] < HEAP_SIZE));
       NewMem->Size = AllocSize;
    } else if (pc->FreeListBig != NULL) {
-   /* grab the first item from the "big" freelist we can fit in */
+   // Grab the first item from the "big" freelist we can fit in.
       for (FreeNode = &pc->FreeListBig; *FreeNode != NULL && (*FreeNode)->Size < AllocSize; FreeNode = &(*FreeNode)->NextFree) {
       }
       if (*FreeNode != NULL) {
          assert((unsigned long)*FreeNode >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)*FreeNode - &(pc->HeapMemory)[0] < HEAP_SIZE);
          assert((*FreeNode)->Size < HEAP_SIZE && (*FreeNode)->Size > 0);
          if ((*FreeNode)->Size < AllocSize + SPLIT_MEM_THRESHOLD) {
-         /* close in size - reduce fragmentation by not splitting */
+         // Close in size - reduce fragmentation by not splitting.
 #   ifdef DEBUG_HEAP
             printf("allocating %d(%d) from freelist, no split (%d)", Size, AllocSize, (*FreeNode)->Size);
 #   endif
@@ -156,7 +160,7 @@ void *HeapAllocMem(Picoc *pc, int Size) {
             assert((unsigned long)NewMem >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)NewMem - &(pc->HeapMemory)[0] < HEAP_SIZE);
             *FreeNode = NewMem->NextFree;
          } else {
-         /* split this big memory chunk */
+         // Split this big memory chunk.
 #   ifdef DEBUG_HEAP
             printf("allocating %d(%d) from freelist, split chunk (%d)", Size, AllocSize, (*FreeNode)->Size);
 #   endif
@@ -168,7 +172,7 @@ void *HeapAllocMem(Picoc *pc, int Size) {
       }
    }
    if (NewMem == NULL) {
-   /* couldn't allocate from a freelist - try to increase the size of the heap area */
+   // Couldn't allocate from a freelist - try to increase the size of the heap area.
 #   ifdef DEBUG_HEAP
       printf("allocating %d(%d) at bottom of heap (0x%lx-0x%lx)", Size, AllocSize, (long)((char *)pc->HeapBottom - AllocSize), (long)HeapBottom);
 #   endif
@@ -187,7 +191,7 @@ void *HeapAllocMem(Picoc *pc, int Size) {
 #endif
 }
 
-/* free some dynamically allocated memory */
+// Free some dynamically allocated memory.
 void HeapFreeMem(Picoc *pc, void *Mem) {
 #ifdef USE_MALLOC_HEAP
    free(Mem);
@@ -202,7 +206,7 @@ void HeapFreeMem(Picoc *pc, void *Mem) {
    if (Mem == NULL)
       return;
    if ((void *)MemNode == pc->HeapBottom) {
-   /* pop it off the bottom of the heap, reducing the heap size */
+   // Pop it off the bottom of the heap, reducing the heap size.
 #   ifdef DEBUG_HEAP
       printf("freeing %d from bottom of heap\n", MemNode->Size);
 #   endif
@@ -211,7 +215,7 @@ void HeapFreeMem(Picoc *pc, void *Mem) {
       ShowBigList(pc);
 #   endif
    } else if (Bucket < FREELIST_BUCKETS) {
-   /* we can fit it in a bucket */
+   // We can fit it in a bucket.
 #   ifdef DEBUG_HEAP
       printf("freeing %d to bucket\n", MemNode->Size);
 #   endif
@@ -219,7 +223,7 @@ void HeapFreeMem(Picoc *pc, void *Mem) {
       *(struct AllocNode **)MemNode = pc->FreeListBucket[Bucket];
       pc->FreeListBucket[Bucket] = (struct AllocNode *)MemNode;
    } else {
-   /* put it in the big memory freelist */
+   // Put it in the big memory freelist.
 #   ifdef DEBUG_HEAP
       printf("freeing %lx:%d to freelist\n", (unsigned long)Mem, MemNode->Size);
 #   endif

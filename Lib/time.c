@@ -1,4 +1,5 @@
-/* string.h library for large systems - small embedded systems use Lib.c instead */
+// time.h library for large systems:
+// Small embedded systems use Lib.c instead.
 #include <time.h>
 #include "../Extern.h"
 
@@ -67,13 +68,12 @@ void StdTimegm(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 #endif
 
-/* handy structure definitions */
-const char StdTimeDefs[] = "\
-typedef int time_t; \
-typedef int clock_t;\
-";
+// Handy structure definitions.
+const char StdTimeDefs[] =
+   "typedef int time_t; "
+   "typedef int clock_t;";
 
-/* all string.h functions */
+// All string.h functions.
 struct LibraryFunction StdTimeFunctions[] = {
    { StdAsctime, "char *asctime(struct tm *);" },
    { StdClock, "time_t clock();" },
@@ -94,11 +94,11 @@ struct LibraryFunction StdTimeFunctions[] = {
    { NULL, NULL }
 };
 
-/* creates various system-dependent definitions */
+// Creates various system-dependent definitions.
 void StdTimeSetupFunc(Picoc *pc) {
-/* make a "struct tm" which is the same size as a native tm structure */
+// Make a "struct tm" which is the same size as a native tm structure.
    TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "tm"), sizeof(struct tm));
-/* define CLK_PER_SEC etc. */
+// Define CLK_PER_SEC etc.
    VariableDefinePlatformVar(pc, NULL, "CLOCKS_PER_SEC", &pc->IntType, (union AnyValue *)&CLOCKS_PER_SECValue, FALSE);
 #ifdef CLK_PER_SEC
    VariableDefinePlatformVar(pc, NULL, "CLK_PER_SEC", &pc->IntType, (union AnyValue *)&CLK_PER_SECValue, FALSE);
@@ -108,4 +108,4 @@ void StdTimeSetupFunc(Picoc *pc) {
 #endif
 }
 
-#endif /* !BUILTIN_MINI_STDLIB */
+#endif // !BUILTIN_MINI_STDLIB.

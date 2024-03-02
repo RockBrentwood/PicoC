@@ -1,4 +1,5 @@
-/* string.h library for large systems - small embedded systems use Lib.c instead */
+// ctype.h library for large systems:
+// Small embedded systems use Lib.c instead.
 #include <ctype.h>
 #include "../Extern.h"
 
@@ -69,7 +70,7 @@ void StdToascii(struct ParseState *Parser, struct Value *ReturnValue, struct Val
    ReturnValue->Val->Integer = toascii(Param[0]->Val->Integer);
 }
 
-/* all string.h functions */
+// All string.h functions.
 struct LibraryFunction StdCtypeFunctions[] = {
    { StdIsalnum, "int isalnum(int);" },
    { StdIsalpha, "int isalpha(int);" },
@@ -90,4 +91,4 @@ struct LibraryFunction StdCtypeFunctions[] = {
    { NULL, NULL }
 };
 
-#endif /* !BUILTIN_MINI_STDLIB */
+#endif // !BUILTIN_MINI_STDLIB.

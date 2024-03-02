@@ -1,4 +1,5 @@
-/* string.h library for large systems - small embedded systems use Lib.c instead */
+// string.h library for large systems:
+// Small embedded systems use Lib.c instead.
 #include "../Extern.h"
 
 #ifndef BUILTIN_MINI_STDLIB
@@ -113,7 +114,7 @@ void StringStrtok_r(struct ParseState *Parser, struct Value *ReturnValue, struct
 }
 #endif
 
-/* all string.h functions */
+// All string.h functions.
 struct LibraryFunction StringFunctions[] = {
 #ifndef WIN32
    { StringIndex, "char *index(char *, int);" },
@@ -148,11 +149,11 @@ struct LibraryFunction StringFunctions[] = {
    { NULL, NULL }
 };
 
-/* creates various system-dependent definitions */
+// Creates various system-dependent definitions.
 void StringSetupFunc(Picoc *pc) {
-/* define NULL */
+// Define NULL.
    if (!VariableDefined(pc, TableStrRegister(pc, "NULL")))
       VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (union AnyValue *)&String_ZeroValue, FALSE);
 }
 
-#endif /* !BUILTIN_MINI_STDLIB */
+#endif // !BUILTIN_MINI_STDLIB.

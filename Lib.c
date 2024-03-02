@@ -1,26 +1,26 @@
-/* picoc mini standard C library - provides an optional tiny C standard library
- * if BUILTIN_MINI_STDLIB is defined */
+// picoc mini standard C library:
+// Provides an optional tiny C standard library if BUILTIN_MINI_STDLIB is defined.
 #include "Main.h"
 #include "Extern.h"
 
-/* endian-ness checking */
+// Endian-ness checking.
 static const int __ENDIAN_CHECK__ = 1;
 static int BigEndian;
 static int LittleEndian;
 
-/* global initialisation for libraries */
+// Global initialisation for libraries.
 void LibraryInit(Picoc *pc) {
-/* define the version number macro */
+// Define the version number macro.
    pc->VersionString = TableStrRegister(pc, PICOC_VERSION);
    VariableDefinePlatformVar(pc, NULL, "PICOC_VERSION", pc->CharPtrType, (union AnyValue *)&pc->VersionString, FALSE);
-/* define endian-ness macros */
+// Define endian-ness macros.
    BigEndian = ((*(char *)&__ENDIAN_CHECK__) == 0);
    LittleEndian = ((*(char *)&__ENDIAN_CHECK__) == 1);
    VariableDefinePlatformVar(pc, NULL, "BIG_ENDIAN", &pc->IntType, (union AnyValue *)&BigEndian, FALSE);
    VariableDefinePlatformVar(pc, NULL, "LITTLE_ENDIAN", &pc->IntType, (union AnyValue *)&LittleEndian, FALSE);
 }
 
-/* add a library */
+// Add a library.
 void LibraryAdd(Picoc *pc, struct Table *GlobalTable, const char *LibraryName, struct LibraryFunction *FuncList) {
    struct ParseState Parser;
    int Count;
@@ -29,7 +29,7 @@ void LibraryAdd(Picoc *pc, struct Table *GlobalTable, const char *LibraryName, s
    struct Value *NewValue;
    void *Tokens;
    char *IntrinsicName = TableStrRegister(pc, "c library");
-/* read all the library definitions */
+// Read all the library definitions.
    for (Count = 0; FuncList[Count].Prototype != NULL; Count++) {
       Tokens = LexAnalyse(pc, IntrinsicName, FuncList[Count].Prototype, strlen((char *)FuncList[Count].Prototype), NULL);
       LexInitParser(&Parser, pc, FuncList[Count].Prototype, Tokens, IntrinsicName, TRUE, FALSE);
@@ -40,7 +40,7 @@ void LibraryAdd(Picoc *pc, struct Table *GlobalTable, const char *LibraryName, s
    }
 }
 
-/* print a type to a stream without using printf/sprintf */
+// Print a type to a stream without using printf/sprintf.
 void PrintType(struct ValueType *Typ, IOFILE *Stream) {
    switch (Typ->Base) {
       case TypeVoid:
@@ -113,12 +113,10 @@ void PrintType(struct ValueType *Typ, IOFILE *Stream) {
 }
 
 #ifdef BUILTIN_MINI_STDLIB
-/*
- * This is a simplified standard library for small embedded systems. It doesn't require
- * a system stdio library to operate.
- *
- * A more complete standard library for larger computers is in the Sys/Lib*.c files.
- */
+// This is a simplified standard library for small embedded systems.
+// It doesn't require a system stdio library to operate.
+
+// A more complete standard library for larger computers is in the Sys/Lib*.c files.
 static int TRUEValue = 1;
 static int ZeroValue = 0;
 
@@ -127,38 +125,38 @@ void BasicIOInit(Picoc *pc) {
    pc->CStdOut = &CStdOutBase;
 }
 
-/* initialise the C library */
+// Initialize the C library.
 void CLibraryInit(Picoc *pc) {
-/* define some constants */
+// Define some constants.
    VariableDefinePlatformVar(pc, NULL, "NULL", &IntType, (union AnyValue *)&ZeroValue, FALSE);
    VariableDefinePlatformVar(pc, NULL, "TRUE", &IntType, (union AnyValue *)&TRUEValue, FALSE);
    VariableDefinePlatformVar(pc, NULL, "FALSE", &IntType, (union AnyValue *)&ZeroValue, FALSE);
 }
 
-/* stream for writing into strings */
+// Stream for writing into strings.
 void SPutc(unsigned char Ch, union OutputStreamInfo *Stream) {
    struct StringOutputStream *Out = &Stream->Str;
    *Out->WritePos++ = Ch;
 }
 
-/* print a character to a stream without using printf/sprintf */
+// Print a character to a stream without using printf/sprintf.
 void PrintCh(char OutCh, struct OutputStream *Stream) {
    (*Stream->Putch)(OutCh, &Stream->i);
 }
 
-/* print a string to a stream without using printf/sprintf */
+// Print a string to a stream without using printf/sprintf.
 void PrintStr(const char *Str, struct OutputStream *Stream) {
    while (*Str != 0)
       PrintCh(*Str++, Stream);
 }
 
-/* print a single character a given number of times */
+// Print a single character a given number of times.
 void PrintRepeatedChar(Picoc *pc, char ShowChar, int Length, struct OutputStream *Stream) {
    while (Length-- > 0)
       PrintCh(ShowChar, Stream);
 }
 
-/* print an unsigned integer to a stream without using printf/sprintf */
+// Print an unsigned integer to a stream without using printf/sprintf.
 void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream) {
    char Result[33];
    int ResPos = sizeof(Result);
@@ -181,12 +179,12 @@ void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, int Zer
       PrintRepeatedChar(' ', FieldWidth - (sizeof(Result) - 1 - ResPos), Stream);
 }
 
-/* print an integer to a stream without using printf/sprintf */
+// Print an integer to a stream without using printf/sprintf.
 void PrintSimpleInt(long Num, struct OutputStream *Stream) {
    PrintInt(Num, -1, FALSE, FALSE, Stream);
 }
 
-/* print an integer to a stream without using printf/sprintf */
+// Print an integer to a stream without using printf/sprintf.
 void PrintInt(long Num, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream) {
    if (Num < 0) {
       PrintCh('-', Stream);
@@ -198,7 +196,7 @@ void PrintInt(long Num, int FieldWidth, int ZeroPad, int LeftJustify, struct Out
 }
 
 #ifndef NO_FP
-/* print a double to a stream without using printf/sprintf */
+// Print a double to a stream without using printf/sprintf.
 void PrintFP(double Num, struct OutputStream *Stream) {
    int Exponent = 0;
    int MaxDecimal;
@@ -226,7 +224,7 @@ void PrintFP(double Num, struct OutputStream *Stream) {
 }
 #endif
 
-/* intrinsic functions made available to the language */
+// Intrinsic functions made available to the language.
 void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs, struct OutputStream *Stream) {
    char *FPos;
    struct Value *NextArg = Param[0];
@@ -241,19 +239,19 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
          FPos++;
          FieldWidth = 0;
          if (*FPos == '-') {
-         /* a leading '-' means left justify */
+         // A leading '-' means left justify.
             LeftJustify = TRUE;
             FPos++;
          }
          if (*FPos == '0') {
-         /* a leading zero means zero pad a decimal number */
+         // A leading zero means zero pad a decimal number.
             ZeroPad = TRUE;
             FPos++;
          }
-      /* get any field width in the format */
+      // Get any field width in the format.
          while (isdigit((int)*FPos))
             FieldWidth = FieldWidth*10 + (*FPos++ - '0');
-      /* now check the format type */
+      // Now check the format type.
          switch (*FPos) {
             case 's':
                FormatType = CharPtrType;
@@ -284,13 +282,13 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
             break;
          }
          if (FormatType != NULL) {
-         /* we have to format something */
+         // We have to format something.
             if (ArgCount >= NumArgs)
-               PrintStr("XXX", Stream); /* not enough parameters for format */
+               PrintStr("XXX", Stream); // Not enough parameters for format.
             else {
                NextArg = (struct Value *)((char *)NextArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(NextArg)));
                if (NextArg->Typ != FormatType && !((FormatType == &IntType || *FPos == 'f') && IS_NUMERIC_COERCIBLE(NextArg)) && !(FormatType == CharPtrType && (NextArg->Typ->Base == TypePointer || (NextArg->Typ->Base == TypeArray && NextArg->Typ->FromType->Base == TypeChar))))
-                  PrintStr("XXX", Stream); /* bad type for format */
+                  PrintStr("XXX", Stream); // Bad type for format.
                else {
                   switch (*FPos) {
                      case 's': {
@@ -335,14 +333,14 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
    }
 }
 
-/* printf(): print to console output */
+// printf(): print to console output.
 void LibPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
    struct OutputStream ConsoleStream;
    ConsoleStream.Putch = &PlatformPutc;
    GenericPrintf(Parser, ReturnValue, Param, NumArgs, &ConsoleStream);
 }
 
-/* sprintf(): print to a string */
+// sprintf(): print to a string.
 void LibSPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
    struct OutputStream StrStream;
    StrStream.Putch = &SPutc;
@@ -353,7 +351,8 @@ void LibSPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct Val
    ReturnValue->Val->Pointer = *Param;
 }
 
-/* get a line of input. protected from buffer overrun */
+// Get a line of input.
+// Protected from buffer overrun.
 void LibGets(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
    ReturnValue->Val->Pointer = PlatformGetLine(Param[0]->Val->Pointer, GETS_BUF_MAX, NULL);
    if (ReturnValue->Val->Pointer != NULL) {
@@ -433,7 +432,7 @@ void LibSqrt(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
 }
 
 void LibRound(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
-   ReturnValue->Val->FP = floor(Param[0]->Val->FP + 0.5); /* XXX - fix for soft float */
+   ReturnValue->Val->FP = floor(Param[0]->Val->FP + 0.5); // XXX - fix for soft float.
 }
 
 void LibCeil(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
@@ -557,12 +556,12 @@ void LibStrlen(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 void LibMemset(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
-/* we can use the system memset() */
+// We can use the system memset().
    memset(Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Integer);
 }
 
 void LibMemcpy(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
-/* we can use the system memcpy() */
+// We can use the system memcpy().
    memcpy(Param[0]->Val->Pointer, Param[1]->Val->Pointer, Param[2]->Val->Integer);
 }
 
@@ -583,7 +582,7 @@ void LibMemcmp(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 #endif
 
-/* list of all library functions and their prototypes */
+// List of all library functions and their prototypes.
 struct LibraryFunction CLibrary[] = {
    { LibPrintf, "void printf(char *, ...);" },
    { LibSPrintf, "char *sprintf(char *, char *, ...);" },
@@ -634,4 +633,4 @@ struct LibraryFunction CLibrary[] = {
    { NULL, NULL }
 };
 
-#endif /* BUILTIN_MINI_STDLIB */
+#endif // BUILTIN_MINI_STDLIB.

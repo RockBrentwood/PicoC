@@ -1,4 +1,5 @@
-/* string.h library for large systems - small embedded systems use Lib.c instead */
+// errno.h library for large systems:
+// Small embedded systems use Lib.c instead.
 #include <errno.h>
 #include "../Extern.h"
 
@@ -245,9 +246,9 @@ static int EWOULDBLOCKValue = EWOULDBLOCK;
 static int EXDEVValue = EXDEV;
 #endif
 
-/* creates various system-dependent definitions */
+// Creates various system-dependent definitions.
 void StdErrnoSetupFunc(Picoc *pc) {
-/* defines */
+// Defines.
 #ifdef EACCES
    VariableDefinePlatformVar(pc, NULL, "EACCES", &pc->IntType, (union AnyValue *)&EACCESValue, FALSE);
 #endif
@@ -491,4 +492,4 @@ void StdErrnoSetupFunc(Picoc *pc) {
    VariableDefinePlatformVar(pc, NULL, "errno", &pc->IntType, (union AnyValue *)&errno, TRUE);
 }
 
-#endif /* !BUILTIN_MINI_STDLIB */
+#endif // !BUILTIN_MINI_STDLIB.

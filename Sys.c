@@ -1,10 +1,10 @@
-/* picoc's interface to the underlying platform. most platform-specific code
- * is in Sys/Sys*.c and Sys/Lib*.c */
+// picoc's interface to the underlying platform.
+// Most platform-specific code is in Sys/Sys*.c and Sys/Lib*.c.
 #include "Main.h"
 #include "Extern.h"
 
-/* initialise everything */
-void PicocInitialise(Picoc *pc, int StackSize) {
+// Initialize everything.
+void PicocInitialize(Picoc *pc, int StackSize) {
    memset(pc, '\0', sizeof(*pc));
    PlatformInit(pc);
    BasicIOInit(pc);
@@ -25,7 +25,7 @@ void PicocInitialise(Picoc *pc, int StackSize) {
    DebugInit(pc);
 }
 
-/* free memory */
+// Free memory.
 void PicocCleanup(Picoc *pc) {
    DebugCleanup(pc);
 #ifndef NO_HASH_INCLUDE
@@ -40,7 +40,7 @@ void PicocCleanup(Picoc *pc) {
    PlatformCleanup(pc);
 }
 
-/* platform-dependent code for running programs */
+// Platform-dependent code for running programs.
 #if defined(UNIX_HOST) || defined(WIN32)
 #   define CALL_MAIN_NO_ARGS_RETURN_VOID "main();"
 #   define CALL_MAIN_WITH_ARGS_RETURN_VOID "main(__argc, __argv);"
@@ -48,7 +48,7 @@ void PicocCleanup(Picoc *pc) {
 #   define CALL_MAIN_WITH_ARGS_RETURN_INT "__exit_value = main(__argc, __argv);"
 
 void PicocCallMain(Picoc *pc, int argc, char **argv) {
-/* check if the program wants arguments */
+// Check if the program wants arguments.
    struct Value *FuncValue = NULL;
    if (!VariableDefined(pc, TableStrRegister(pc, "main")))
       ProgramFailNoParser(pc, "main() is not defined");
@@ -56,7 +56,7 @@ void PicocCallMain(Picoc *pc, int argc, char **argv) {
    if (FuncValue->Typ->Base != TypeFunction)
       ProgramFailNoParser(pc, "main is not a function - can't call it");
    if (FuncValue->Val->FuncDef.NumParams != 0) {
-   /* define the arguments */
+   // Define the arguments.
       VariableDefinePlatformVar(pc, NULL, "__argc", &pc->IntType, (union AnyValue *)&argc, FALSE);
       VariableDefinePlatformVar(pc, NULL, "__argv", pc->CharPtrPtrType, (union AnyValue *)&argv, FALSE);
    }
@@ -81,16 +81,16 @@ void PrintSourceTextErrorLine(IOFILE *Stream, const char *FileName, const char *
    const char *CPos;
    int CCount;
    if (SourceText != NULL) {
-   /* find the source line */
+   // Find the source line.
       for (LinePos = SourceText, LineCount = 1; *LinePos != '\0' && LineCount < Line; LinePos++) {
          if (*LinePos == '\n')
             LineCount++;
       }
-   /* display the line */
+   // Display the line.
       for (CPos = LinePos; *CPos != '\n' && *CPos != '\0'; CPos++)
          PrintCh(*CPos, Stream);
       PrintCh('\n', Stream);
-   /* display the error position */
+   // Display the error position.
       for (CPos = LinePos, CCount = 0; *CPos != '\n' && *CPos != '\0' && (CCount < CharacterPos || *CPos == ' '); CPos++, CCount++) {
          if (*CPos == '\t')
             PrintCh('\t', Stream);
@@ -98,14 +98,14 @@ void PrintSourceTextErrorLine(IOFILE *Stream, const char *FileName, const char *
             PrintCh(' ', Stream);
       }
    } else {
-   /* assume we're in interactive mode - try to make the arrow match up with the input text */
+   // Assume we're in interactive mode - try to make the arrow match up with the input text.
       for (CCount = 0; CCount < CharacterPos + (int)strlen(INTERACTIVE_PROMPT_STATEMENT); CCount++)
          PrintCh(' ', Stream);
    }
    PlatformPrintf(Stream, "^\n%s:%d:%d ", FileName, Line, CharacterPos);
 }
 
-/* exit with a message */
+// Exit with a message.
 void ProgramFail(struct ParseState *Parser, const char *Message, ...) {
    va_list Args;
    PrintSourceTextErrorLine(Parser->pc->CStdOut, Parser->FileName, Parser->SourceText, Parser->Line, Parser->CharacterPos);
@@ -116,7 +116,7 @@ void ProgramFail(struct ParseState *Parser, const char *Message, ...) {
    PlatformExit(Parser->pc, 1);
 }
 
-/* exit with a message, when we're not parsing a program */
+// Exit with a message, when we're not parsing a program.
 void ProgramFailNoParser(Picoc *pc, const char *Message, ...) {
    va_list Args;
    va_start(Args, Message);
@@ -126,7 +126,7 @@ void ProgramFailNoParser(Picoc *pc, const char *Message, ...) {
    PlatformExit(pc, 1);
 }
 
-/* like ProgramFail() but gives descriptive error messages for assignment */
+// Like ProgramFail() but gives descriptive error messages for assignment.
 void AssignFail(struct ParseState *Parser, const char *Format, struct ValueType *Type1, struct ValueType *Type2, int Num1, int Num2, const char *FuncName, int ParamNo) {
    IOFILE *Stream = Parser->pc->CStdOut;
    PrintSourceTextErrorLine(Parser->pc->CStdOut, Parser->FileName, Parser->SourceText, Parser->Line, Parser->CharacterPos);
@@ -141,7 +141,7 @@ void AssignFail(struct ParseState *Parser, const char *Format, struct ValueType 
    PlatformExit(Parser->pc, 1);
 }
 
-/* exit lexing with a message */
+// Exit lexing with a message.
 void LexFail(Picoc *pc, struct LexState *Lexer, const char *Message, ...) {
    va_list Args;
    PrintSourceTextErrorLine(pc->CStdOut, Lexer->FileName, Lexer->SourceText, Lexer->Line, Lexer->CharacterPos);
@@ -152,7 +152,7 @@ void LexFail(Picoc *pc, struct LexState *Lexer, const char *Message, ...) {
    PlatformExit(pc, 1);
 }
 
-/* printf for compiler error reporting */
+// Printf for compiler error reporting.
 void PlatformPrintf(IOFILE *Stream, const char *Format, ...) {
    va_list Args;
    va_start(Args, Format);
@@ -195,8 +195,9 @@ void PlatformVPrintf(IOFILE *Stream, const char *Format, va_list Args) {
    }
 }
 
-/* make a new temporary name. takes a static buffer of char [7] as a parameter. should be initialised to "XX0000"
- * where XX can be any characters */
+// Make a new temporary name.
+// Takes a static buffer of char [7] as a parameter.
+// Should be initialized to "XX0000" where XX can be any characters.
 char *PlatformMakeTempName(Picoc *pc, char *TempNameBuffer) {
    int CPos = 5;
    while (CPos > 1) {

@@ -5,7 +5,7 @@
 #   include <readline/history.h>
 #endif
 
-/* mark where to end the program for platforms which require this */
+// Mark where to end the program for platforms which require this.
 jmp_buf PicocExitBuf;
 
 #ifndef NO_DEBUGGER
@@ -18,7 +18,7 @@ static void BreakHandler(int Signal) {
 }
 
 void PlatformInit(Picoc *pc) {
-/* capture the break signal and pass it to the debugger */
+// Capture the break signal and pass it to the debugger.
    break_pc = pc;
    signal(SIGINT, BreakHandler);
 }
@@ -30,11 +30,11 @@ void PlatformInit(Picoc *pc) {
 void PlatformCleanup(Picoc *pc) {
 }
 
-/* get a line of interactive input */
+// Get a line of interactive input.
 char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt) {
 #ifdef USE_READLINE
    if (Prompt != NULL) {
-   /* use GNU readline to read the line */
+   // Use GNU readline to read the line.
       char *InLine = readline(Prompt);
       if (InLine == NULL)
          return NULL;
@@ -53,18 +53,18 @@ char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt) {
    return fgets(Buf, MaxLen, stdin);
 }
 
-/* get a character of interactive input */
+// Get a character of interactive input.
 int PlatformGetCharacter() {
    fflush(stdout);
    return getchar();
 }
 
-/* write a character to the console */
+// Write a character to the console.
 void PlatformPutc(unsigned char OutCh, union OutputStreamInfo *Stream) {
    putchar(OutCh);
 }
 
-/* read a file into memory */
+// Read a file into memory.
 char *PlatformReadFile(Picoc *pc, const char *FileName) {
    struct stat FileInfo;
    char *ReadText;
@@ -92,10 +92,10 @@ char *PlatformReadFile(Picoc *pc, const char *FileName) {
    return ReadText;
 }
 
-/* read and scan a file for definitions */
+// Read and scan a file for definitions.
 void PicocPlatformScanFile(Picoc *pc, const char *FileName) {
    char *SourceStr = PlatformReadFile(pc, FileName);
-/* ignore "#!/path/to/picoc" .. by replacing the "#!" with "//" */
+// Ignore "#!/path/to/picoc" ... by replacing the "#!" with "//".
    if (SourceStr != NULL && SourceStr[0] == '#' && SourceStr[1] == '!') {
       SourceStr[0] = '/';
       SourceStr[1] = '/';
@@ -103,7 +103,7 @@ void PicocPlatformScanFile(Picoc *pc, const char *FileName) {
    PicocParse(pc, FileName, SourceStr, strlen(SourceStr), TRUE, FALSE, TRUE, TRUE);
 }
 
-/* exit the program */
+// Exit the program.
 void PlatformExit(Picoc *pc, int RetVal) {
    pc->PicocExitValue = RetVal;
    longjmp(pc->PicocExitBuf, 1);

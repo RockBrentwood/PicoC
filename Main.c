@@ -1,17 +1,17 @@
-/* picoc main program - this varies depending on your operating system and
- * how you're using picoc */
+// picoc main program:
+// This varies depending on your operating system and how you're using picoc.
 
-/* include only Main.h here - should be able to use it with only the external interfaces, no internals from Extern.h */
+// Include only Main.h here - should be able to use it with only the external interfaces, no internals from Extern.h.
 #include "Main.h"
 
-/* platform-dependent code for running programs is in this file */
+// Platform-dependent code for running programs is in this file.
 
 #if defined(UNIX_HOST) || defined(WIN32)
 #   include <stdlib.h>
 #   include <stdio.h>
 #   include <string.h>
 
-#   define PICOC_STACK_SIZE (128*1024) /* space for the the stack */
+#   define PICOC_STACK_SIZE (128*1024) // Space for the the stack.
 
 int main(int argc, char **argv) {
    int ParamCount = 1;
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
       );
       exit(1);
    }
-   PicocInitialise(&pc, StackSize);
+   PicocInitialize(&pc, StackSize);
    if (strcmp(argv[ParamCount], "-s") == 0 || strcmp(argv[ParamCount], "-m") == 0) {
       DontRunMain = TRUE;
       PicocIncludeAllSystemHeaders(&pc);
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
 int picoc(char *SourceStr) {
    char *pos;
-   PicocInitialise(HEAP_SIZE);
+   PicocInitialize(HEAP_SIZE);
    if (SourceStr) {
       for (pos = SourceStr; *pos != 0; pos++) {
          if (*pos == 0x1a) {
