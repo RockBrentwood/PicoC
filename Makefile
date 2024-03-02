@@ -1,56 +1,62 @@
+RM=rm -f
 CC=gcc
 CFLAGS=-Wall -pedantic -g -DUNIX_HOST -DVER=\"2.1\"
 LIBS=-lm -lreadline
 
-TARGET	= picoc
-SRCS	= picoc.c table.c lex.c parse.c expression.c heap.c type.c \
-	variable.c clibrary.c platform.c include.c debug.c \
-	platform/platform_unix.c platform/library_unix.c \
-	cstdlib/stdio.c cstdlib/math.c cstdlib/string.c cstdlib/stdlib.c \
-	cstdlib/time.c cstdlib/errno.c cstdlib/ctype.c cstdlib/stdbool.c \
-	cstdlib/unistd.c
-OBJS	:= $(SRCS:%.c=%.o)
+APP	= picoc
+MOD	= \
+	picoc table lex parse expression heap type variable clibrary platform include debug \
+	platform/platform_unix platform/library_unix \
+	cstdlib/stdio cstdlib/math cstdlib/string cstdlib/stdlib cstdlib/time cstdlib/errno cstdlib/ctype cstdlib/stdbool cstdlib/unistd
+SRC	:= $(MOD:%=%.c)
+OBJ	:= $(MOD:%=%.o)
 
-all: $(TARGET)
-
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS)
-
+all: $(APP)
+$(APP): $(OBJ)
+	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
+csmith:	all
+	(cd tests; make csmith)
 test:	all
 	(cd tests; make test)
-
 clean:
-	rm -f $(TARGET) $(OBJS) *~
+	$(RM) $(OBJ)
+	$(RM) *~
+clobber: clean
+	$(RM) $(APP)
 
 count:
 	@echo "Core:"
 	@cat picoc.h interpreter.h picoc.c table.c lex.c parse.c expression.c platform.c heap.c type.c variable.c include.c debug.c | grep -v '^[ 	]*/\*' | grep -v '^[ 	]*$$' | wc
 	@echo ""
 	@echo "Everything:"
-	@cat $(SRCS) *.h */*.h | wc
+	@cat $(SRC) *.h */*.h | wc
 
 .PHONY: clibrary.c
 
-picoc.o: picoc.c picoc.h
-table.o: table.c interpreter.h platform.h
-lex.o: lex.c interpreter.h platform.h
-parse.o: parse.c picoc.h interpreter.h platform.h
-expression.o: expression.c interpreter.h platform.h
-heap.o: heap.c interpreter.h platform.h
-type.o: type.c interpreter.h platform.h
-variable.o: variable.c interpreter.h platform.h
-clibrary.o: clibrary.c picoc.h interpreter.h platform.h
-platform.o: platform.c picoc.h interpreter.h platform.h
-include.o: include.c picoc.h interpreter.h platform.h
-debug.o: debug.c interpreter.h platform.h
-platform/platform_unix.o: platform/platform_unix.c picoc.h interpreter.h platform.h
-platform/library_unix.o: platform/library_unix.c interpreter.h platform.h
-cstdlib/stdio.o: cstdlib/stdio.c interpreter.h platform.h
-cstdlib/math.o: cstdlib/math.c interpreter.h platform.h
-cstdlib/string.o: cstdlib/string.c interpreter.h platform.h
-cstdlib/stdlib.o: cstdlib/stdlib.c interpreter.h platform.h
-cstdlib/time.o: cstdlib/time.c interpreter.h platform.h
-cstdlib/errno.o: cstdlib/errno.c interpreter.h platform.h
-cstdlib/ctype.o: cstdlib/ctype.c interpreter.h platform.h
-cstdlib/stdbool.o: cstdlib/stdbool.c interpreter.h platform.h
-cstdlib/unistd.o: cstdlib/unistd.c interpreter.h platform.h
+picoc.o parse.o clibrary.o platform.o include.o platform/platform_unix.o: picoc.h
+table.o lex.o parse.o expression.o heap.o type.o variable.o clibrary.o platform.o include.o debug.o: interpreter.h platform.h
+platform/platform_unix.o platform/library_unix.o: interpreter.h platform.h
+cstdlib/stdio.o cstdlib/math.o cstdlib/string.o cstdlib/stdlib.o cstdlib/time.o cstdlib/errno.o cstdlib/ctype.o cstdlib/stdbool.o cstdlib/unistd.o: interpreter.h platform.h
+picoc.o: picoc.c
+table.o: table.c
+lex.o: lex.c
+parse.o: parse.c
+expression.o: expression.c
+heap.o: heap.c
+type.o: type.c
+variable.o: variable.c
+clibrary.o: clibrary.c
+platform.o: platform.c
+include.o: include.c
+debug.o: debug.c
+platform/platform_unix.o: platform/platform_unix.c
+platform/library_unix.o: platform/library_unix.c
+cstdlib/stdio.o: cstdlib/stdio.c
+cstdlib/math.o: cstdlib/math.c
+cstdlib/string.o: cstdlib/string.c
+cstdlib/stdlib.o: cstdlib/stdlib.c
+cstdlib/time.o: cstdlib/time.c
+cstdlib/errno.o: cstdlib/errno.c
+cstdlib/ctype.o: cstdlib/ctype.c
+cstdlib/stdbool.o: cstdlib/stdbool.c
+cstdlib/unistd.o: cstdlib/unistd.c
