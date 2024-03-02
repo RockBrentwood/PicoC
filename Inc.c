@@ -62,13 +62,13 @@ void IncludeFile(State pc, char *FileName) {
       if (strcmp(LInclude->IncludeName, FileName) == 0) {
       // Found it - protect against multiple inclusion.
          if (!VariableDefined(pc, FileName)) {
-            VariableDefine(pc, NULL, FileName, NULL, &pc->VoidType, FALSE);
+            VariableDefine(pc, NULL, FileName, NULL, &pc->VoidType, false);
          // Run an extra startup function if there is one.
             if (LInclude->SetupFunction != NULL)
                (*LInclude->SetupFunction)(pc);
          // Parse the setup C source code - may define types etc.
             if (LInclude->SetupCSource != NULL)
-               PicocParse(pc, FileName, LInclude->SetupCSource, strlen(LInclude->SetupCSource), TRUE, TRUE, FALSE, FALSE);
+               PicocParse(pc, FileName, LInclude->SetupCSource, strlen(LInclude->SetupCSource), true, true, false, false);
          // Set up the library functions.
             if (LInclude->FuncList != NULL)
                LibraryAdd(pc, &pc->GlobalTable, FileName, LInclude->FuncList);

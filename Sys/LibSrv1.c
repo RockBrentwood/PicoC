@@ -7,28 +7,28 @@ static int ScanVect[16], NNVect[NUM_OUTPUT];
 ValueType IntArrayType;
 
 void SRV1SetupFunc(State pc) {
-   pc->IntArrayType = TypeGetMatching(pc, NULL, &pc->IntType, TypeArray, 16, StrEmpty, TRUE);
-   VariableDefinePlatformVar(pc, NULL, "scanvect", pc->IntArrayType, (AnyValue)&ScanVect, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "neuron", pc->IntArrayType, (AnyValue)&NNVect, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "blobcnt", &pc->IntType, (AnyValue)&Blobcnt, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "blobx1", &pc->IntType, (AnyValue)&Blobx1, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "blobx2", &pc->IntType, (AnyValue)&Blobx2, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "bloby1", &pc->IntType, (AnyValue)&Bloby1, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "bloby2", &pc->IntType, (AnyValue)&Bloby2, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "lcount", &pc->IntType, (AnyValue)&Elcount, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "rcount", &pc->IntType, (AnyValue)&Ercount, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "y1", &pc->IntType, (AnyValue)&Iy1, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "y2", &pc->IntType, (AnyValue)&Iy2, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "u1", &pc->IntType, (AnyValue)&Iu1, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "u2", &pc->IntType, (AnyValue)&Iu2, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "v1", &pc->IntType, (AnyValue)&Iv1, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "v2", &pc->IntType, (AnyValue)&Iv2, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "gpslat", &pc->IntType, (AnyValue)&GPSlat, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "gpslon", &pc->IntType, (AnyValue)&GPSlon, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "gpsalt", &pc->IntType, (AnyValue)&GPSalt, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "gpsfix", &pc->IntType, (AnyValue)&GPSfix, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "gpssat", &pc->IntType, (AnyValue)&GPSsat, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "gpsutc", &pc->IntType, (AnyValue)&GPSutc, FALSE);
+   pc->IntArrayType = TypeGetMatching(pc, NULL, &pc->IntType, TypeArray, 16, StrEmpty, true);
+   VariableDefinePlatformVar(pc, NULL, "scanvect", pc->IntArrayType, (AnyValue)&ScanVect, false);
+   VariableDefinePlatformVar(pc, NULL, "neuron", pc->IntArrayType, (AnyValue)&NNVect, false);
+   VariableDefinePlatformVar(pc, NULL, "blobcnt", &pc->IntType, (AnyValue)&Blobcnt, false);
+   VariableDefinePlatformVar(pc, NULL, "blobx1", &pc->IntType, (AnyValue)&Blobx1, false);
+   VariableDefinePlatformVar(pc, NULL, "blobx2", &pc->IntType, (AnyValue)&Blobx2, false);
+   VariableDefinePlatformVar(pc, NULL, "bloby1", &pc->IntType, (AnyValue)&Bloby1, false);
+   VariableDefinePlatformVar(pc, NULL, "bloby2", &pc->IntType, (AnyValue)&Bloby2, false);
+   VariableDefinePlatformVar(pc, NULL, "lcount", &pc->IntType, (AnyValue)&Elcount, false);
+   VariableDefinePlatformVar(pc, NULL, "rcount", &pc->IntType, (AnyValue)&Ercount, false);
+   VariableDefinePlatformVar(pc, NULL, "y1", &pc->IntType, (AnyValue)&Iy1, false);
+   VariableDefinePlatformVar(pc, NULL, "y2", &pc->IntType, (AnyValue)&Iy2, false);
+   VariableDefinePlatformVar(pc, NULL, "u1", &pc->IntType, (AnyValue)&Iu1, false);
+   VariableDefinePlatformVar(pc, NULL, "u2", &pc->IntType, (AnyValue)&Iu2, false);
+   VariableDefinePlatformVar(pc, NULL, "v1", &pc->IntType, (AnyValue)&Iv1, false);
+   VariableDefinePlatformVar(pc, NULL, "v2", &pc->IntType, (AnyValue)&Iv2, false);
+   VariableDefinePlatformVar(pc, NULL, "gpslat", &pc->IntType, (AnyValue)&GPSlat, false);
+   VariableDefinePlatformVar(pc, NULL, "gpslon", &pc->IntType, (AnyValue)&GPSlon, false);
+   VariableDefinePlatformVar(pc, NULL, "gpsalt", &pc->IntType, (AnyValue)&GPSalt, false);
+   VariableDefinePlatformVar(pc, NULL, "gpsfix", &pc->IntType, (AnyValue)&GPSfix, false);
+   VariableDefinePlatformVar(pc, NULL, "gpssat", &pc->IntType, (AnyValue)&GPSsat, false);
+   VariableDefinePlatformVar(pc, NULL, "gpsutc", &pc->IntType, (AnyValue)&GPSutc, false);
 }
 
 // Check for kbhit, return t or nil.

@@ -153,7 +153,7 @@ struct LibraryFunction StringFunctions[] = {
 void StringSetupFunc(State pc) {
 // Define NULL.
    if (!VariableDefined(pc, TableStrRegister(pc, "NULL")))
-      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&String_ZeroValue, FALSE);
+      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&String_ZeroValue, false);
 }
 
 #endif // !BUILTIN_MINI_STDLIB.

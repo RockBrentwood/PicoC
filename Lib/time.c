@@ -99,12 +99,12 @@ void StdTimeSetupFunc(State pc) {
 // Make a "struct tm" which is the same size as a native tm structure.
    TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "tm"), sizeof(struct tm));
 // Define CLK_PER_SEC etc.
-   VariableDefinePlatformVar(pc, NULL, "CLOCKS_PER_SEC", &pc->IntType, (AnyValue)&CLOCKS_PER_SECValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "CLOCKS_PER_SEC", &pc->IntType, (AnyValue)&CLOCKS_PER_SECValue, false);
 #ifdef CLK_PER_SEC
-   VariableDefinePlatformVar(pc, NULL, "CLK_PER_SEC", &pc->IntType, (AnyValue)&CLK_PER_SECValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "CLK_PER_SEC", &pc->IntType, (AnyValue)&CLK_PER_SECValue, false);
 #endif
 #ifdef CLK_TCK
-   VariableDefinePlatformVar(pc, NULL, "CLK_TCK", &pc->IntType, (AnyValue)&CLK_TCKValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "CLK_TCK", &pc->IntType, (AnyValue)&CLK_TCKValue, false);
 #endif
 }
 

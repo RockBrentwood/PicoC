@@ -7,12 +7,11 @@
 #include "Sys.h"
 
 // Handy definitions.
-#ifndef TRUE
-#   define TRUE 1
-#   define FALSE 0
-#endif
+// Should be replaced by #include <stdbool.h>, and might later be.
+typedef enum { false, true } bool;
 #ifndef NULL
-#   define NULL 0
+// Should be replaced by #include <stdlib.h>, and might later be.
+#   define NULL ((void *)0)
 #endif
 #ifndef min
 #   define min(x, y) (((x) < (y))? (x): (y))
@@ -37,11 +36,11 @@ typedef FILE OutStruct, *OutFile;
 #   define IS_FP(v) ((v)->Typ->Base == TypeFP)
 #   define FP_VAL(v) ((v)->Val->FP)
 #else
-#   define IS_FP(v) 0
+#   define IS_FP(v) false
 #   define FP_VAL(v) 0
 #endif
 
-#define IS_POINTER_COERCIBLE(v, ap) ((ap)? ((v)->Typ->Base == TypePointer): 0)
+#define IS_POINTER_COERCIBLE(v, ap) ((ap)? ((v)->Typ->Base == TypePointer): false)
 #define POINTER_COERCE(v) ((int)(v)->Val->Pointer)
 
 #define IS_INTEGER_NUMERIC_TYPE(t) ((t)->Base >= TypeInt && (t)->Base <= TypeUnsignedLong)
@@ -115,7 +114,7 @@ typedef struct ParseState {
    const char *SourceText; // The entire source text.
    short int HashIfLevel; // How many "if"s we're nested down.
    short int HashIfEvaluateToLevel; // If we're not evaluating an if branch, what the last evaluated level was.
-   int DebugMode; // Debugging mode.
+   bool DebugMode; // Debugging mode.
    int ScopeID; // For keeping track of local variables (free them after they go out of scope).
 } *ParseState;
 
@@ -156,8 +155,8 @@ struct ValueType {
    ValueType DerivedTypeList; // First in a list of types derived from this one.
    ValueType Next; // Next item in the derived type list.
    Table Members; // Members of a struct or union.
-   int OnHeap; // True if allocated on the heap.
-   int StaticQualifier; // True if it's a static.
+   bool OnHeap; // True if allocated on the heap.
+   bool StaticQualifier; // True if it's a static.
 };
 
 // Function definition.
@@ -204,12 +203,12 @@ struct Value {
    ValueType Typ; // The type of this value.
    AnyValue Val; // Pointer to the AnyValue which holds the actual content.
    Value LValueFrom; // If an LValue, this is a Value our LValue is contained within (or NULL).
-   int ValOnHeap; // This Value is on the heap.
-   int ValOnStack; // The AnyValue is on the stack along with this Value.
-   int AnyValOnHeap; // The AnyValue is separately allocated from the Value on the heap.
-   int IsLValue; // Is modifiable and is allocated somewhere we can usefully modify it.
+   bool ValOnHeap; // This Value is on the heap.
+   bool ValOnStack; // The AnyValue is on the stack along with this Value.
+   bool AnyValOnHeap; // The AnyValue is separately allocated from the Value on the heap.
+   bool IsLValue; // Is modifiable and is allocated somewhere we can usefully modify it.
    int ScopeID; // To know when it goes out of scope.
-   int OutOfScope;
+   bool OutOfScope;
 };
 
 // Hash table data structure.
@@ -235,7 +234,7 @@ struct TableEntry {
 
 struct Table {
    short Size;
-   int OnHeap;
+   bool OnHeap;
    TableEntry *HashTable;
 };
 
@@ -326,7 +325,7 @@ struct State {
    TokenLine InteractiveHead;
    TokenLine InteractiveTail;
    TokenLine InteractiveCurrentLine;
-   int LexUseStatementPrompt;
+   bool LexUseStatementPrompt;
    union AnyValue LexAnyValue;
    struct Value LexValue;
    struct Table ReservedWordTable;
@@ -414,9 +413,9 @@ struct State {
 void TableInit(State pc);
 char *TableStrRegister(State pc, const char *Str);
 char *TableStrRegister2(State pc, const char *Str, int Len);
-void TableInitTable(Table Tbl, TableEntry *HashTable, int Size, int OnHeap);
-int TableSet(State pc, Table Tbl, char *Key, Value Val, const char *DeclFileName, int DeclLine, int DeclColumn);
-int TableGet(Table Tbl, const char *Key, Value *Val, const char **DeclFileName, int *DeclLine, int *DeclColumn);
+void TableInitTable(Table Tbl, TableEntry *HashTable, int Size, bool OnHeap);
+bool TableSet(State pc, Table Tbl, char *Key, Value Val, const char *DeclFileName, int DeclLine, int DeclColumn);
+bool TableGet(Table Tbl, const char *Key, Value *Val, const char **DeclFileName, int *DeclLine, int *DeclColumn);
 Value TableDelete(State pc, Table Tbl, const char *Key);
 char *TableSetIdentifier(State pc, Table Tbl, const char *Ident, int IdentLen);
 void TableStrFree(State pc);
@@ -425,7 +424,7 @@ void TableStrFree(State pc);
 void LexInit(State pc);
 void LexCleanup(State pc);
 void *LexAnalyse(State pc, const char *FileName, const char *Source, int SourceLen, int *TokenLen);
-void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *TokenSource, char *FileName, int RunIt, int EnableDebugger);
+void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *TokenSource, char *FileName, bool RunIt, bool EnableDebugger);
 LexToken LexGetToken(ParseState Parser, Value *ValP, int IncPos);
 LexToken LexRawPeekToken(ParseState Parser);
 void LexToEndOfLine(ParseState Parser);
@@ -437,20 +436,20 @@ void LexInteractiveStatementPrompt(State pc);
 // Syn.c:
 #if 0
 // The following are defined in Main.h:
-void PicocParse(State pc, const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource, int EnableDebugger);
+void PicocParse(State pc, const char *FileName, const char *Source, int SourceLen, bool RunIt, bool CleanupNow, bool CleanupSource, bool EnableDebugger);
 void PicocParseInteractive(State pc);
 #endif
-void PicocParseInteractiveNoStartPrompt(State pc, int EnableDebugger);
-ParseResult ParseStatement(ParseState Parser, int CheckTrailingSemicolon);
+void PicocParseInteractiveNoStartPrompt(State pc, bool EnableDebugger);
+ParseResult ParseStatement(ParseState Parser, bool CheckTrailingSemicolon);
 Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Identifier);
 void ParseCleanup(State pc);
 void ParserCopyPos(ParseState To, ParseState From);
 void ParserCopy(ParseState To, ParseState From);
 
 // Exp.c:
-int ExpressionParse(ParseState Parser, Value *Result);
+bool ExpressionParse(ParseState Parser, Value *Result);
 long ExpressionParseInt(ParseState Parser);
-void ExpressionAssign(ParseState Parser, Value DestValue, Value SourceValue, int Force, const char *FuncName, int ParamNo, int AllowPointerCoercion);
+void ExpressionAssign(ParseState Parser, Value DestValue, Value SourceValue, bool Force, const char *FuncName, int ParamNo, bool AllowPointerCoercion);
 long ExpressionCoerceInteger(Value Val);
 unsigned long ExpressionCoerceUnsignedInteger(Value Val);
 #ifndef NO_FP
@@ -460,25 +459,25 @@ double ExpressionCoerceFP(Value Val);
 // Type.c:
 void TypeInit(State pc);
 void TypeCleanup(State pc);
-int TypeSize(ValueType Typ, int ArraySize, int Compact);
-int TypeSizeValue(Value Val, int Compact);
+int TypeSize(ValueType Typ, int ArraySize, bool Compact);
+int TypeSizeValue(Value Val, bool Compact);
 int TypeStackSizeValue(Value Val);
 int TypeLastAccessibleOffset(State pc, Value Val);
-int TypeParseFront(ParseState Parser, ValueType *Typ, int *IsStatic);
+bool TypeParseFront(ParseState Parser, ValueType *Typ, bool *IsStatic);
 void TypeParseIdentPart(ParseState Parser, ValueType BasicTyp, ValueType *Typ, char **Identifier);
-void TypeParse(ParseState Parser, ValueType *Typ, char **Identifier, int *IsStatic);
-ValueType TypeGetMatching(State pc, ParseState Parser, ValueType ParentType, BaseType Base, int ArraySize, const char *Identifier, int AllowDuplicates);
+void TypeParse(ParseState Parser, ValueType *Typ, char **Identifier, bool *IsStatic);
+ValueType TypeGetMatching(State pc, ParseState Parser, ValueType ParentType, BaseType Base, int ArraySize, const char *Identifier, bool AllowDuplicates);
 ValueType TypeCreateOpaqueStruct(State pc, ParseState Parser, const char *StructName, int Size);
-int TypeIsForwardDeclared(ParseState Parser, ValueType Typ);
+bool TypeIsForwardDeclared(ParseState Parser, ValueType Typ);
 
 // Heap.c:
 void HeapInit(State pc, int StackOrHeapSize);
 void HeapCleanup(State pc);
 void *HeapAllocStack(State pc, int Size);
-int HeapPopStack(State pc, void *Addr, int Size);
+bool HeapPopStack(State pc, void *Addr, int Size);
 void HeapUnpopStack(State pc, int Size);
 void HeapPushStackFrame(State pc);
-int HeapPopStackFrame(State pc);
+bool HeapPopStackFrame(State pc);
 void *HeapAllocMem(State pc, int Size);
 void HeapFreeMem(State pc, void *Mem);
 
@@ -487,25 +486,25 @@ void VariableInit(State pc);
 void VariableCleanup(State pc);
 void VariableFree(State pc, Value Val);
 void VariableTableCleanup(State pc, Table HashTable);
-void *VariableAlloc(State pc, ParseState Parser, int Size, int OnHeap);
+void *VariableAlloc(State pc, ParseState Parser, int Size, bool OnHeap);
 void VariableStackPop(ParseState Parser, Value Var);
-Value VariableAllocValueAndData(State pc, ParseState Parser, int DataSize, int IsLValue, Value LValueFrom, int OnHeap);
-Value VariableAllocValueAndCopy(State pc, ParseState Parser, Value FromValue, int OnHeap);
-Value VariableAllocValueFromType(State pc, ParseState Parser, ValueType Typ, int IsLValue, Value LValueFrom, int OnHeap);
-Value VariableAllocValueFromExistingData(ParseState Parser, ValueType Typ, AnyValue FromValue, int IsLValue, Value LValueFrom);
+Value VariableAllocValueAndData(State pc, ParseState Parser, int DataSize, bool IsLValue, Value LValueFrom, bool OnHeap);
+Value VariableAllocValueAndCopy(State pc, ParseState Parser, Value FromValue, bool OnHeap);
+Value VariableAllocValueFromType(State pc, ParseState Parser, ValueType Typ, bool IsLValue, Value LValueFrom, bool OnHeap);
+Value VariableAllocValueFromExistingData(ParseState Parser, ValueType Typ, AnyValue FromValue, bool IsLValue, Value LValueFrom);
 Value VariableAllocValueShared(ParseState Parser, Value FromValue);
-Value VariableDefine(State pc, ParseState Parser, char *Ident, Value InitValue, ValueType Typ, int MakeWritable);
-Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType Typ, int IsStatic, int *FirstVisit);
-int VariableDefined(State pc, const char *Ident);
-int VariableDefinedAndOutOfScope(State pc, const char *Ident);
+Value VariableDefine(State pc, ParseState Parser, char *Ident, Value InitValue, ValueType Typ, bool MakeWritable);
+Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType Typ, bool IsStatic, bool *FirstVisit);
+bool VariableDefined(State pc, const char *Ident);
+bool VariableDefinedAndOutOfScope(State pc, const char *Ident);
 void VariableRealloc(ParseState Parser, Value FromValue, int NewSize);
 void VariableGet(State pc, ParseState Parser, const char *Ident, Value *LVal);
-void VariableDefinePlatformVar(State pc, ParseState Parser, char *Ident, ValueType Typ, AnyValue FromValue, int IsWritable);
+void VariableDefinePlatformVar(State pc, ParseState Parser, char *Ident, ValueType Typ, AnyValue FromValue, bool IsWritable);
 void VariableStackFrameAdd(ParseState Parser, const char *FuncName, int NumParams);
 void VariableStackFramePop(ParseState Parser);
 Value VariableStringLiteralGet(State pc, char *Ident);
 void VariableStringLiteralDefine(State pc, char *Ident, Value Val);
-void *VariableDereferencePointer(ParseState Parser, Value PointerValue, Value *DerefVal, int *DerefOffset, ValueType *DerefType, int *DerefIsLValue);
+void *VariableDereferencePointer(ParseState Parser, Value PointerValue, Value *DerefVal, int *DerefOffset, ValueType *DerefType, bool *DerefIsLValue);
 int VariableScopeBegin(ParseState Parser, int *OldScopeID);
 void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID);
 
@@ -516,7 +515,7 @@ void LibraryAdd(State pc, Table GlobalTable, const char *LibraryName, LibraryFun
 void CLibraryInit(State pc);
 void PrintCh(char OutCh, OutFile Stream);
 void PrintSimpleInt(long Num, OutFile Stream);
-void PrintInt(long Num, int FieldWidth, int ZeroPad, int LeftJustify, OutFile Stream);
+void PrintInt(long Num, int FieldWidth, bool ZeroPad, bool LeftJustify, OutFile Stream);
 void PrintStr(const char *Str, OutFile Stream);
 void PrintFP(double Num, OutFile Stream);
 void PrintType(ValueType Typ, OutFile Stream);

@@ -57,20 +57,20 @@ void PicocCallMain(State pc, int argc, char **argv) {
       ProgramFailNoParser(pc, "main is not a function - can't call it");
    if (FuncValue->Val->FuncDef.NumParams != 0) {
    // Define the arguments.
-      VariableDefinePlatformVar(pc, NULL, "__argc", &pc->IntType, (AnyValue)&argc, FALSE);
-      VariableDefinePlatformVar(pc, NULL, "__argv", pc->CharPtrPtrType, (AnyValue)&argv, FALSE);
+      VariableDefinePlatformVar(pc, NULL, "__argc", &pc->IntType, (AnyValue)&argc, false);
+      VariableDefinePlatformVar(pc, NULL, "__argv", pc->CharPtrPtrType, (AnyValue)&argv, false);
    }
    if (FuncValue->Val->FuncDef.ReturnType == &pc->VoidType) {
       if (FuncValue->Val->FuncDef.NumParams == 0)
-         PicocParse(pc, "startup", CALL_MAIN_NO_ARGS_RETURN_VOID, strlen(CALL_MAIN_NO_ARGS_RETURN_VOID), TRUE, TRUE, FALSE, TRUE);
+         PicocParse(pc, "startup", CALL_MAIN_NO_ARGS_RETURN_VOID, strlen(CALL_MAIN_NO_ARGS_RETURN_VOID), true, true, false, true);
       else
-         PicocParse(pc, "startup", CALL_MAIN_WITH_ARGS_RETURN_VOID, strlen(CALL_MAIN_WITH_ARGS_RETURN_VOID), TRUE, TRUE, FALSE, TRUE);
+         PicocParse(pc, "startup", CALL_MAIN_WITH_ARGS_RETURN_VOID, strlen(CALL_MAIN_WITH_ARGS_RETURN_VOID), true, true, false, true);
    } else {
-      VariableDefinePlatformVar(pc, NULL, "__exit_value", &pc->IntType, (AnyValue)&pc->PicocExitValue, TRUE);
+      VariableDefinePlatformVar(pc, NULL, "__exit_value", &pc->IntType, (AnyValue)&pc->PicocExitValue, true);
       if (FuncValue->Val->FuncDef.NumParams == 0)
-         PicocParse(pc, "startup", CALL_MAIN_NO_ARGS_RETURN_INT, strlen(CALL_MAIN_NO_ARGS_RETURN_INT), TRUE, TRUE, FALSE, TRUE);
+         PicocParse(pc, "startup", CALL_MAIN_NO_ARGS_RETURN_INT, strlen(CALL_MAIN_NO_ARGS_RETURN_INT), true, true, false, true);
       else
-         PicocParse(pc, "startup", CALL_MAIN_WITH_ARGS_RETURN_INT, strlen(CALL_MAIN_WITH_ARGS_RETURN_INT), TRUE, TRUE, FALSE, TRUE);
+         PicocParse(pc, "startup", CALL_MAIN_WITH_ARGS_RETURN_INT, strlen(CALL_MAIN_WITH_ARGS_RETURN_INT), true, true, false, true);
    }
 }
 #endif

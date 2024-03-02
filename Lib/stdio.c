@@ -595,28 +595,28 @@ void StdioSetupFunc(State pc) {
 // Make a "struct __FILEStruct" which is the same size as a native FILE structure.
    StructFileType = TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "__FILEStruct"), sizeof(FILE));
 // Get a FILE * type.
-   FilePtrType = TypeGetMatching(pc, NULL, StructFileType, TypePointer, 0, pc->StrEmpty, TRUE);
+   FilePtrType = TypeGetMatching(pc, NULL, StructFileType, TypePointer, 0, pc->StrEmpty, true);
 // Make a "struct __va_listStruct" which is the same size as our struct StdVararg.
    TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "__va_listStruct"), sizeof(FILE));
 // Define EOF equal to the system EOF.
-   VariableDefinePlatformVar(pc, NULL, "EOF", &pc->IntType, (AnyValue)&EOFValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "SEEK_SET", &pc->IntType, (AnyValue)&SEEK_SETValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "SEEK_CUR", &pc->IntType, (AnyValue)&SEEK_CURValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "SEEK_END", &pc->IntType, (AnyValue)&SEEK_ENDValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "BUFSIZ", &pc->IntType, (AnyValue)&BUFSIZValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "FILENAME_MAX", &pc->IntType, (AnyValue)&FILENAME_MAXValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "_IOFBF", &pc->IntType, (AnyValue)&_IOFBFValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "_IOLBF", &pc->IntType, (AnyValue)&_IOLBFValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "_IONBF", &pc->IntType, (AnyValue)&_IONBFValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "L_tmpnam", &pc->IntType, (AnyValue)&L_tmpnamValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "GETS_MAX", &pc->IntType, (AnyValue)&GETS_MAXValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "EOF", &pc->IntType, (AnyValue)&EOFValue, false);
+   VariableDefinePlatformVar(pc, NULL, "SEEK_SET", &pc->IntType, (AnyValue)&SEEK_SETValue, false);
+   VariableDefinePlatformVar(pc, NULL, "SEEK_CUR", &pc->IntType, (AnyValue)&SEEK_CURValue, false);
+   VariableDefinePlatformVar(pc, NULL, "SEEK_END", &pc->IntType, (AnyValue)&SEEK_ENDValue, false);
+   VariableDefinePlatformVar(pc, NULL, "BUFSIZ", &pc->IntType, (AnyValue)&BUFSIZValue, false);
+   VariableDefinePlatformVar(pc, NULL, "FILENAME_MAX", &pc->IntType, (AnyValue)&FILENAME_MAXValue, false);
+   VariableDefinePlatformVar(pc, NULL, "_IOFBF", &pc->IntType, (AnyValue)&_IOFBFValue, false);
+   VariableDefinePlatformVar(pc, NULL, "_IOLBF", &pc->IntType, (AnyValue)&_IOLBFValue, false);
+   VariableDefinePlatformVar(pc, NULL, "_IONBF", &pc->IntType, (AnyValue)&_IONBFValue, false);
+   VariableDefinePlatformVar(pc, NULL, "L_tmpnam", &pc->IntType, (AnyValue)&L_tmpnamValue, false);
+   VariableDefinePlatformVar(pc, NULL, "GETS_MAX", &pc->IntType, (AnyValue)&GETS_MAXValue, false);
 // Define stdin, stdout and stderr.
-   VariableDefinePlatformVar(pc, NULL, "stdin", FilePtrType, (AnyValue)&stdinValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "stdout", FilePtrType, (AnyValue)&stdoutValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "stderr", FilePtrType, (AnyValue)&stderrValue, FALSE);
-// Define NULL, TRUE and FALSE.
+   VariableDefinePlatformVar(pc, NULL, "stdin", FilePtrType, (AnyValue)&stdinValue, false);
+   VariableDefinePlatformVar(pc, NULL, "stdout", FilePtrType, (AnyValue)&stdoutValue, false);
+   VariableDefinePlatformVar(pc, NULL, "stderr", FilePtrType, (AnyValue)&stderrValue, false);
+// Define NULL, true and false.
    if (!VariableDefined(pc, TableStrRegister(pc, "NULL")))
-      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&Stdio_ZeroValue, FALSE);
+      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&Stdio_ZeroValue, false);
 }
 
 // Portability-related I/O calls.

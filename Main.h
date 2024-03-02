@@ -12,9 +12,9 @@
 #endif
 
 // Handy definitions.
-#ifndef TRUE
-#   define TRUE 1
-#   define FALSE 0
+#if 0
+// Already defined in Extern.h.
+typedef enum { false, true } bool;
 #endif
 #include "Extern.h"
 
@@ -30,7 +30,7 @@ extern int PicocExitBuf[];
 #endif
 
 // Syn.c:
-void PicocParse(State pc, const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource, int EnableDebugger);
+void PicocParse(State pc, const char *FileName, const char *Source, int SourceLen, bool RunIt, bool CleanupNow, bool CleanupSource, bool EnableDebugger);
 void PicocParseInteractive(State pc);
 
 // Sys.c:

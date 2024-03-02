@@ -12,12 +12,12 @@ static int LittleEndian;
 void LibraryInit(State pc) {
 // Define the version number macro.
    pc->VersionString = TableStrRegister(pc, PICOC_VERSION);
-   VariableDefinePlatformVar(pc, NULL, "PICOC_VERSION", pc->CharPtrType, (AnyValue)&pc->VersionString, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "PICOC_VERSION", pc->CharPtrType, (AnyValue)&pc->VersionString, false);
 // Define endian-ness macros.
    BigEndian = ((*(char *)&__ENDIAN_CHECK__) == 0);
    LittleEndian = ((*(char *)&__ENDIAN_CHECK__) == 1);
-   VariableDefinePlatformVar(pc, NULL, "BIG_ENDIAN", &pc->IntType, (AnyValue)&BigEndian, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "LITTLE_ENDIAN", &pc->IntType, (AnyValue)&LittleEndian, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "BIG_ENDIAN", &pc->IntType, (AnyValue)&BigEndian, false);
+   VariableDefinePlatformVar(pc, NULL, "LITTLE_ENDIAN", &pc->IntType, (AnyValue)&LittleEndian, false);
 }
 
 // Add a library.
@@ -32,7 +32,7 @@ void LibraryAdd(State pc, Table GlobalTable, const char *LibraryName, LibraryFun
 // Read all the library definitions.
    for (Count = 0; FuncList[Count].Prototype != NULL; Count++) {
       Tokens = LexAnalyse(pc, IntrinsicName, FuncList[Count].Prototype, strlen((char *)FuncList[Count].Prototype), NULL);
-      LexInitParser(&Parser, pc, FuncList[Count].Prototype, Tokens, IntrinsicName, TRUE, FALSE);
+      LexInitParser(&Parser, pc, FuncList[Count].Prototype, Tokens, IntrinsicName, true, false);
       TypeParse(&Parser, &ReturnType, &Identifier, NULL);
       NewValue = ParseFunctionDefinition(&Parser, ReturnType, Identifier);
       NewValue->Val->FuncDef.Intrinsic = FuncList[Count].Func;
@@ -128,9 +128,9 @@ void BasicIOInit(State pc) {
 // Initialize the C library.
 void CLibraryInit(State pc) {
 // Define some constants.
-   VariableDefinePlatformVar(pc, NULL, "NULL", &IntType, (AnyValue)&ZeroValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "TRUE", &IntType, (AnyValue)&TRUEValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "FALSE", &IntType, (AnyValue)&ZeroValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "NULL", &IntType, (AnyValue)&ZeroValue, false);
+   VariableDefinePlatformVar(pc, NULL, "true", &IntType, (AnyValue)&TRUEValue, false);
+   VariableDefinePlatformVar(pc, NULL, "false", &IntType, (AnyValue)&ZeroValue, false);
 }
 
 // Stream for writing into strings.
@@ -156,7 +156,7 @@ void PrintRepeatedChar(State pc, char ShowChar, int Length, OutputStream Stream)
 }
 
 // Print an unsigned integer to a stream without using printf/sprintf.
-void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, int ZeroPad, int LeftJustify, OutputStream Stream) {
+void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputStream Stream) {
    char Result[33];
    int ResPos = sizeof(Result);
    Result[--ResPos] = '\0';
@@ -180,11 +180,11 @@ void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, int Zer
 
 // Print an integer to a stream without using printf/sprintf.
 void PrintSimpleInt(long Num, OutputStream Stream) {
-   PrintInt(Num, -1, FALSE, FALSE, Stream);
+   PrintInt(Num, -1, false, false, Stream);
 }
 
 // Print an integer to a stream without using printf/sprintf.
-void PrintInt(long Num, int FieldWidth, int ZeroPad, int LeftJustify, OutputStream Stream) {
+void PrintInt(long Num, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputStream Stream) {
    if (Num < 0) {
       PrintCh('-', Stream);
       Num = -Num;
@@ -208,7 +208,7 @@ void PrintFP(double Num, OutputStream Stream) {
    else if (Num <= 1e-7 && Num != 0.0)
       Exponent = log10(Num) - 0.999999999;
    Num /= pow(10.0, Exponent);
-   PrintInt((long)Num, 0, FALSE, FALSE, Stream);
+   PrintInt((long)Num, 0, false, false, Stream);
    PrintCh('.', Stream);
    Num = (Num - (long)Num)*10;
    if (abs(Num) >= 1e-7) {
@@ -218,7 +218,7 @@ void PrintFP(double Num, OutputStream Stream) {
       PrintCh('0', Stream);
    if (Exponent != 0) {
       PrintCh('e', Stream);
-      PrintInt(Exponent, 0, FALSE, FALSE, Stream);
+      PrintInt(Exponent, 0, false, false, Stream);
    }
 }
 #endif
@@ -229,8 +229,8 @@ void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumAr
    Value NextArg = Param[0];
    ValueType FormatType;
    int ArgCount = 1;
-   int LeftJustify = FALSE;
-   int ZeroPad = FALSE;
+   bool LeftJustify = false;
+   bool ZeroPad = false;
    int FieldWidth = 0;
    char *Format = Param[0]->Val->Pointer;
    for (FPos = Format; *FPos != '\0'; FPos++) {
@@ -239,12 +239,12 @@ void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumAr
          FieldWidth = 0;
          if (*FPos == '-') {
          // A leading '-' means left justify.
-            LeftJustify = TRUE;
+            LeftJustify = true;
             FPos++;
          }
          if (*FPos == '0') {
          // A leading zero means zero pad a decimal number.
-            ZeroPad = TRUE;
+            ZeroPad = true;
             FPos++;
          }
       // Get any field width in the format.
@@ -485,8 +485,8 @@ void LibStrncpy(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs)
 void LibStrcmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *Str1 = (char *)Param[0]->Val->Pointer;
    char *Str2 = (char *)Param[1]->Val->Pointer;
-   int StrEnded;
-   for (StrEnded = FALSE; !StrEnded; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++) {
+   bool StrEnded;
+   for (StrEnded = false; !StrEnded; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++) {
       if (*Str1 < *Str2) {
          ReturnValue->Val->Integer = -1;
          return;
@@ -502,8 +502,8 @@ void LibStrncmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs)
    char *Str1 = (char *)Param[0]->Val->Pointer;
    char *Str2 = (char *)Param[1]->Val->Pointer;
    int Len = Param[2]->Val->Integer;
-   int StrEnded;
-   for (StrEnded = FALSE; !StrEnded && Len > 0; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++, Len--) {
+   bool StrEnded;
+   for (StrEnded = false; !StrEnded && Len > 0; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++, Len--) {
       if (*Str1 < *Str2) {
          ReturnValue->Val->Integer = -1;
          return;

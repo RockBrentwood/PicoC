@@ -4,7 +4,7 @@
 
 // Initialize the shared string system.
 void TableInit(State pc) {
-   TableInitTable(&pc->StringTable, &pc->StringHashTable[0], STRING_TABLE_SIZE, TRUE);
+   TableInitTable(&pc->StringTable, &pc->StringHashTable[0], STRING_TABLE_SIZE, true);
    pc->StrEmpty = TableStrRegister(pc, "");
 }
 
@@ -22,7 +22,7 @@ static unsigned int TableHash(const char *Key, int Len) {
 }
 
 // Initialize a table.
-void TableInitTable(Table Tbl, TableEntry *HashTable, int Size, int OnHeap) {
+void TableInitTable(Table Tbl, TableEntry *HashTable, int Size, bool OnHeap) {
    Tbl->Size = Size;
    Tbl->OnHeap = OnHeap;
    Tbl->HashTable = HashTable;
@@ -42,9 +42,9 @@ static TableEntry TableSearch(Table Tbl, const char *Key, int *AddAt) {
 }
 
 // Set an identifier to a value.
-// Returns FALSE if it already exists.
+// Returns false if it already exists.
 // Key must be a shared string from TableStrRegister().
-int TableSet(State pc, Table Tbl, char *Key, Value Val, const char *DeclFileName, int DeclLine, int DeclColumn) {
+bool TableSet(State pc, Table Tbl, char *Key, Value Val, const char *DeclFileName, int DeclLine, int DeclColumn) {
    int AddAt;
    TableEntry FoundEntry = TableSearch(Tbl, Key, &AddAt);
    if (FoundEntry == NULL) { // Add it to the table.
@@ -56,26 +56,26 @@ int TableSet(State pc, Table Tbl, char *Key, Value Val, const char *DeclFileName
       NewEntry->p.v.Val = Val;
       NewEntry->Next = Tbl->HashTable[AddAt];
       Tbl->HashTable[AddAt] = NewEntry;
-      return TRUE;
+      return true;
    }
-   return FALSE;
+   return false;
 }
 
 // Find a value in a table.
-// Returns FALSE if not found.
+// Returns false if not found.
 // Key must be a shared string from TableStrRegister().
-int TableGet(Table Tbl, const char *Key, Value *Val, const char **DeclFileName, int *DeclLine, int *DeclColumn) {
+bool TableGet(Table Tbl, const char *Key, Value *Val, const char **DeclFileName, int *DeclLine, int *DeclColumn) {
    int AddAt;
    TableEntry FoundEntry = TableSearch(Tbl, Key, &AddAt);
    if (FoundEntry == NULL)
-      return FALSE;
+      return false;
    *Val = FoundEntry->p.v.Val;
    if (DeclFileName != NULL) {
       *DeclFileName = FoundEntry->DeclFileName;
       *DeclLine = FoundEntry->DeclLine;
       *DeclColumn = FoundEntry->DeclColumn;
    }
-   return TRUE;
+   return true;
 }
 
 // Remove an entry from the table.

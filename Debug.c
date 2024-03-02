@@ -7,7 +7,7 @@
 
 // Initialize the debugger by clearing the breakpoint table.
 void DebugInit(State pc) {
-   TableInitTable(&pc->BreakpointTable, &pc->BreakpointHashTable[0], BREAKPOINT_TABLE_SIZE, TRUE);
+   TableInitTable(&pc->BreakpointTable, &pc->BreakpointHashTable[0], BREAKPOINT_TABLE_SIZE, true);
    pc->BreakpointCount = 0;
 }
 
@@ -57,7 +57,7 @@ void DebugSetBreakpoint(ParseState Parser) {
 }
 
 // Delete a breakpoint from the hash table.
-int DebugClearBreakpoint(ParseState Parser) {
+bool DebugClearBreakpoint(ParseState Parser) {
    TableEntry *EntryPtr;
    State pc = Parser->pc;
    int HashValue = BREAKPOINT_HASH(Parser)%pc->BreakpointTable.Size;
@@ -67,30 +67,30 @@ int DebugClearBreakpoint(ParseState Parser) {
          *EntryPtr = DeleteEntry->Next;
          HeapFreeMem(pc, DeleteEntry);
          pc->BreakpointCount--;
-         return TRUE;
+         return true;
       }
    }
-   return FALSE;
+   return false;
 }
 
 // Before we run a statement, check if there's anything we have to do with the debugger here.
 void DebugCheckStatement(ParseState Parser) {
-   int DoBreak = FALSE;
+   bool DoBreak = false;
    int AddAt;
    State pc = Parser->pc;
 // Has the user manually pressed break?
    if (pc->DebugManualBreak) {
       PlatformPrintf(pc->CStdOut, "break\n");
-      DoBreak = TRUE;
-      pc->DebugManualBreak = FALSE;
+      DoBreak = true;
+      pc->DebugManualBreak = false;
    }
 // Is this a breakpoint location?
    if (Parser->pc->BreakpointCount != 0 && DebugTableSearchBreakpoint(Parser, &AddAt) != NULL)
-      DoBreak = TRUE;
+      DoBreak = true;
 // Handle a break.
    if (DoBreak) {
       PlatformPrintf(pc->CStdOut, "Handling a break\n");
-      PicocParseInteractiveNoStartPrompt(pc, FALSE);
+      PicocParseInteractiveNoStartPrompt(pc, false);
    }
 }
 

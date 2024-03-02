@@ -60,7 +60,7 @@ char *PlatformReadFile(State pc, const char *FileName) {
 // Read and scan a file for definitions.
 void PicocPlatformScanFile(State pc, const char *FileName) {
    char *SourceStr = PlatformReadFile(pc, FileName);
-   PicocParse(pc, FileName, SourceStr, strlen(SourceStr), TRUE, FALSE, TRUE, TRUE);
+   PicocParse(pc, FileName, SourceStr, strlen(SourceStr), true, false, true, true);
 }
 
 // Exit the program.

@@ -434,12 +434,12 @@ struct LibraryFunction UnistdFunctions[] = {
 void UnistdSetupFunc(State pc) {
 // Define NULL.
    if (!VariableDefined(pc, TableStrRegister(pc, "NULL")))
-      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&ZeroValue, FALSE);
+      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&ZeroValue, false);
 // Define optarg and friends.
-   VariableDefinePlatformVar(pc, NULL, "optarg", pc->CharPtrType, (AnyValue)&optarg, TRUE);
-   VariableDefinePlatformVar(pc, NULL, "optind", &pc->IntType, (AnyValue)&optind, TRUE);
-   VariableDefinePlatformVar(pc, NULL, "opterr", &pc->IntType, (AnyValue)&opterr, TRUE);
-   VariableDefinePlatformVar(pc, NULL, "optopt", &pc->IntType, (AnyValue)&optopt, TRUE);
+   VariableDefinePlatformVar(pc, NULL, "optarg", pc->CharPtrType, (AnyValue)&optarg, true);
+   VariableDefinePlatformVar(pc, NULL, "optind", &pc->IntType, (AnyValue)&optind, true);
+   VariableDefinePlatformVar(pc, NULL, "opterr", &pc->IntType, (AnyValue)&opterr, true);
+   VariableDefinePlatformVar(pc, NULL, "optopt", &pc->IntType, (AnyValue)&optopt, true);
 }
 
 #endif // !BUILTIN_MINI_STDLIB.

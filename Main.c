@@ -15,7 +15,7 @@
 
 int main(int argc, char **argv) {
    int ParamCount = 1;
-   int DontRunMain = FALSE;
+   bool DontRunMain = false;
    int StackSize = getenv("STACKSIZE")? atoi(getenv("STACKSIZE")): PICOC_STACK_SIZE;
    struct State pc;
    if (argc < 2) {
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
    }
    PicocInitialize(&pc, StackSize);
    if (strcmp(argv[ParamCount], "-s") == 0 || strcmp(argv[ParamCount], "-m") == 0) {
-      DontRunMain = TRUE;
+      DontRunMain = true;
       PicocIncludeAllSystemHeaders(&pc);
       ParamCount++;
    }
@@ -57,8 +57,9 @@ int main(int argc, char **argv) {
 #   include "../string.h"
 
 int picoc(char *SourceStr) {
+   struct State pc;
    char *pos;
-   PicocInitialize(HEAP_SIZE);
+   PicocInitialize(&pc, HEAP_SIZE);
    if (SourceStr) {
       for (pos = SourceStr; *pos != 0; pos++) {
          if (*pos == 0x1a) {
@@ -66,18 +67,18 @@ int picoc(char *SourceStr) {
          }
       }
    }
-   PicocExitBuf[40] = 0;
-   PicocPlatformSetExitPoint();
-   if (PicocExitBuf[40]) {
+   pc.PicocExitBuf[40] = 0;
+   PicocPlatformSetExitPoint(&pc);
+   if (pc.PicocExitBuf[40]) {
       printf("Leaving PicoC\n\r");
-      PicocCleanup();
+      PicocCleanup(&pc);
       return PicocExitValue;
    }
    if (SourceStr)
-      PicocParse("nofile", SourceStr, strlen(SourceStr), TRUE, TRUE, FALSE);
-   PicocParseInteractive();
-   PicocCleanup();
-   return PicocExitValue;
+      PicocParse(pc, "nofile", SourceStr, strlen(SourceStr), true, true, false, false);
+   PicocParseInteractive(&pc);
+   PicocCleanup(&pc);
+   return pc.PicocExitValue;
 }
 #endif
 #endif

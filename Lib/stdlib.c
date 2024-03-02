@@ -145,9 +145,9 @@ struct LibraryFunction StdlibFunctions[] = {
 
 // Creates various system-dependent definitions.
 void StdlibSetupFunc(State pc) {
-// Define NULL, TRUE and FALSE.
+// Define NULL, true and false.
    if (!VariableDefined(pc, TableStrRegister(pc, "NULL")))
-      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&Stdlib_ZeroValue, FALSE);
+      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&Stdlib_ZeroValue, false);
 }
 
 #endif // !BUILTIN_MINI_STDLIB.

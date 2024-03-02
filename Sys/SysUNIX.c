@@ -14,7 +14,7 @@ jmp_buf PicocExitBuf;
 State break_pc = NULL;
 
 static void BreakHandler(int Signal) {
-   break_pc->DebugManualBreak = TRUE;
+   break_pc->DebugManualBreak = true;
 }
 
 void PlatformInit(State pc) {
@@ -100,7 +100,7 @@ void PicocPlatformScanFile(State pc, const char *FileName) {
       SourceStr[0] = '/';
       SourceStr[1] = '/';
    }
-   PicocParse(pc, FileName, SourceStr, strlen(SourceStr), TRUE, FALSE, TRUE, TRUE);
+   PicocParse(pc, FileName, SourceStr, strlen(SourceStr), true, false, true, true);
 }
 
 // Exit the program.
