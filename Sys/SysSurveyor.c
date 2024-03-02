@@ -5,7 +5,7 @@
 int PicocExitBuf[41];
 
 // Deallocate any storage.
-void PlatformCleanup() {
+void PlatformCleanup(State pc) {
 }
 
 // Get a line of interactive input.
@@ -51,8 +51,8 @@ int PlatformGetCharacter() {
 }
 
 // Exit the program.
-void PlatformExit(int RetVal) {
-   PicocExitValue = RetVal;
-   PicocExitBuf[40] = 1;
-   longjmp(PicocExitBuf, 1);
+void PlatformExit(State pc, int RetVal) {
+   pc->PicocExitValue = RetVal;
+   pc->PicocExitBuf[40] = 1;
+   longjmp(pc->PicocExitBuf, 1);
 }

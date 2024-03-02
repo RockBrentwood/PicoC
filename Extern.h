@@ -425,7 +425,7 @@ void TableStrFree(State pc);
 void LexInit(State pc);
 void LexCleanup(State pc);
 void *LexAnalyse(State pc, const char *FileName, const char *Source, int SourceLen, int *TokenLen);
-void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *TokenSource, char *FileName, int RunIt, int SetDebugMode);
+void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *TokenSource, char *FileName, int RunIt, int EnableDebugger);
 LexToken LexGetToken(ParseState Parser, Value *ValP, int IncPos);
 LexToken LexRawPeekToken(ParseState Parser);
 void LexToEndOfLine(ParseState Parser);
@@ -437,8 +437,8 @@ void LexInteractiveStatementPrompt(State pc);
 // Syn.c:
 #if 0
 // The following are defined in Main.h:
-void PicocParse(const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource);
-void PicocParseInteractive();
+void PicocParse(State pc, const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource, int EnableDebugger);
+void PicocParseInteractive(State pc);
 #endif
 void PicocParseInteractiveNoStartPrompt(State pc, int EnableDebugger);
 ParseResult ParseStatement(ParseState Parser, int CheckTrailingSemicolon);
@@ -472,7 +472,7 @@ ValueType TypeCreateOpaqueStruct(State pc, ParseState Parser, const char *Struct
 int TypeIsForwardDeclared(ParseState Parser, ValueType Typ);
 
 // Heap.c:
-void HeapInit(State pc, int StackSize);
+void HeapInit(State pc, int StackOrHeapSize);
 void HeapCleanup(State pc);
 void *HeapAllocStack(State pc, int Size);
 int HeapPopStack(State pc, void *Addr, int Size);
@@ -506,7 +506,7 @@ void VariableStackFramePop(ParseState Parser);
 Value VariableStringLiteralGet(State pc, char *Ident);
 void VariableStringLiteralDefine(State pc, char *Ident, Value Val);
 void *VariableDereferencePointer(ParseState Parser, Value PointerValue, Value *DerefVal, int *DerefOffset, ValueType *DerefType, int *DerefIsLValue);
-int VariableScopeBegin(ParseState Parser, int *PrevScopeID);
+int VariableScopeBegin(ParseState Parser, int *OldScopeID);
 void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID);
 
 // Lib.c:
@@ -525,11 +525,11 @@ void LibPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs);
 // Sys.c:
 #if 0
 // The following are defined in Main.h:
-void PicocCallMain(int argc, char **argv);
+void PicocCallMain(State pc, int argc, char **argv);
 int PicocPlatformSetExitPoint();
-void PicocInitialize(int StackSize);
-void PicocCleanup();
-void PicocPlatformScanFile(const char *FileName);
+void PicocInitialize(State pc, int StackSize);
+void PicocCleanup(State pc);
+void PicocPlatformScanFile(State pc, const char *FileName);
 extern int PicocExitValue;
 #endif
 void ProgramFail(ParseState Parser, const char *Message, ...);
@@ -540,10 +540,10 @@ void PlatformInit(State pc);
 void PlatformCleanup(State pc);
 char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt);
 int PlatformGetCharacter();
-void PlatformPutc(unsigned char OutCh, OutputStreamInfo);
+void PlatformPutc(unsigned char OutCh, OutputStreamInfo Stream);
 void PlatformPrintf(OutFile Stream, const char *Format, ...);
 void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args);
-void PlatformExit(State pc, int ExitVal);
+void PlatformExit(State pc, int RetVal);
 char *PlatformMakeTempName(State pc, char *TempNameBuffer);
 void PlatformLibraryInit(State pc);
 
@@ -551,15 +551,15 @@ void PlatformLibraryInit(State pc);
 void IncludeInit(State pc);
 void IncludeCleanup(State pc);
 void IncludeRegister(State pc, const char *IncludeName, void (*SetupFunction)(State pc), LibraryFunction FuncList, const char *SetupCSource);
-void IncludeFile(State pc, char *Filename);
+void IncludeFile(State pc, char *FileName);
 #if 0
 // The following is defined in Main.h:
-void PicocIncludeAllSystemHeaders();
+void PicocIncludeAllSystemHeaders(State pc);
 #endif
 
 // Debug.c:
-void DebugInit();
-void DebugCleanup();
+void DebugInit(State pc);
+void DebugCleanup(State pc);
 void DebugCheckStatement(ParseState Parser);
 
 // Lib/stdio.c:

@@ -1,11 +1,11 @@
 #include "../Extern.h"
 
 // Deallocate any storage.
-void PlatformCleanup() {
+void PlatformCleanup(State pc) {
 }
 
 // Get a line of interactive input.
-char *PlatformGetLine(char *Buf, int MaxLen) {
+char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt) {
 // XXX - unimplemented so far.
    return NULL;
 }
@@ -22,14 +22,14 @@ void PlatformPutc(unsigned char OutCh, OutputStreamInfo Stream) {
 }
 
 // Read a file into memory.
-char *PlatformReadFile(const char *FileName) {
+char *PlatformReadFile(State pc, const char *FileName) {
 // XXX - unimplemented so far.
    return NULL;
 }
 
 // Read and scan a file for definitions.
-void PlatformScanFile(const char *FileName) {
-   char *SourceStr = PlatformReadFile(FileName);
+void PicocPlatformScanFile(State pc, const char *FileName) {
+   char *SourceStr = PlatformReadFile(pc, FileName);
    Parse(FileName, SourceStr, strlen(SourceStr), TRUE);
 #if 0
    free(SourceStr);
@@ -40,6 +40,6 @@ void PlatformScanFile(const char *FileName) {
 jmp_buf ExitBuf;
 
 // Exit the program.
-void PlatformExit() {
-   longjmp(ExitBuf, 1);
+void PlatformExit(State pc, int RetVal) {
+   longjmp(pc->PicocExitBuf, 1);
 }

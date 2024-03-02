@@ -5,6 +5,6 @@ struct LibraryFunction PlatformLibrary[] = {
    { NULL, NULL }
 };
 
-void PlatformLibraryInit() {
-   LibraryAdd(&GlobalTable, "platform library", &PlatformLibrary);
+void PlatformLibraryInit(State pc) {
+   LibraryAdd(pc, &pc->GlobalTable, "platform library", &PlatformLibrary);
 }

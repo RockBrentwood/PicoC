@@ -6,36 +6,36 @@ static int Cxmin, Cxmax, Cymin, Cymax;
 static int GPSlat, GPSlon, GPSalt, GPSfix, GPSsat, GPSutc, Elcount, Ercount;
 static int ScanVect[16], NNVect[NUM_OUTPUT];
 
-void PlatformLibraryInit() {
+void PlatformLibraryInit(State pc) {
    ValueType IntArrayType;
-   IntArrayType = TypeGetMatching(NULL, &IntType, TypeArray, 16, StrEmpty, TRUE);
-   VariableDefinePlatformVar(NULL, "scanvect", IntArrayType, (AnyValue)&ScanVect, FALSE);
-   VariableDefinePlatformVar(NULL, "neuron", IntArrayType, (AnyValue)&NNVect, FALSE);
-   VariableDefinePlatformVar(NULL, "xbuf", CharArrayType, (AnyValue)&xbuff, FALSE);
-   VariableDefinePlatformVar(NULL, "blobcnt", &IntType, (AnyValue)&Blobcnt, FALSE);
-   VariableDefinePlatformVar(NULL, "blobx1", &IntType, (AnyValue)&Blobx1, FALSE);
-   VariableDefinePlatformVar(NULL, "blobx2", &IntType, (AnyValue)&Blobx2, FALSE);
-   VariableDefinePlatformVar(NULL, "bloby1", &IntType, (AnyValue)&Bloby1, FALSE);
-   VariableDefinePlatformVar(NULL, "bloby2", &IntType, (AnyValue)&Bloby2, FALSE);
-   VariableDefinePlatformVar(NULL, "lcount", &IntType, (AnyValue)&Elcount, FALSE);
-   VariableDefinePlatformVar(NULL, "rcount", &IntType, (AnyValue)&Ercount, FALSE);
-   VariableDefinePlatformVar(NULL, "y1", &IntType, (AnyValue)&Iy1, FALSE);
-   VariableDefinePlatformVar(NULL, "y2", &IntType, (AnyValue)&Iy2, FALSE);
-   VariableDefinePlatformVar(NULL, "u1", &IntType, (AnyValue)&Iu1, FALSE);
-   VariableDefinePlatformVar(NULL, "u2", &IntType, (AnyValue)&Iu2, FALSE);
-   VariableDefinePlatformVar(NULL, "v1", &IntType, (AnyValue)&Iv1, FALSE);
-   VariableDefinePlatformVar(NULL, "v2", &IntType, (AnyValue)&Iv2, FALSE);
-   VariableDefinePlatformVar(NULL, "gpslat", &IntType, (AnyValue)&GPSlat, FALSE);
-   VariableDefinePlatformVar(NULL, "gpslon", &IntType, (AnyValue)&GPSlon, FALSE);
-   VariableDefinePlatformVar(NULL, "gpsalt", &IntType, (AnyValue)&GPSalt, FALSE);
-   VariableDefinePlatformVar(NULL, "gpsfix", &IntType, (AnyValue)&GPSfix, FALSE);
-   VariableDefinePlatformVar(NULL, "gpssat", &IntType, (AnyValue)&GPSsat, FALSE);
-   VariableDefinePlatformVar(NULL, "gpsutc", &IntType, (AnyValue)&GPSutc, FALSE);
-   VariableDefinePlatformVar(NULL, "cxmin", &IntType, (AnyValue)&Cxmin, FALSE);
-   VariableDefinePlatformVar(NULL, "cxmax", &IntType, (AnyValue)&Cxmax, FALSE);
-   VariableDefinePlatformVar(NULL, "cymin", &IntType, (AnyValue)&Cymin, FALSE);
-   VariableDefinePlatformVar(NULL, "cymax", &IntType, (AnyValue)&Cymax, FALSE);
-   LibraryAdd(&GlobalTable, "platform library", &PlatformLibrary[0]);
+   IntArrayType = TypeGetMatching(pc, NULL, &pc->IntType, TypeArray, 16, StrEmpty, TRUE);
+   VariableDefinePlatformVar(pc, NULL, "scanvect", pc->IntArrayType, (AnyValue)&ScanVect, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "neuron", pc->IntArrayType, (AnyValue)&NNVect, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "xbuf", pc->CharArrayType, (AnyValue)&xbuff, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "blobcnt", &pc->IntType, (AnyValue)&Blobcnt, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "blobx1", &pc->IntType, (AnyValue)&Blobx1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "blobx2", &pc->IntType, (AnyValue)&Blobx2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "bloby1", &pc->IntType, (AnyValue)&Bloby1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "bloby2", &pc->IntType, (AnyValue)&Bloby2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "lcount", &pc->IntType, (AnyValue)&Elcount, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "rcount", &pc->IntType, (AnyValue)&Ercount, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "y1", &pc->IntType, (AnyValue)&Iy1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "y2", &pc->IntType, (AnyValue)&Iy2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "u1", &pc->IntType, (AnyValue)&Iu1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "u2", &pc->IntType, (AnyValue)&Iu2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "v1", &pc->IntType, (AnyValue)&Iv1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "v2", &pc->IntType, (AnyValue)&Iv2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpslat", &pc->IntType, (AnyValue)&GPSlat, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpslon", &pc->IntType, (AnyValue)&GPSlon, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpsalt", &pc->IntType, (AnyValue)&GPSalt, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpsfix", &pc->IntType, (AnyValue)&GPSfix, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpssat", &pc->IntType, (AnyValue)&GPSsat, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpsutc", &pc->IntType, (AnyValue)&GPSutc, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "cxmin", &pc->IntType, (AnyValue)&Cxmin, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "cxmax", &pc->IntType, (AnyValue)&Cxmax, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "cymin", &pc->IntType, (AnyValue)&Cymin, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "cymax", &pc->IntType, (AnyValue)&Cymax, FALSE);
+   LibraryAdd(pc, &pc->GlobalTable, "platform library", &PlatformLibrary[0]);
 }
 
 // Check for kbhit, return t or nil.

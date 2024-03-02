@@ -6,29 +6,29 @@ static int ScanVect[16], NNVect[NUM_OUTPUT];
 
 ValueType IntArrayType;
 
-void SRV1SetupFunc() {
-   IntArrayType = TypeGetMatching(NULL, &IntType, TypeArray, 16, StrEmpty, TRUE);
-   VariableDefinePlatformVar(NULL, "scanvect", IntArrayType, (AnyValue)&ScanVect, FALSE);
-   VariableDefinePlatformVar(NULL, "neuron", IntArrayType, (AnyValue)&NNVect, FALSE);
-   VariableDefinePlatformVar(NULL, "blobcnt", &IntType, (AnyValue)&Blobcnt, FALSE);
-   VariableDefinePlatformVar(NULL, "blobx1", &IntType, (AnyValue)&Blobx1, FALSE);
-   VariableDefinePlatformVar(NULL, "blobx2", &IntType, (AnyValue)&Blobx2, FALSE);
-   VariableDefinePlatformVar(NULL, "bloby1", &IntType, (AnyValue)&Bloby1, FALSE);
-   VariableDefinePlatformVar(NULL, "bloby2", &IntType, (AnyValue)&Bloby2, FALSE);
-   VariableDefinePlatformVar(NULL, "lcount", &IntType, (AnyValue)&Elcount, FALSE);
-   VariableDefinePlatformVar(NULL, "rcount", &IntType, (AnyValue)&Ercount, FALSE);
-   VariableDefinePlatformVar(NULL, "y1", &IntType, (AnyValue)&Iy1, FALSE);
-   VariableDefinePlatformVar(NULL, "y2", &IntType, (AnyValue)&Iy2, FALSE);
-   VariableDefinePlatformVar(NULL, "u1", &IntType, (AnyValue)&Iu1, FALSE);
-   VariableDefinePlatformVar(NULL, "u2", &IntType, (AnyValue)&Iu2, FALSE);
-   VariableDefinePlatformVar(NULL, "v1", &IntType, (AnyValue)&Iv1, FALSE);
-   VariableDefinePlatformVar(NULL, "v2", &IntType, (AnyValue)&Iv2, FALSE);
-   VariableDefinePlatformVar(NULL, "gpslat", &IntType, (AnyValue)&GPSlat, FALSE);
-   VariableDefinePlatformVar(NULL, "gpslon", &IntType, (AnyValue)&GPSlon, FALSE);
-   VariableDefinePlatformVar(NULL, "gpsalt", &IntType, (AnyValue)&GPSalt, FALSE);
-   VariableDefinePlatformVar(NULL, "gpsfix", &IntType, (AnyValue)&GPSfix, FALSE);
-   VariableDefinePlatformVar(NULL, "gpssat", &IntType, (AnyValue)&GPSsat, FALSE);
-   VariableDefinePlatformVar(NULL, "gpsutc", &IntType, (AnyValue)&GPSutc, FALSE);
+void SRV1SetupFunc(State pc) {
+   pc->IntArrayType = TypeGetMatching(pc, NULL, &pc->IntType, TypeArray, 16, StrEmpty, TRUE);
+   VariableDefinePlatformVar(pc, NULL, "scanvect", pc->IntArrayType, (AnyValue)&ScanVect, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "neuron", pc->IntArrayType, (AnyValue)&NNVect, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "blobcnt", &pc->IntType, (AnyValue)&Blobcnt, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "blobx1", &pc->IntType, (AnyValue)&Blobx1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "blobx2", &pc->IntType, (AnyValue)&Blobx2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "bloby1", &pc->IntType, (AnyValue)&Bloby1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "bloby2", &pc->IntType, (AnyValue)&Bloby2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "lcount", &pc->IntType, (AnyValue)&Elcount, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "rcount", &pc->IntType, (AnyValue)&Ercount, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "y1", &pc->IntType, (AnyValue)&Iy1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "y2", &pc->IntType, (AnyValue)&Iy2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "u1", &pc->IntType, (AnyValue)&Iu1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "u2", &pc->IntType, (AnyValue)&Iu2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "v1", &pc->IntType, (AnyValue)&Iv1, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "v2", &pc->IntType, (AnyValue)&Iv2, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpslat", &pc->IntType, (AnyValue)&GPSlat, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpslon", &pc->IntType, (AnyValue)&GPSlon, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpsalt", &pc->IntType, (AnyValue)&GPSalt, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpsfix", &pc->IntType, (AnyValue)&GPSfix, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpssat", &pc->IntType, (AnyValue)&GPSsat, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "gpsutc", &pc->IntType, (AnyValue)&GPSutc, FALSE);
 }
 
 // Check for kbhit, return t or nil.
@@ -731,6 +731,6 @@ struct LibraryFunction SRV1Functions[] = {
    { NULL, NULL }
 };
 
-void PlatformLibraryInit() {
-   IncludeRegister("srv1.h", &SRV1SetupFunc, &SRV1Functions[0], NULL);
+void PlatformLibraryInit(State pc) {
+   IncludeRegister(pc, "srv1.h", &SRV1SetupFunc, &SRV1Functions[0], NULL);
 }
