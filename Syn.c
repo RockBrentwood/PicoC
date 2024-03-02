@@ -4,9 +4,9 @@
 #include "Extern.h"
 
 // Deallocate any memory.
-void ParseCleanup(Picoc *pc) {
+void ParseCleanup(State pc) {
    while (pc->CleanupTokenList != NULL) {
-      struct CleanupTokenNode *Next = pc->CleanupTokenList->Next;
+      CleanupTokenNode Next = pc->CleanupTokenList->Next;
       HeapFreeMem(pc, pc->CleanupTokenList->Tokens);
       if (pc->CleanupTokenList->SourceText != NULL)
          HeapFreeMem(pc, (void *)pc->CleanupTokenList->SourceText);
@@ -16,9 +16,9 @@ void ParseCleanup(Picoc *pc) {
 }
 
 // Parse a statement, but only run it if Condition is TRUE.
-enum ParseResult ParseStatementMaybeRun(struct ParseState *Parser, int Condition, int CheckTrailingSemicolon) {
+ParseResult ParseStatementMaybeRun(ParseState Parser, int Condition, int CheckTrailingSemicolon) {
    if (Parser->Mode != RunModeSkip && !Condition) {
-      enum RunMode OldMode = Parser->Mode;
+      RunMode OldMode = Parser->Mode;
       int Result;
       Parser->Mode = RunModeSkip;
       Result = ParseStatement(Parser, CheckTrailingSemicolon);
@@ -29,9 +29,9 @@ enum ParseResult ParseStatementMaybeRun(struct ParseState *Parser, int Condition
 }
 
 // Count the number of parameters to a function or macro.
-int ParseCountParams(struct ParseState *Parser) {
+int ParseCountParams(ParseState Parser) {
    int ParamCount = 0;
-   enum LexToken Token = LexGetToken(Parser, NULL, TRUE);
+   LexToken Token = LexGetToken(Parser, NULL, TRUE);
    if (Token != TokenCloseBracket && Token != TokenEOF) {
    // Count the number of parameters.
       ParamCount++;
@@ -44,16 +44,16 @@ int ParseCountParams(struct ParseState *Parser) {
 }
 
 // Parse a function definition and store it for later.
-struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueType *ReturnType, char *Identifier) {
-   struct ValueType *ParamType;
+Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Identifier) {
+   ValueType ParamType;
    char *ParamIdentifier;
-   enum LexToken Token = TokenNone;
+   LexToken Token = TokenNone;
    struct ParseState ParamParser;
-   struct Value *FuncValue;
-   struct Value *OldFuncValue;
+   Value FuncValue;
+   Value OldFuncValue;
    struct ParseState FuncBody;
    int ParamCount = 0;
-   Picoc *pc = Parser->pc;
+   State pc = Parser->pc;
    if (pc->TopStackFrame != NULL)
       ProgramFail(Parser, "nested function definitions are not allowed");
    LexGetToken(Parser, NULL, TRUE); // Open bracket.
@@ -61,13 +61,13 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
    ParamCount = ParseCountParams(Parser);
    if (ParamCount > PARAMETER_MAX)
       ProgramFail(Parser, "too many parameters (%d allowed)", PARAMETER_MAX);
-   FuncValue = VariableAllocValueAndData(pc, Parser, sizeof(struct FuncDef) + sizeof(struct ValueType *)*ParamCount + sizeof(const char *)*ParamCount, FALSE, NULL, TRUE);
+   FuncValue = VariableAllocValueAndData(pc, Parser, sizeof(struct FuncDef) + sizeof(ValueType)*ParamCount + sizeof(const char *)*ParamCount, FALSE, NULL, TRUE);
    FuncValue->Typ = &pc->FunctionType;
    FuncValue->Val->FuncDef.ReturnType = ReturnType;
    FuncValue->Val->FuncDef.NumParams = ParamCount;
    FuncValue->Val->FuncDef.VarArgs = FALSE;
-   FuncValue->Val->FuncDef.ParamType = (struct ValueType **)((char *)FuncValue->Val + sizeof(struct FuncDef));
-   FuncValue->Val->FuncDef.ParamName = (char **)((char *)FuncValue->Val->FuncDef.ParamType + sizeof(struct ValueType *)*ParamCount);
+   FuncValue->Val->FuncDef.ParamType = (ValueType *)((char *)FuncValue->Val + sizeof(struct FuncDef));
+   FuncValue->Val->FuncDef.ParamName = (char **)((char *)FuncValue->Val->FuncDef.ParamType + sizeof(ValueType)*ParamCount);
    for (ParamCount = 0; ParamCount < FuncValue->Val->FuncDef.NumParams; ParamCount++) {
    // Harvest the parameters into the function definition.
       if (ParamCount == FuncValue->Val->FuncDef.NumParams - 1 && LexGetToken(&ParamParser, NULL, FALSE) == TokenEllipsis) {
@@ -128,10 +128,10 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
 }
 
 // Parse an array initializer and assign to a variable.
-int ParseArrayInitializer(struct ParseState *Parser, struct Value *NewVariable, int DoAssignment) {
+int ParseArrayInitializer(ParseState Parser, Value NewVariable, int DoAssignment) {
    int ArrayIndex = 0;
-   enum LexToken Token;
-   struct Value *CValue;
+   LexToken Token;
+   Value CValue;
 // Count the number of elements in the array.
    if (DoAssignment && Parser->Mode == RunModeRun) {
       struct ParseState CountParser;
@@ -155,10 +155,10 @@ int ParseArrayInitializer(struct ParseState *Parser, struct Value *NewVariable, 
       if (LexGetToken(Parser, NULL, FALSE) == TokenLeftBrace) {
       // This is a sub-array initializer.
          int SubArraySize = 0;
-         struct Value *SubArray = NewVariable;
+         Value SubArray = NewVariable;
          if (Parser->Mode == RunModeRun && DoAssignment) {
             SubArraySize = TypeSize(NewVariable->Typ->FromType, NewVariable->Typ->FromType->ArraySize, TRUE);
-            SubArray = VariableAllocValueFromExistingData(Parser, NewVariable->Typ->FromType, (union AnyValue *)(&NewVariable->Val->ArrayMem[0] + SubArraySize*ArrayIndex), TRUE, NewVariable);
+            SubArray = VariableAllocValueFromExistingData(Parser, NewVariable->Typ->FromType, (AnyValue)(&NewVariable->Val->ArrayMem[0] + SubArraySize*ArrayIndex), TRUE, NewVariable);
 #ifdef DEBUG_ARRAY_INITIALIZER
             int FullArraySize = TypeSize(NewVariable->Typ, NewVariable->Typ->ArraySize, TRUE);
             PRINT_SOURCE_POS;
@@ -171,9 +171,9 @@ int ParseArrayInitializer(struct ParseState *Parser, struct Value *NewVariable, 
          LexGetToken(Parser, NULL, TRUE);
          ParseArrayInitializer(Parser, SubArray, DoAssignment);
       } else {
-         struct Value *ArrayElement = NULL;
+         Value ArrayElement = NULL;
          if (Parser->Mode == RunModeRun && DoAssignment) {
-            struct ValueType *ElementType = NewVariable->Typ;
+            ValueType ElementType = NewVariable->Typ;
             int TotalSize = 1;
             int ElementSize = 0;
          // int x[3][3] = {1,2,3,4} => handle it just like int x[9] = {1,2,3,4}.
@@ -191,7 +191,7 @@ int ParseArrayInitializer(struct ParseState *Parser, struct Value *NewVariable, 
 #endif
             if (ArrayIndex >= TotalSize)
                ProgramFail(Parser, "too many array elements");
-            ArrayElement = VariableAllocValueFromExistingData(Parser, ElementType, (union AnyValue *)(&NewVariable->Val->ArrayMem[0] + ElementSize*ArrayIndex), TRUE, NewVariable);
+            ArrayElement = VariableAllocValueFromExistingData(Parser, ElementType, (AnyValue)(&NewVariable->Val->ArrayMem[0] + ElementSize*ArrayIndex), TRUE, NewVariable);
          }
       // This is a normal expression initializer.
          if (!ExpressionParse(Parser, &CValue))
@@ -218,8 +218,8 @@ int ParseArrayInitializer(struct ParseState *Parser, struct Value *NewVariable, 
 }
 
 // Assign an initial value to a variable.
-void ParseDeclarationAssignment(struct ParseState *Parser, struct Value *NewVariable, int DoAssignment) {
-   struct Value *CValue;
+void ParseDeclarationAssignment(ParseState Parser, Value NewVariable, int DoAssignment) {
+   Value CValue;
    if (LexGetToken(Parser, NULL, FALSE) == TokenLeftBrace) {
    // This is an array initializer.
       LexGetToken(Parser, NULL, TRUE);
@@ -236,14 +236,14 @@ void ParseDeclarationAssignment(struct ParseState *Parser, struct Value *NewVari
 }
 
 // Declare a variable or function.
-int ParseDeclaration(struct ParseState *Parser, enum LexToken Token) {
+int ParseDeclaration(ParseState Parser, LexToken Token) {
    char *Identifier;
-   struct ValueType *BasicType;
-   struct ValueType *Typ;
-   struct Value *NewVariable = NULL;
+   ValueType BasicType;
+   ValueType Typ;
+   Value NewVariable = NULL;
    int IsStatic = FALSE;
    int FirstVisit = FALSE;
-   Picoc *pc = Parser->pc;
+   State pc = Parser->pc;
    TypeParseFront(Parser, &BasicType, &IsStatic);
    do {
       TypeParseIdentPart(Parser, BasicType, &Typ, &Identifier);
@@ -274,17 +274,17 @@ int ParseDeclaration(struct ParseState *Parser, enum LexToken Token) {
 }
 
 // Parse a #define macro definition and store it for later.
-void ParseMacroDefinition(struct ParseState *Parser) {
-   struct Value *MacroName;
+void ParseMacroDefinition(ParseState Parser) {
+   Value MacroName;
    char *MacroNameStr;
-   struct Value *ParamName;
-   struct Value *MacroValue;
+   Value ParamName;
+   Value MacroValue;
    if (LexGetToken(Parser, &MacroName, TRUE) != TokenIdentifier)
       ProgramFail(Parser, "identifier expected");
    MacroNameStr = MacroName->Val->Identifier;
    if (LexRawPeekToken(Parser) == TokenOpenMacroBracket) {
    // It's a parameterized macro, read the parameters.
-      enum LexToken Token = LexGetToken(Parser, NULL, TRUE);
+      LexToken Token = LexGetToken(Parser, NULL, TRUE);
       struct ParseState ParamParser;
       int NumParams;
       int ParamCount = 0;
@@ -321,12 +321,12 @@ void ParseMacroDefinition(struct ParseState *Parser) {
 }
 
 // Copy the entire parser state.
-void ParserCopy(struct ParseState *To, struct ParseState *From) {
+void ParserCopy(ParseState To, ParseState From) {
    memcpy((void *)To, (void *)From, sizeof(*To));
 }
 
 // Copy where we're at in the parsing.
-void ParserCopyPos(struct ParseState *To, struct ParseState *From) {
+void ParserCopyPos(ParseState To, ParseState From) {
    To->Pos = From->Pos;
    To->Line = From->Line;
    To->HashIfLevel = From->HashIfLevel;
@@ -335,13 +335,13 @@ void ParserCopyPos(struct ParseState *To, struct ParseState *From) {
 }
 
 // Parse a "for" statement.
-void ParseFor(struct ParseState *Parser) {
+void ParseFor(ParseState Parser) {
    int Condition;
    struct ParseState PreConditional;
    struct ParseState PreIncrement;
    struct ParseState PreStatement;
    struct ParseState After;
-   enum RunMode OldMode = Parser->Mode;
+   RunMode OldMode = Parser->Mode;
    int PrevScopeID = 0, ScopeID = VariableScopeBegin(Parser, &PrevScopeID);
    if (LexGetToken(Parser, NULL, TRUE) != TokenOpenBracket)
       ProgramFail(Parser, "'(' expected");
@@ -386,13 +386,13 @@ void ParseFor(struct ParseState *Parser) {
 }
 
 // Parse a block of code and return what mode it returned in.
-enum RunMode ParseBlock(struct ParseState *Parser, int AbsorbOpenBrace, int Condition) {
+RunMode ParseBlock(ParseState Parser, int AbsorbOpenBrace, int Condition) {
    int PrevScopeID = 0, ScopeID = VariableScopeBegin(Parser, &PrevScopeID);
    if (AbsorbOpenBrace && LexGetToken(Parser, NULL, TRUE) != TokenLeftBrace)
       ProgramFail(Parser, "'{' expected");
    if (Parser->Mode == RunModeSkip || !Condition) {
    // Condition failed - skip this block instead.
-      enum RunMode OldMode = Parser->Mode;
+      RunMode OldMode = Parser->Mode;
       Parser->Mode = RunModeSkip;
       while (ParseStatement(Parser, TRUE) == ParseResultOk) {
       }
@@ -409,28 +409,28 @@ enum RunMode ParseBlock(struct ParseState *Parser, int AbsorbOpenBrace, int Cond
 }
 
 // Parse a typedef declaration.
-void ParseTypedef(struct ParseState *Parser) {
-   struct ValueType *Typ;
-   struct ValueType **TypPtr;
+void ParseTypedef(ParseState Parser) {
+   ValueType Typ;
+   ValueType *TypPtr;
    char *TypeName;
    struct Value InitValue;
    TypeParse(Parser, &Typ, &TypeName, NULL);
    if (Parser->Mode == RunModeRun) {
       TypPtr = &Typ;
       InitValue.Typ = &Parser->pc->TypeType;
-      InitValue.Val = (union AnyValue *)TypPtr;
+      InitValue.Val = (AnyValue)TypPtr;
       VariableDefine(Parser->pc, Parser, TypeName, &InitValue, NULL, FALSE);
    }
 }
 
 // Parse a statement.
-enum ParseResult ParseStatement(struct ParseState *Parser, int CheckTrailingSemicolon) {
-   struct Value *CValue;
-   struct Value *LexerValue;
-   struct Value *VarValue;
+ParseResult ParseStatement(ParseState Parser, int CheckTrailingSemicolon) {
+   Value CValue;
+   Value LexerValue;
+   Value VarValue;
    int Condition;
    struct ParseState PreState;
-   enum LexToken Token;
+   LexToken Token;
 // If we're debugging, check for a breakpoint.
    if (Parser->DebugMode && Parser->Mode == RunModeRun)
       DebugCheckStatement(Parser);
@@ -451,7 +451,7 @@ enum ParseResult ParseStatement(struct ParseState *Parser, int CheckTrailingSemi
             }
          } else {
          // It might be a goto label.
-            enum LexToken NextToken = LexGetToken(Parser, NULL, FALSE);
+            LexToken NextToken = LexGetToken(Parser, NULL, FALSE);
             if (NextToken == TokenColon) {
             // Declare the identifier as a goto label.
                LexGetToken(Parser, NULL, TRUE);
@@ -465,7 +465,7 @@ enum ParseResult ParseStatement(struct ParseState *Parser, int CheckTrailingSemi
          // Try to guess type and declare the variable based on assigned value.
                if (NextToken == TokenAssign && !VariableDefinedAndOutOfScope(Parser->pc, LexerValue->Val->Identifier)) {
                   if (Parser->Mode == RunModeRun) {
-                     struct Value *CValue;
+                     Value CValue;
                      char *Identifier = LexerValue->Val->Identifier;
                      LexGetToken(Parser, NULL, TRUE);
                      if (!ExpressionParse(Parser, &CValue)) {
@@ -516,7 +516,7 @@ enum ParseResult ParseStatement(struct ParseState *Parser, int CheckTrailingSemi
       break;
       case TokenWhile: {
          struct ParseState PreConditional;
-         enum RunMode PreMode = Parser->Mode;
+         RunMode PreMode = Parser->Mode;
          if (LexGetToken(Parser, NULL, TRUE) != TokenOpenBracket)
             ProgramFail(Parser, "'(' expected");
          ParserCopyPos(&PreConditional, Parser);
@@ -537,7 +537,7 @@ enum ParseResult ParseStatement(struct ParseState *Parser, int CheckTrailingSemi
       break;
       case TokenDo: {
          struct ParseState PreStatement;
-         enum RunMode PreMode = Parser->Mode;
+         RunMode PreMode = Parser->Mode;
          ParserCopyPos(&PreStatement, Parser);
          do {
             ParserCopyPos(Parser, &PreStatement);
@@ -605,7 +605,7 @@ enum ParseResult ParseStatement(struct ParseState *Parser, int CheckTrailingSemi
             ProgramFail(Parser, "'{' expected");
       {
       // New block so we can store parser state.
-         enum RunMode OldMode = Parser->Mode;
+         RunMode OldMode = Parser->Mode;
          int OldSearchLabel = Parser->SearchLabel;
          Parser->Mode = RunModeCaseSearch;
          Parser->SearchLabel = Condition;
@@ -699,10 +699,10 @@ enum ParseResult ParseStatement(struct ParseState *Parser, int CheckTrailingSemi
 }
 
 // Quick scan a source file for definitions.
-void PicocParse(Picoc *pc, const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource, int EnableDebugger) {
+void PicocParse(State pc, const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource, int EnableDebugger) {
    struct ParseState Parser;
-   enum ParseResult Ok;
-   struct CleanupTokenNode *NewCleanupNode;
+   ParseResult Ok;
+   CleanupTokenNode NewCleanupNode;
    char *RegFileName = TableStrRegister(pc, FileName);
    void *Tokens = LexAnalyse(pc, RegFileName, Source, SourceLen, NULL);
 // Allocate a cleanup node so we can clean up the tokens later.
@@ -731,9 +731,9 @@ void PicocParse(Picoc *pc, const char *FileName, const char *Source, int SourceL
 }
 
 // Parse interactively.
-void PicocParseInteractiveNoStartPrompt(Picoc *pc, int EnableDebugger) {
+void PicocParseInteractiveNoStartPrompt(State pc, int EnableDebugger) {
    struct ParseState Parser;
-   enum ParseResult Ok;
+   ParseResult Ok;
    LexInitParser(&Parser, pc, NULL, NULL, pc->StrEmpty, TRUE, EnableDebugger);
    PicocPlatformSetExitPoint(pc);
    LexInteractiveClear(pc, &Parser);
@@ -748,7 +748,7 @@ void PicocParseInteractiveNoStartPrompt(Picoc *pc, int EnableDebugger) {
 }
 
 // Parse interactively, showing a startup message.
-void PicocParseInteractive(Picoc *pc) {
+void PicocParseInteractive(State pc) {
    PlatformPrintf(pc->CStdOut, INTERACTIVE_PROMPT_START);
    PicocParseInteractiveNoStartPrompt(pc, TRUE);
 }

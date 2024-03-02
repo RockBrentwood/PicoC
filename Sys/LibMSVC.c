@@ -1,14 +1,14 @@
 #include "../Extern.h"
 
-void MsvcSetupFunc(Picoc *pc) {
+void MsvcSetupFunc(State pc) {
 }
 
-void CTest(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void CTest(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    printf("test(%d)\n", Param[0]->Val->Integer);
    Param[0]->Val->Integer = 1234;
 }
 
-void CLineNo(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void CLineNo(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = Parser->Line;
 }
 
@@ -19,6 +19,6 @@ struct LibraryFunction MsvcFunctions[] = {
    { NULL, NULL }
 };
 
-void PlatformLibraryInit(Picoc *pc) {
+void PlatformLibraryInit(State pc) {
    IncludeRegister(pc, "picoc_msvc.h", &MsvcSetupFunc, &MsvcFunctions[0], NULL);
 }

@@ -16,7 +16,6 @@
 #   define TRUE 1
 #   define FALSE 0
 #endif
-
 #include "Extern.h"
 
 #if defined(UNIX_HOST) || defined(WIN32)
@@ -31,16 +30,16 @@ extern int PicocExitBuf[];
 #endif
 
 // Syn.c:
-void PicocParse(Picoc *pc, const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource, int EnableDebugger);
-void PicocParseInteractive(Picoc *pc);
+void PicocParse(State pc, const char *FileName, const char *Source, int SourceLen, int RunIt, int CleanupNow, int CleanupSource, int EnableDebugger);
+void PicocParseInteractive(State pc);
 
 // Sys.c:
-void PicocCallMain(Picoc *pc, int argc, char **argv);
-void PicocInitialize(Picoc *pc, int StackSize);
-void PicocCleanup(Picoc *pc);
-void PicocPlatformScanFile(Picoc *pc, const char *FileName);
+void PicocCallMain(State pc, int argc, char **argv);
+void PicocInitialize(State pc, int StackSize);
+void PicocCleanup(State pc);
+void PicocPlatformScanFile(State pc, const char *FileName);
 
 // Inc.c:
-void PicocIncludeAllSystemHeaders(Picoc *pc);
+void PicocIncludeAllSystemHeaders(State pc);
 
 #endif // MAIN_H.

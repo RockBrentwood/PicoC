@@ -11,23 +11,23 @@ jmp_buf PicocExitBuf;
 #ifndef NO_DEBUGGER
 #   include <signal.h>
 
-Picoc *break_pc = NULL;
+State break_pc = NULL;
 
 static void BreakHandler(int Signal) {
    break_pc->DebugManualBreak = TRUE;
 }
 
-void PlatformInit(Picoc *pc) {
+void PlatformInit(State pc) {
 // Capture the break signal and pass it to the debugger.
    break_pc = pc;
    signal(SIGINT, BreakHandler);
 }
 #else
-void PlatformInit(Picoc *pc) {
+void PlatformInit(State pc) {
 }
 #endif
 
-void PlatformCleanup(Picoc *pc) {
+void PlatformCleanup(State pc) {
 }
 
 // Get a line of interactive input.
@@ -60,12 +60,12 @@ int PlatformGetCharacter() {
 }
 
 // Write a character to the console.
-void PlatformPutc(unsigned char OutCh, union OutputStreamInfo *Stream) {
+void PlatformPutc(unsigned char OutCh, OutputStreamInfo Stream) {
    putchar(OutCh);
 }
 
 // Read a file into memory.
-char *PlatformReadFile(Picoc *pc, const char *FileName) {
+char *PlatformReadFile(State pc, const char *FileName) {
    struct stat FileInfo;
    char *ReadText;
    FILE *InFile;
@@ -93,7 +93,7 @@ char *PlatformReadFile(Picoc *pc, const char *FileName) {
 }
 
 // Read and scan a file for definitions.
-void PicocPlatformScanFile(Picoc *pc, const char *FileName) {
+void PicocPlatformScanFile(State pc, const char *FileName) {
    char *SourceStr = PlatformReadFile(pc, FileName);
 // Ignore "#!/path/to/picoc" ... by replacing the "#!" with "//".
    if (SourceStr != NULL && SourceStr[0] == '#' && SourceStr[1] == '!') {
@@ -104,7 +104,7 @@ void PicocPlatformScanFile(Picoc *pc, const char *FileName) {
 }
 
 // Exit the program.
-void PlatformExit(Picoc *pc, int RetVal) {
+void PlatformExit(State pc, int RetVal) {
    pc->PicocExitValue = RetVal;
    longjmp(pc->PicocExitBuf, 1);
 }

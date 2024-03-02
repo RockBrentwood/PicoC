@@ -6,8 +6,8 @@
 #include "Extern.h"
 
 #ifdef DEBUG_HEAP
-void ShowBigList(Picoc *pc) {
-   struct AllocNode *LPos;
+void ShowBigList(State pc) {
+   AllocNode LPos;
    printf("Heap: bottom=0x%lx 0x%lx-0x%lx, big freelist=", (long)pc->HeapBottom, (long)&(pc->HeapMemory)[0], (long)&(pc->HeapMemory)[HEAP_SIZE]);
    for (LPos = pc->FreeListBig; LPos != NULL; LPos = LPos->NextFree)
       printf("0x%lx:%d ", (long)LPos, LPos->Size);
@@ -16,7 +16,7 @@ void ShowBigList(Picoc *pc) {
 #endif
 
 // Initialize the stack and heap storage.
-void HeapInit(Picoc *pc, int StackOrHeapSize) {
+void HeapInit(State pc, int StackOrHeapSize) {
    int Count;
    int AlignOffset = 0;
 #ifdef USE_MALLOC_STACK
@@ -48,7 +48,7 @@ void HeapInit(Picoc *pc, int StackOrHeapSize) {
       pc->FreeListBucket[Count] = NULL;
 }
 
-void HeapCleanup(Picoc *pc) {
+void HeapCleanup(State pc) {
 #ifdef USE_MALLOC_STACK
    free(pc->HeapMemory);
 #endif
@@ -57,7 +57,7 @@ void HeapCleanup(Picoc *pc) {
 // Allocate some space on the stack, in the current stack frame.
 // Clears memory.
 // Can return NULL if out of stack space.
-void *HeapAllocStack(Picoc *pc, int Size) {
+void *HeapAllocStack(State pc, int Size) {
    char *NewMem = pc->HeapStackTop;
    char *NewTop = (char *)pc->HeapStackTop + MEM_ALIGN(Size);
 #ifdef DEBUG_HEAP
@@ -71,7 +71,7 @@ void *HeapAllocStack(Picoc *pc, int Size) {
 }
 
 // Allocate some space on the stack, in the current stack frame.
-void HeapUnpopStack(Picoc *pc, int Size) {
+void HeapUnpopStack(State pc, int Size) {
 #ifdef DEBUG_HEAP
    printf("HeapUnpopStack(%ld) at 0x%lx\n", (unsigned long)MEM_ALIGN(Size), (unsigned long)pc->HeapStackTop);
 #endif
@@ -79,7 +79,7 @@ void HeapUnpopStack(Picoc *pc, int Size) {
 }
 
 // Free some space at the top of the stack.
-int HeapPopStack(Picoc *pc, void *Addr, int Size) {
+int HeapPopStack(State pc, void *Addr, int Size) {
    int ToLose = MEM_ALIGN(Size);
    if (ToLose > ((char *)pc->HeapStackTop - (char *)&(pc->HeapMemory)[0]))
       return FALSE;
@@ -92,7 +92,7 @@ int HeapPopStack(Picoc *pc, void *Addr, int Size) {
 }
 
 // Push a new stack frame on to the stack.
-void HeapPushStackFrame(Picoc *pc) {
+void HeapPushStackFrame(State pc) {
 #ifdef DEBUG_HEAP
    printf("Adding stack frame at 0x%lx\n", (unsigned long)pc->HeapStackTop);
 #endif
@@ -103,7 +103,7 @@ void HeapPushStackFrame(Picoc *pc) {
 
 // Pop the current stack frame, freeing all memory in the frame.
 // Can return NULL.
-int HeapPopStackFrame(Picoc *pc) {
+int HeapPopStackFrame(State pc) {
    if (*(void **)pc->StackFrame != NULL) {
       pc->HeapStackTop = pc->StackFrame;
       pc->StackFrame = *(void **)pc->StackFrame;
@@ -118,12 +118,12 @@ int HeapPopStackFrame(Picoc *pc) {
 // Allocate some dynamically allocated memory.
 // Memory is cleared.
 // Can return NULL if out of memory.
-void *HeapAllocMem(Picoc *pc, int Size) {
+void *HeapAllocMem(State pc, int Size) {
 #ifdef USE_MALLOC_HEAP
    return calloc(Size, 1);
 #else
-   struct AllocNode *NewMem = NULL;
-   struct AllocNode **FreeNode;
+   AllocNode NewMem = NULL;
+   AllocNode *FreeNode;
    int AllocSize = MEM_ALIGN(Size) + MEM_ALIGN(sizeof(NewMem->Size));
    int Bucket;
    void *ReturnMem;
@@ -141,7 +141,7 @@ void *HeapAllocMem(Picoc *pc, int Size) {
 #   endif
       NewMem = pc->FreeListBucket[Bucket];
       assert((unsigned long)NewMem >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)NewMem - &(pc->HeapMemory)[0] < HEAP_SIZE);
-      pc->FreeListBucket[Bucket] = *(struct AllocNode **)NewMem;
+      pc->FreeListBucket[Bucket] = *(AllocNode *)NewMem;
       assert(pc->FreeListBucket[Bucket] == NULL || ((unsigned long)pc->FreeListBucket[Bucket] >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)pc->FreeListBucket[Bucket] - &(pc->HeapMemory)[0] < HEAP_SIZE));
       NewMem->Size = AllocSize;
    } else if (pc->FreeListBig != NULL) {
@@ -192,11 +192,11 @@ void *HeapAllocMem(Picoc *pc, int Size) {
 }
 
 // Free some dynamically allocated memory.
-void HeapFreeMem(Picoc *pc, void *Mem) {
+void HeapFreeMem(State pc, void *Mem) {
 #ifdef USE_MALLOC_HEAP
    free(Mem);
 #else
-   struct AllocNode *MemNode = (struct AllocNode *)((char *)Mem - MEM_ALIGN(sizeof(MemNode->Size)));
+   AllocNode MemNode = (AllocNode)((char *)Mem - MEM_ALIGN(sizeof(MemNode->Size)));
    int Bucket = MemNode->Size >> 2;
 #   ifdef DEBUG_HEAP
    printf("HeapFreeMem(0x%lx)\n", (unsigned long)Mem);
@@ -220,8 +220,8 @@ void HeapFreeMem(Picoc *pc, void *Mem) {
       printf("freeing %d to bucket\n", MemNode->Size);
 #   endif
       assert(pc->FreeListBucket[Bucket] == NULL || ((unsigned long)pc->FreeListBucket[Bucket] >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)FreeListBucket[Bucket] - &HeapMemory[0] < HEAP_SIZE));
-      *(struct AllocNode **)MemNode = pc->FreeListBucket[Bucket];
-      pc->FreeListBucket[Bucket] = (struct AllocNode *)MemNode;
+      *(AllocNode *)MemNode = pc->FreeListBucket[Bucket];
+      pc->FreeListBucket[Bucket] = (AllocNode)MemNode;
    } else {
    // Put it in the big memory freelist.
 #   ifdef DEBUG_HEAP

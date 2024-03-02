@@ -5,68 +5,68 @@
 
 #ifndef BUILTIN_MINI_STDLIB
 
-void StdIsalnum(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsalnum(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isalnum(Param[0]->Val->Integer);
 }
 
-void StdIsalpha(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsalpha(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isalpha(Param[0]->Val->Integer);
 }
 
-void StdIsblank(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsblank(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ch = Param[0]->Val->Integer;
    ReturnValue->Val->Integer = (ch == ' ') | (ch == '\t');
 }
 
-void StdIscntrl(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIscntrl(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = iscntrl(Param[0]->Val->Integer);
 }
 
-void StdIsdigit(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsdigit(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isdigit(Param[0]->Val->Integer);
 }
 
-void StdIsgraph(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsgraph(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isgraph(Param[0]->Val->Integer);
 }
 
-void StdIslower(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIslower(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = islower(Param[0]->Val->Integer);
 }
 
-void StdIsprint(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsprint(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isprint(Param[0]->Val->Integer);
 }
 
-void StdIspunct(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIspunct(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = ispunct(Param[0]->Val->Integer);
 }
 
-void StdIsspace(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsspace(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isspace(Param[0]->Val->Integer);
 }
 
-void StdIsupper(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsupper(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isupper(Param[0]->Val->Integer);
 }
 
-void StdIsxdigit(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsxdigit(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isxdigit(Param[0]->Val->Integer);
 }
 
-void StdTolower(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdTolower(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = tolower(Param[0]->Val->Integer);
 }
 
-void StdToupper(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdToupper(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = toupper(Param[0]->Val->Integer);
 }
 
-void StdIsascii(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdIsascii(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isascii(Param[0]->Val->Integer);
 }
 
-void StdToascii(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdToascii(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = toascii(Param[0]->Val->Integer);
 }
 

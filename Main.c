@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
    int ParamCount = 1;
    int DontRunMain = FALSE;
    int StackSize = getenv("STACKSIZE")? atoi(getenv("STACKSIZE")): PICOC_STACK_SIZE;
-   Picoc pc;
+   struct State pc;
    if (argc < 2) {
       printf(
          "Format: picoc <csource1.c>... [- <arg1>...]    : run a program (calls main() to start it)\n"

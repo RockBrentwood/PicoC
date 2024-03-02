@@ -4,10 +4,10 @@
 // Mark where to end the program for platforms which require this.
 jmp_buf PicocExitBuf;
 
-void PlatformInit(Picoc *pc) {
+void PlatformInit(State pc) {
 }
 
-void PlatformCleanup(Picoc *pc) {
+void PlatformCleanup(State pc) {
 }
 
 // Get a line of interactive input.
@@ -25,12 +25,12 @@ int PlatformGetCharacter() {
 }
 
 // Write a character to the console.
-void PlatformPutc(unsigned char OutCh, union OutputStreamInfo *Stream) {
+void PlatformPutc(unsigned char OutCh, OutputStreamInfo Stream) {
    putchar(OutCh);
 }
 
 // Read a file into memory.
-char *PlatformReadFile(Picoc *pc, const char *FileName) {
+char *PlatformReadFile(State pc, const char *FileName) {
    struct stat FileInfo;
    char *ReadText;
    FILE *InFile;
@@ -58,13 +58,13 @@ char *PlatformReadFile(Picoc *pc, const char *FileName) {
 }
 
 // Read and scan a file for definitions.
-void PicocPlatformScanFile(Picoc *pc, const char *FileName) {
+void PicocPlatformScanFile(State pc, const char *FileName) {
    char *SourceStr = PlatformReadFile(pc, FileName);
    PicocParse(pc, FileName, SourceStr, strlen(SourceStr), TRUE, FALSE, TRUE, TRUE);
 }
 
 // Exit the program.
-void PlatformExit(Picoc *pc, int RetVal) {
+void PlatformExit(State pc, int RetVal) {
    pc->PicocExitValue = RetVal;
    longjmp(pc->PicocExitBuf, 1);
 }

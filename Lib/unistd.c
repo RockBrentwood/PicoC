@@ -10,65 +10,65 @@
 
 static int ZeroValue = 0;
 
-void UnistdAccess(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdAccess(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = access(Param[0]->Val->Pointer, Param[1]->Val->Integer);
 }
 
-void UnistdAlarm(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdAlarm(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = alarm(Param[0]->Val->Integer);
 }
 
-void UnistdChdir(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdChdir(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = chdir(Param[0]->Val->Pointer);
 }
 
-void UnistdChroot(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdChroot(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = chroot(Param[0]->Val->Pointer);
 }
 
-void UnistdChown(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdChown(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = chown(Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Integer);
 }
 
-void UnistdClose(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdClose(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = close(Param[0]->Val->Integer);
 }
 
-void UnistdConfstr(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdConfstr(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = confstr(Param[0]->Val->Integer, Param[1]->Val->Pointer, Param[2]->Val->Integer);
 }
 
-void UnistdCtermid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdCtermid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = ctermid(Param[0]->Val->Pointer);
 }
 
 #if 0
-void UnistdCuserid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdCuserid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = cuserid(Param[0]->Val->Pointer);
 }
 #endif
 
-void UnistdDup(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdDup(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = dup(Param[0]->Val->Integer);
 }
 
-void UnistdDup2(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdDup2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = dup2(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
 
-void Unistd_Exit(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Unistd_Exit(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    _exit(Param[0]->Val->Integer);
 }
 
-void UnistdFchown(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdFchown(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fchown(Param[0]->Val->Integer, Param[1]->Val->Integer, Param[2]->Val->Integer);
 }
 
-void UnistdFchdir(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdFchdir(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fchdir(Param[0]->Val->Integer);
 }
 
-void UnistdFdatasync(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdFdatasync(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 #ifndef F_FULLSYNC
    ReturnValue->Val->Integer = fdatasync(Param[0]->Val->Integer);
 #else // Mac OS X equivalent.
@@ -76,239 +76,239 @@ void UnistdFdatasync(struct ParseState *Parser, struct Value *ReturnValue, struc
 #endif
 }
 
-void UnistdFork(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdFork(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fork();
 }
 
-void UnistdFpathconf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdFpathconf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fpathconf(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
 
-void UnistdFsync(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdFsync(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fsync(Param[0]->Val->Integer);
 }
 
-void UnistdFtruncate(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdFtruncate(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = ftruncate(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
 
-void UnistdGetcwd(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetcwd(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = getcwd(Param[0]->Val->Pointer, Param[1]->Val->Integer);
 }
 
-void UnistdGetdtablesize(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetdtablesize(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getdtablesize();
 }
 
-void UnistdGetegid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetegid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getegid();
 }
 
-void UnistdGeteuid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGeteuid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = geteuid();
 }
 
-void UnistdGetgid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetgid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getgid();
 }
 
-void UnistdGethostid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGethostid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = gethostid();
 }
 
-void UnistdGetlogin(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetlogin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = getlogin();
 }
 
-void UnistdGetlogin_r(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetlogin_r(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getlogin_r(Param[0]->Val->Pointer, Param[1]->Val->Integer);
 }
 
-void UnistdGetpagesize(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetpagesize(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getpagesize();
 }
 
-void UnistdGetpass(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetpass(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = getpass(Param[0]->Val->Pointer);
 }
 
 #if 0
-void UnistdGetpgid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetpgid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getpgid(Param[0]->Val->Integer);
 }
 #endif
 
-void UnistdGetpgrp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetpgrp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getpgrp();
 }
 
-void UnistdGetpid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetpid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getpid();
 }
 
-void UnistdGetppid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetppid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getppid();
 }
 
 #if 0
-void UnistdGetsid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetsid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getsid(Param[0]->Val->Integer);
 }
 #endif
 
-void UnistdGetuid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetuid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getuid();
 }
 
-void UnistdGetwd(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdGetwd(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = getcwd(Param[0]->Val->Pointer, PATH_MAX);
 }
 
-void UnistdIsatty(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdIsatty(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = isatty(Param[0]->Val->Integer);
 }
 
-void UnistdLchown(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdLchown(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = lchown(Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Integer);
 }
 
-void UnistdLink(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdLink(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = link(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void UnistdLockf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdLockf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = lockf(Param[0]->Val->Integer, Param[1]->Val->Integer, Param[2]->Val->Integer);
 }
 
-void UnistdLseek(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdLseek(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = lseek(Param[0]->Val->Integer, Param[1]->Val->Integer, Param[2]->Val->Integer);
 }
 
-void UnistdNice(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdNice(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = nice(Param[0]->Val->Integer);
 }
 
-void UnistdPathconf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdPathconf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = pathconf(Param[0]->Val->Pointer, Param[1]->Val->Integer);
 }
 
-void UnistdPause(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdPause(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = pause();
 }
 
 #if 0
-void UnistdPread(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdPread(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = pread(Param[0]->Val->Integer, Param[1]->Val->Pointer, Param[2]->Val->Integer, Param[3]->Val->Integer);
 }
 
-void UnistdPwrite(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdPwrite(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = pwrite(Param[0]->Val->Integer, Param[1]->Val->Pointer, Param[2]->Val->Integer, Param[3]->Val->Integer);
 }
 #endif
 
-void UnistdRead(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdRead(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = read(Param[0]->Val->Integer, Param[1]->Val->Pointer, Param[2]->Val->Integer);
 }
 
-void UnistdReadlink(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdReadlink(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = readlink(Param[0]->Val->Pointer, Param[1]->Val->Pointer, Param[2]->Val->Integer);
 }
 
-void UnistdRmdir(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdRmdir(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = rmdir(Param[0]->Val->Pointer);
 }
 
-void UnistdSbrk(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSbrk(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = sbrk(Param[0]->Val->Integer);
 }
 
-void UnistdSetgid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSetgid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = setgid(Param[0]->Val->Integer);
 }
 
-void UnistdSetpgid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSetpgid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = setpgid(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
 
-void UnistdSetpgrp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSetpgrp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = setpgrp();
 }
 
-void UnistdSetregid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSetregid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = setregid(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
 
-void UnistdSetreuid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSetreuid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = setreuid(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
 
-void UnistdSetsid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSetsid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = setsid();
 }
 
-void UnistdSetuid(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSetuid(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = setuid(Param[0]->Val->Integer);
 }
 
-void UnistdSleep(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSleep(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = sleep(Param[0]->Val->Integer);
 }
 
 #if 0
-void UnistdSwab(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSwab(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = swab(Param[0]->Val->Pointer, Param[1]->Val->Pointer, Param[2]->Val->Integer);
 }
 #endif
 
-void UnistdSymlink(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSymlink(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = symlink(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void UnistdSync(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSync(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    sync();
 }
 
-void UnistdSysconf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdSysconf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = sysconf(Param[0]->Val->Integer);
 }
 
-void UnistdTcgetpgrp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdTcgetpgrp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = tcgetpgrp(Param[0]->Val->Integer);
 }
 
-void UnistdTcsetpgrp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdTcsetpgrp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = tcsetpgrp(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
 
-void UnistdTruncate(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdTruncate(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = truncate(Param[0]->Val->Pointer, Param[1]->Val->Integer);
 }
 
-void UnistdTtyname(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdTtyname(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = ttyname(Param[0]->Val->Integer);
 }
 
-void UnistdTtyname_r(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdTtyname_r(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = ttyname_r(Param[0]->Val->Integer, Param[1]->Val->Pointer, Param[2]->Val->Integer);
 }
 
-void UnistdUalarm(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdUalarm(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = ualarm(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
 
-void UnistdUnlink(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdUnlink(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = unlink(Param[0]->Val->Pointer);
 }
 
-void UnistdUsleep(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdUsleep(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = usleep(Param[0]->Val->Integer);
 }
 
-void UnistdVfork(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdVfork(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = vfork();
 }
 
-void UnistdWrite(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void UnistdWrite(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = write(Param[0]->Val->Integer, Param[1]->Val->Pointer, Param[2]->Val->Integer);
 }
 
@@ -431,15 +431,15 @@ struct LibraryFunction UnistdFunctions[] = {
 };
 
 // Creates various system-dependent definitions.
-void UnistdSetupFunc(Picoc *pc) {
+void UnistdSetupFunc(State pc) {
 // Define NULL.
    if (!VariableDefined(pc, TableStrRegister(pc, "NULL")))
-      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (union AnyValue *)&ZeroValue, FALSE);
+      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&ZeroValue, FALSE);
 // Define optarg and friends.
-   VariableDefinePlatformVar(pc, NULL, "optarg", pc->CharPtrType, (union AnyValue *)&optarg, TRUE);
-   VariableDefinePlatformVar(pc, NULL, "optind", &pc->IntType, (union AnyValue *)&optind, TRUE);
-   VariableDefinePlatformVar(pc, NULL, "opterr", &pc->IntType, (union AnyValue *)&opterr, TRUE);
-   VariableDefinePlatformVar(pc, NULL, "optopt", &pc->IntType, (union AnyValue *)&optopt, TRUE);
+   VariableDefinePlatformVar(pc, NULL, "optarg", pc->CharPtrType, (AnyValue)&optarg, TRUE);
+   VariableDefinePlatformVar(pc, NULL, "optind", &pc->IntType, (AnyValue)&optind, TRUE);
+   VariableDefinePlatformVar(pc, NULL, "opterr", &pc->IntType, (AnyValue)&opterr, TRUE);
+   VariableDefinePlatformVar(pc, NULL, "optopt", &pc->IntType, (AnyValue)&optopt, TRUE);
 }
 
 #endif // !BUILTIN_MINI_STDLIB.

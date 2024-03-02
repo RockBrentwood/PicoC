@@ -7,59 +7,59 @@ static int GPSlat, GPSlon, GPSalt, GPSfix, GPSsat, GPSutc, Elcount, Ercount;
 static int ScanVect[16], NNVect[NUM_OUTPUT];
 
 void PlatformLibraryInit() {
-   struct ValueType *IntArrayType;
+   ValueType IntArrayType;
    IntArrayType = TypeGetMatching(NULL, &IntType, TypeArray, 16, StrEmpty, TRUE);
-   VariableDefinePlatformVar(NULL, "scanvect", IntArrayType, (union AnyValue *)&ScanVect, FALSE);
-   VariableDefinePlatformVar(NULL, "neuron", IntArrayType, (union AnyValue *)&NNVect, FALSE);
-   VariableDefinePlatformVar(NULL, "xbuf", CharArrayType, (union AnyValue *)&xbuff, FALSE);
-   VariableDefinePlatformVar(NULL, "blobcnt", &IntType, (union AnyValue *)&Blobcnt, FALSE);
-   VariableDefinePlatformVar(NULL, "blobx1", &IntType, (union AnyValue *)&Blobx1, FALSE);
-   VariableDefinePlatformVar(NULL, "blobx2", &IntType, (union AnyValue *)&Blobx2, FALSE);
-   VariableDefinePlatformVar(NULL, "bloby1", &IntType, (union AnyValue *)&Bloby1, FALSE);
-   VariableDefinePlatformVar(NULL, "bloby2", &IntType, (union AnyValue *)&Bloby2, FALSE);
-   VariableDefinePlatformVar(NULL, "lcount", &IntType, (union AnyValue *)&Elcount, FALSE);
-   VariableDefinePlatformVar(NULL, "rcount", &IntType, (union AnyValue *)&Ercount, FALSE);
-   VariableDefinePlatformVar(NULL, "y1", &IntType, (union AnyValue *)&Iy1, FALSE);
-   VariableDefinePlatformVar(NULL, "y2", &IntType, (union AnyValue *)&Iy2, FALSE);
-   VariableDefinePlatformVar(NULL, "u1", &IntType, (union AnyValue *)&Iu1, FALSE);
-   VariableDefinePlatformVar(NULL, "u2", &IntType, (union AnyValue *)&Iu2, FALSE);
-   VariableDefinePlatformVar(NULL, "v1", &IntType, (union AnyValue *)&Iv1, FALSE);
-   VariableDefinePlatformVar(NULL, "v2", &IntType, (union AnyValue *)&Iv2, FALSE);
-   VariableDefinePlatformVar(NULL, "gpslat", &IntType, (union AnyValue *)&GPSlat, FALSE);
-   VariableDefinePlatformVar(NULL, "gpslon", &IntType, (union AnyValue *)&GPSlon, FALSE);
-   VariableDefinePlatformVar(NULL, "gpsalt", &IntType, (union AnyValue *)&GPSalt, FALSE);
-   VariableDefinePlatformVar(NULL, "gpsfix", &IntType, (union AnyValue *)&GPSfix, FALSE);
-   VariableDefinePlatformVar(NULL, "gpssat", &IntType, (union AnyValue *)&GPSsat, FALSE);
-   VariableDefinePlatformVar(NULL, "gpsutc", &IntType, (union AnyValue *)&GPSutc, FALSE);
-   VariableDefinePlatformVar(NULL, "cxmin", &IntType, (union AnyValue *)&Cxmin, FALSE);
-   VariableDefinePlatformVar(NULL, "cxmax", &IntType, (union AnyValue *)&Cxmax, FALSE);
-   VariableDefinePlatformVar(NULL, "cymin", &IntType, (union AnyValue *)&Cymin, FALSE);
-   VariableDefinePlatformVar(NULL, "cymax", &IntType, (union AnyValue *)&Cymax, FALSE);
+   VariableDefinePlatformVar(NULL, "scanvect", IntArrayType, (AnyValue)&ScanVect, FALSE);
+   VariableDefinePlatformVar(NULL, "neuron", IntArrayType, (AnyValue)&NNVect, FALSE);
+   VariableDefinePlatformVar(NULL, "xbuf", CharArrayType, (AnyValue)&xbuff, FALSE);
+   VariableDefinePlatformVar(NULL, "blobcnt", &IntType, (AnyValue)&Blobcnt, FALSE);
+   VariableDefinePlatformVar(NULL, "blobx1", &IntType, (AnyValue)&Blobx1, FALSE);
+   VariableDefinePlatformVar(NULL, "blobx2", &IntType, (AnyValue)&Blobx2, FALSE);
+   VariableDefinePlatformVar(NULL, "bloby1", &IntType, (AnyValue)&Bloby1, FALSE);
+   VariableDefinePlatformVar(NULL, "bloby2", &IntType, (AnyValue)&Bloby2, FALSE);
+   VariableDefinePlatformVar(NULL, "lcount", &IntType, (AnyValue)&Elcount, FALSE);
+   VariableDefinePlatformVar(NULL, "rcount", &IntType, (AnyValue)&Ercount, FALSE);
+   VariableDefinePlatformVar(NULL, "y1", &IntType, (AnyValue)&Iy1, FALSE);
+   VariableDefinePlatformVar(NULL, "y2", &IntType, (AnyValue)&Iy2, FALSE);
+   VariableDefinePlatformVar(NULL, "u1", &IntType, (AnyValue)&Iu1, FALSE);
+   VariableDefinePlatformVar(NULL, "u2", &IntType, (AnyValue)&Iu2, FALSE);
+   VariableDefinePlatformVar(NULL, "v1", &IntType, (AnyValue)&Iv1, FALSE);
+   VariableDefinePlatformVar(NULL, "v2", &IntType, (AnyValue)&Iv2, FALSE);
+   VariableDefinePlatformVar(NULL, "gpslat", &IntType, (AnyValue)&GPSlat, FALSE);
+   VariableDefinePlatformVar(NULL, "gpslon", &IntType, (AnyValue)&GPSlon, FALSE);
+   VariableDefinePlatformVar(NULL, "gpsalt", &IntType, (AnyValue)&GPSalt, FALSE);
+   VariableDefinePlatformVar(NULL, "gpsfix", &IntType, (AnyValue)&GPSfix, FALSE);
+   VariableDefinePlatformVar(NULL, "gpssat", &IntType, (AnyValue)&GPSsat, FALSE);
+   VariableDefinePlatformVar(NULL, "gpsutc", &IntType, (AnyValue)&GPSutc, FALSE);
+   VariableDefinePlatformVar(NULL, "cxmin", &IntType, (AnyValue)&Cxmin, FALSE);
+   VariableDefinePlatformVar(NULL, "cxmax", &IntType, (AnyValue)&Cxmax, FALSE);
+   VariableDefinePlatformVar(NULL, "cymin", &IntType, (AnyValue)&Cymin, FALSE);
+   VariableDefinePlatformVar(NULL, "cymax", &IntType, (AnyValue)&Cymax, FALSE);
    LibraryAdd(&GlobalTable, "platform library", &PlatformLibrary[0]);
 }
 
 // Check for kbhit, return t or nil.
-void Csignal(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Csignal(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getsignal();
 }
 
 // Check for kbhit, return t or nil.
-void Csignal1(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Csignal1(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = uart1Signal();
 }
 
 // Return 0-9 from console input.
-void Cinput(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cinput(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getch();
 }
 
 // Return 0-9 from console input.
-void Cinput1(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cinput1(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = uart1GetCh();
 }
 
 // Return 0-9 from console input.
-void Cread_int(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cread_int(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix, sign;
    unsigned char ch;
    ix = 0;
@@ -79,7 +79,7 @@ void Cread_int(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 // Read string from console.
-void Cread_str(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cread_str(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    unsigned char ch;
    ix = 0;
@@ -102,27 +102,27 @@ void Cread_str(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 // Return 0-9 from console input.
-void Cinit_uart1(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cinit_uart1(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ii;
    ii = Param[0]->Val->Integer; // ii = baudrate for uart1.
    init_uart1(ii);
 }
 
 // Return 0-9 from console input.
-void Coutput(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Coutput(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ch;
    ch = Param[0]->Val->Integer;
    putchar((unsigned char)ch);
 }
 
 // Return 0-9 from console input.
-void Coutput1(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Coutput1(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ch;
    ch = Param[0]->Val->Integer;
    uart1SendChar((unsigned char)ch);
 }
 
-void Cdelay(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cdelay(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int del;
    del = Param[0]->Val->Integer;
    if ((del < 0) || (del > 1000000))
@@ -130,30 +130,30 @@ void Cdelay(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
    delayMS(del);
 }
 
-void Crand(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Crand(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = (int)rand()%(unsigned int)(Param[0]->Val->Integer + 1);
 }
 
-void Ctime(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Ctime(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = (int)readRTC();
 }
 
-void Ciodir(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Ciodir(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int dir;
    dir = Param[0]->Val->Integer;
    *pPORTHIO_DIR = ((dir << 10)&0xFC00) + (*pPORTHIO_DIR&0x03FF); // H15/14/13/12/11/10 - 1=output, 0=input.
    *pPORTHIO_INEN = (((~dir) << 10)&0xFC00) + (*pPORTHIO_INEN&0x03FF); // Invert dir bits to enable inputs.
 }
 
-void Cioread(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cioread(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = (*pPORTHIO >> 10)&0x003F;
 }
 
-void Ciowrite(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Ciowrite(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    *pPORTHIO = ((Param[0]->Val->Integer << 10)&0xFC00) + (*pPORTHIO&0x03FF);
 }
 
-void Cpeek(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cpeek(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int size, ptr;
    unsigned char *cp;
    unsigned short *sp;
@@ -181,7 +181,7 @@ void Cpeek(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
    }
 }
 
-void Cpoke(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cpoke(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int size, ptr, val;
    unsigned char *cp;
    unsigned short *sp;
@@ -209,7 +209,7 @@ void Cpoke(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
    }
 }
 
-void Cencoders(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cencoders(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int ix;
    ix = encoders(); // Read left and right encoders; save data to C globals lcount, rcount.
    Elcount = (ix >> 16)&0x0000FFFF;
@@ -217,7 +217,7 @@ void Cencoders(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 // Return reading from HMC6352 I2C compass.
-void Cencoderx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cencoderx(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = (unsigned char)Param[0]->Val->Integer;
    if ((ix < 0) || (ix > 7))
@@ -225,7 +225,7 @@ void Cencoderx(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
    ReturnValue->Val->Integer = encoder_4wd(ix);
 }
 
-void Cmotors(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cmotors(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    lspeed = Param[0]->Val->Integer;
    if ((lspeed < -100) || (lspeed > 100))
       ProgramFail(NULL, "motors():  left motor value out of range");
@@ -241,7 +241,7 @@ void Cmotors(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
    setPWM(lspeed, rspeed);
 }
 
-void Cmotors2(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cmotors2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    lspeed2 = Param[0]->Val->Integer;
    if ((lspeed2 < -100) || (lspeed2 > 100))
       ProgramFail(NULL, "motors2():  left motor value out of range");
@@ -258,7 +258,7 @@ void Cmotors2(struct ParseState *Parser, struct Value *ReturnValue, struct Value
 }
 
 // Motor control for SRV-4WD controller.
-void Cmotorx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cmotorx(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char ch;
    int ls, rs;
    ls = Param[0]->Val->Integer;
@@ -281,7 +281,7 @@ void Cmotorx(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
       continue;
 }
 
-void Cservos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cservos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int lspeed, rspeed;
    lspeed = Param[0]->Val->Integer;
    if ((lspeed < 0) || (lspeed > 100))
@@ -297,7 +297,7 @@ void Cservos(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
    setPPM1(lspeed, rspeed);
 }
 
-void Cservos2(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cservos2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int lspeed, rspeed;
    lspeed = Param[0]->Val->Integer;
    if ((lspeed < 0) || (lspeed > 100))
@@ -314,7 +314,7 @@ void Cservos2(struct ParseState *Parser, struct Value *ReturnValue, struct Value
 }
 
 // Laser(1) turns them on, laser(0) turns them off.
-void Claser(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Claser(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    *pPORTHIO &= 0xFD7F; // Turn off both lasers.
    switch (Param[0]->Val->Integer) {
       case 1:
@@ -330,7 +330,7 @@ void Claser(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
 }
 
 // Read sonar module.
-void Csonar(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Csonar(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int i;
    i = Param[0]->Val->Integer;
    if ((i < 1) || (i > 4)) {
@@ -340,11 +340,11 @@ void Csonar(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
    ReturnValue->Val->Integer = sonar_data[i]/100;
 }
 
-void Crange(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Crange(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = laser_range(0);
 }
 
-void Cbattery(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cbattery(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    if (*pPORTHIO&0x0004)
       ReturnValue->Val->Integer = 0; // Low battery voltage detected.
    else
@@ -353,7 +353,7 @@ void Cbattery(struct ParseState *Parser, struct Value *ReturnValue, struct Value
 
 // Set color bin -
 //	vcolor(color, ymin, ymax, umin, umax, vmin, vmax);
-void Cvcolor(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvcolor(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = Param[0]->Val->Integer;
    ymin[ix] = Param[1]->Val->Integer;
@@ -367,7 +367,7 @@ void Cvcolor(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
 // Set camera functions -
 //	enable/disable AGC(4) / AWB(2) / AEC(1) camera controls,
 //	vcam(7) = AGC+AWB+AEC on vcam(0) = AGC+AWB+AEC off.
-void Cvcam(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvcam(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char cx, i2c_data[2];
    cx = (unsigned char)Param[0]->Val->Integer&0x07;
    i2c_data[0] = 0x13;
@@ -378,7 +378,7 @@ void Cvcam(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
 
 // Set color bin -
 //	vfind(color, x1, x2, y1, y2);
-void Cvfind(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvfind(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix, x1, x2, y1, y2;
    ix = Param[0]->Val->Integer;
    x1 = Param[1]->Val->Integer;
@@ -388,19 +388,19 @@ void Cvfind(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
    ReturnValue->Val->Integer = vfind((unsigned char *)FRAME_BUF, ix, x1, x2, y1, y2);
 }
 
-void Cvcap(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvcap(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    grab_frame(); // Capture frame for processing.
 }
 
-void Cvrcap(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvrcap(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    grab_reference_frame(); // Capture reference frame for differencing.
 }
 
-void Cvdiff(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvdiff(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    frame_diff_flag = Param[0]->Val->Integer; // Set/clear frame_diff_flag.
 }
 
-void Cvpix(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvpix(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int x, y, ix;
    x = Param[0]->Val->Integer;
    y = Param[1]->Val->Integer;
@@ -410,7 +410,7 @@ void Cvpix(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
    Iv1 = ((ix >> 8)&0x000000FF); // V.
 }
 
-void Cvscan(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvscan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int col, thresh, ix;
    col = Param[0]->Val->Integer;
    if ((col < 1) || (col > 9))
@@ -422,7 +422,7 @@ void Cvscan(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
    ReturnValue->Val->Integer = ix;
 }
 
-void Cvmean(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvmean(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    vmean((unsigned char *)FRAME_BUF);
    Iy1 = mean[0];
    Iu1 = mean[1];
@@ -430,7 +430,7 @@ void Cvmean(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
 }
 
 // Search for blob by color, index; return center point X, Y and width Z.
-void Cvblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix, iblob, numblob;
    ix = Param[0]->Val->Integer;
    if (ix > MAX_COLORS)
@@ -451,7 +451,7 @@ void Cvblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
    ReturnValue->Val->Integer = numblob;
 }
 
-void Cvjpeg(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvjpeg(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int image_size, qual;
    unsigned char *output_start, *output_end;
    qual = Param[0]->Val->Integer;
@@ -463,7 +463,7 @@ void Cvjpeg(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
    ReturnValue->Val->Integer = image_size;
 }
 
-void Cvsend(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cvsend(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int ix, image_size;
    unsigned char *cp;
    image_size = Param[0]->Val->Integer;
@@ -477,7 +477,7 @@ void Cvsend(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
 }
 
 // Return reading from HMC6352 I2C compass.
-void Ccompass(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Ccompass(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char i2c_data[2];
    unsigned int ix;
    i2c_data[0] = 0x41; // Read compass twice to clear last reading.
@@ -490,7 +490,7 @@ void Ccompass(struct ParseState *Parser, struct Value *ReturnValue, struct Value
 }
 
 // Return reading from HMC5843 I2C compass.
-void Ccompassx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Ccompassx(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    short x, y, z;
    int ix;
    ix = (int)read_compass3x(&x, &y, &z);
@@ -502,7 +502,7 @@ void Ccompassx(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 // Return reading from HMC5843 I2C compass.
-void Ccompassxcal(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Ccompassxcal(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 // cxmin, cxmax, cymin, cymax.
    cxmin = Param[0]->Val->Integer;
    cxmax = Param[1]->Val->Integer;
@@ -512,7 +512,7 @@ void Ccompassxcal(struct ParseState *Parser, struct Value *ReturnValue, struct V
 }
 
 // Return reading from HMC6352 I2C compass.
-void Ctilt(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Ctilt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int ix;
    ix = (unsigned int)Param[0]->Val->Integer;
    if ((ix < 1) || (ix > 3))
@@ -521,7 +521,7 @@ void Ctilt(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
 }
 
 // Return reading from HMC6352 I2C compass.
-void Canalog(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Canalog(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int ix, channel;
    ix = (unsigned char)Param[0]->Val->Integer;
    if ((ix < 1) || (ix > 28))
@@ -542,7 +542,7 @@ void Canalog(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
 //	channel 7 = IR4
 // ).
 // Return reading from HMC6352 I2C compass.
-void Canalogx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Canalogx(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = (unsigned char)Param[0]->Val->Integer;
    if ((ix < 0) || (ix > 7))
@@ -550,7 +550,7 @@ void Canalogx(struct ParseState *Parser, struct Value *ReturnValue, struct Value
    ReturnValue->Val->Integer = analog_4wd(ix);
 }
 
-void Cgps(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cgps(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    gps_parse();
    GPSlat = gps_gga.lat;
    GPSlon = gps_gga.lon;
@@ -561,7 +561,7 @@ void Cgps(struct ParseState *Parser, struct Value *ReturnValue, struct Value **P
 }
 
 // Syntax: val = readi2c(device, register);
-void Creadi2c(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Creadi2c(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char i2c_device, i2c_data[2];
    i2c_device = (unsigned char)Param[0]->Val->Integer;
    i2c_data[0] = (unsigned char)Param[1]->Val->Integer;
@@ -570,7 +570,7 @@ void Creadi2c(struct ParseState *Parser, struct Value *ReturnValue, struct Value
 }
 
 // Syntax: two_byte_val = readi2c(device, register);
-void Creadi2c2(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Creadi2c2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char i2c_device, i2c_data[2];
    i2c_device = (unsigned char)Param[0]->Val->Integer;
    i2c_data[0] = (unsigned char)Param[1]->Val->Integer;
@@ -579,7 +579,7 @@ void Creadi2c2(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 // Syntax: writei2c(device, register, value);
-void Cwritei2c(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cwritei2c(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char i2c_device, i2c_data[2];
    i2c_device = (unsigned char)Param[0]->Val->Integer;
    i2c_data[0] = (unsigned char)Param[1]->Val->Integer;
@@ -588,7 +588,7 @@ void Cwritei2c(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 // abs(int).
-void Cabs(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cabs(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = Param[0]->Val->Integer; // Return absolute value of int.
    if (ix < 0)
@@ -597,28 +597,28 @@ void Cabs(struct ParseState *Parser, struct Value *ReturnValue, struct Value **P
 }
 
 // sin(angle).
-void Csin(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Csin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = Param[0]->Val->Integer; // Input to function is angle in degrees.
    ReturnValue->Val->Integer = sin(ix);
 }
 
 // cos(angle).
-void Ccos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Ccos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = Param[0]->Val->Integer; // Input to function is angle in degrees.
    ReturnValue->Val->Integer = cos(ix);
 }
 
 // tan(angle).
-void Ctan(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Ctan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = Param[0]->Val->Integer; // Input to function is angle in degrees.
    ReturnValue->Val->Integer = tan(ix);
 }
 
 // asin(y, hyp).
-void Casin(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Casin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int y, hyp;
    y = Param[0]->Val->Integer;
    hyp = Param[1]->Val->Integer;
@@ -628,7 +628,7 @@ void Casin(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
 }
 
 // acos(x, hyp).
-void Cacos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cacos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int x, hyp;
    x = Param[0]->Val->Integer;
    hyp = Param[1]->Val->Integer;
@@ -638,7 +638,7 @@ void Cacos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
 }
 
 // atan(y, x).
-void Catan(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Catan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int x, y;
    y = Param[0]->Val->Integer;
    x = Param[1]->Val->Integer;
@@ -646,7 +646,7 @@ void Catan(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
 }
 
 // gps_head(lat1, lon1, lat2, lon2).
-void Cgps_head(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cgps_head(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int lat1, lon1, lat2, lon2;
    lat1 = Param[0]->Val->Integer;
    lon1 = Param[1]->Val->Integer;
@@ -656,7 +656,7 @@ void Cgps_head(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 // gps_dist(lat1, lon1, lat2, lon2).
-void Cgps_dist(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cgps_dist(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int lat1, lon1, lat2, lon2;
    lat1 = Param[0]->Val->Integer;
    lon1 = Param[1]->Val->Integer;
@@ -666,13 +666,13 @@ void Cgps_dist(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 }
 
 // sqrt(x).
-void Csqrt(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Csqrt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int x;
    x = Param[0]->Val->Integer;
    ReturnValue->Val->Integer = isqrt(x);
 }
 
-void Cnnset(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cnnset(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix, i1;
    ix = Param[0]->Val->Integer;
    if (ix > NUM_NPATTERNS)
@@ -681,7 +681,7 @@ void Cnnset(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
       npattern[ix*8 + i1] = (unsigned char)Param[i1 + 1]->Val->Integer;
 }
 
-void Cnnshow(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cnnshow(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = Param[0]->Val->Integer;
    if (ix > NUM_NPATTERNS)
@@ -689,11 +689,11 @@ void Cnnshow(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
    nndisplay(ix);
 }
 
-void Cnninit(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cnninit(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    nninit_network();
 }
 
-void Cnntrain(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cnntrain(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix, i1;
    nntrain_network(10000);
    for (ix = 0; ix < NUM_NPATTERNS; ix++) {
@@ -705,7 +705,7 @@ void Cnntrain(struct ParseState *Parser, struct Value *ReturnValue, struct Value
    }
 }
 
-void Cnntest(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cnntest(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix, i1, i2, max;
    unsigned char ch;
    ix = 0;
@@ -731,7 +731,7 @@ void Cnntest(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
    ReturnValue->Val->Integer = ix;
 }
 
-void Cnnmatchblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cnnmatchblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix, i1, max;
    ix = Param[0]->Val->Integer;
    if (ix > MAX_BLOBS)
@@ -756,7 +756,7 @@ void Cnnmatchblob(struct ParseState *Parser, struct Value *ReturnValue, struct V
    ReturnValue->Val->Integer = ix;
 }
 
-void Cnnlearnblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cnnlearnblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = Param[0]->Val->Integer;
    if (ix > NUM_NPATTERNS)
@@ -768,7 +768,7 @@ void Cnnlearnblob(struct ParseState *Parser, struct Value *ReturnValue, struct V
    nndisplay(ix);
 }
 
-void Cautorun(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cautorun(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix, t0;
    unsigned char ch;
    ix = Param[0]->Val->Integer;
@@ -783,11 +783,11 @@ void Cautorun(struct ParseState *Parser, struct Value *ReturnValue, struct Value
    }
 }
 
-void Clineno(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Clineno(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = Parser->Line;
 }
 
-void Cerrormsg(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void Cerrormsg(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    PlatformErrorPrefix(Parser);
    LibPrintf(Parser, ReturnValue, Param, NumArgs);
 }

@@ -39,7 +39,7 @@ char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt) {
 }
 
 // Write a character to the console.
-void PlatformPutc(unsigned char OutCh, union OutputStreamInfo *Stream) {
+void PlatformPutc(unsigned char OutCh, OutputStreamInfo Stream) {
    if (OutCh == '\n')
       putchar('\r');
    putchar(OutCh);

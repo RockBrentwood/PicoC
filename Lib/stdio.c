@@ -25,21 +25,21 @@ static FILE *stdoutValue;
 static FILE *stderrValue;
 
 // Our own internal output stream which can output to FILE * or strings.
-typedef struct StdOutStreamStruct {
+typedef struct StdOutStream {
    FILE *FilePtr;
    char *StrOutPtr;
    int StrOutLen;
    int CharCount;
-} StdOutStream;
+} *StdOutStream;
 
 // Our representation of varargs within picoc.
-struct StdVararg {
-   struct Value **Param;
+typedef struct StdVararg {
+   Value *Param;
    int NumArgs;
-};
+} *StdVararg;
 
 // Initializes the I/O system so error reporting works.
-void BasicIOInit(Picoc *pc) {
+void BasicIOInit(State pc) {
    pc->CStdOut = stdout;
    stdinValue = stdin;
    stdoutValue = stdout;
@@ -47,7 +47,7 @@ void BasicIOInit(Picoc *pc) {
 }
 
 // Output a single character to either a FILE * or a string.
-void StdioOutPutc(int OutCh, StdOutStream *Stream) {
+void StdioOutPutc(int OutCh, StdOutStream Stream) {
    if (Stream->FilePtr != NULL) {
    // Output to stdio stream.
       putc(OutCh, Stream->FilePtr);
@@ -63,7 +63,7 @@ void StdioOutPutc(int OutCh, StdOutStream *Stream) {
 }
 
 // Output a string to either a FILE * or a string.
-void StdioOutPuts(const char *Str, StdOutStream *Stream) {
+void StdioOutPuts(const char *Str, StdOutStream Stream) {
    if (Stream->FilePtr != NULL) {
    // Output to stdio stream.
       fputs(Str, Stream->FilePtr);
@@ -84,7 +84,7 @@ void StdioOutPuts(const char *Str, StdOutStream *Stream) {
 }
 
 // printf-style format of an int or other word-sized object.
-void StdioFprintfWord(StdOutStream *Stream, const char *Format, unsigned long Value) {
+void StdioFprintfWord(StdOutStream Stream, const char *Format, unsigned long Value) {
    if (Stream->FilePtr != NULL)
       Stream->CharCount += fprintf(Stream->FilePtr, Format, Value);
    else if (Stream->StrOutLen >= 0) {
@@ -104,7 +104,7 @@ void StdioFprintfWord(StdOutStream *Stream, const char *Format, unsigned long Va
 }
 
 // printf-style format of a floating point number.
-void StdioFprintfFP(StdOutStream *Stream, const char *Format, double Value) {
+void StdioFprintfFP(StdOutStream Stream, const char *Format, double Value) {
    if (Stream->FilePtr != NULL)
       Stream->CharCount += fprintf(Stream->FilePtr, Format, Value);
    else if (Stream->StrOutLen >= 0) {
@@ -124,7 +124,7 @@ void StdioFprintfFP(StdOutStream *Stream, const char *Format, double Value) {
 }
 
 // printf-style format of a pointer.
-void StdioFprintfPointer(StdOutStream *Stream, const char *Format, void *Value) {
+void StdioFprintfPointer(StdOutStream Stream, const char *Format, void *Value) {
    if (Stream->FilePtr != NULL)
       Stream->CharCount += fprintf(Stream->FilePtr, Format, Value);
    else if (Stream->StrOutLen >= 0) {
@@ -144,15 +144,15 @@ void StdioFprintfPointer(StdOutStream *Stream, const char *Format, void *Value) 
 }
 
 // Internal do-anything v[s][n]printf() formatting system with output to strings or FILE *.
-int StdioBasePrintf(struct ParseState *Parser, FILE *Stream, char *StrOut, int StrOutLen, char *Format, struct StdVararg *Args) {
-   struct Value *ThisArg = Args->Param[0];
+int StdioBasePrintf(ParseState Parser, FILE *Stream, char *StrOut, int StrOutLen, char *Format, StdVararg Args) {
+   Value ThisArg = Args->Param[0];
    int ArgCount = 0;
    char *FPos;
    char OneFormatBuf[MAX_FORMAT + 1];
    int OneFormatCount;
-   struct ValueType *ShowType;
-   StdOutStream SOStream;
-   Picoc *pc = Parser->pc;
+   ValueType ShowType;
+   struct StdOutStream SOStream;
+   State pc = Parser->pc;
    if (Format == NULL)
       Format = "[null format]\n";
    FPos = Format;
@@ -236,7 +236,7 @@ int StdioBasePrintf(struct ParseState *Parser, FILE *Stream, char *StrOut, int S
                      StdioOutPutc(*FPos, &SOStream);
                   break;
                   case 'n':
-                     ThisArg = (struct Value *)((char *)ThisArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(ThisArg)));
+                     ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(ThisArg)));
                      if (ThisArg->Typ->Base == TypeArray && ThisArg->Typ->FromType->Base == TypeInt)
                         *(int *)ThisArg->Val->Pointer = SOStream.CharCount;
                   break;
@@ -251,7 +251,7 @@ int StdioBasePrintf(struct ParseState *Parser, FILE *Stream, char *StrOut, int S
             // Null-terminate the buffer.
                OneFormatBuf[OneFormatCount] = '\0';
             // Print this argument.
-               ThisArg = (struct Value *)((char *)ThisArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(ThisArg)));
+               ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(ThisArg)));
                if (ShowType == &pc->IntType) {
                // Show a signed integer.
                   if (IS_NUMERIC_COERCIBLE(ThisArg))
@@ -299,14 +299,14 @@ int StdioBasePrintf(struct ParseState *Parser, FILE *Stream, char *StrOut, int S
 }
 
 // Internal do-anything v[s][n]scanf() formatting system with input from strings or FILE *.
-int StdioBaseScanf(struct ParseState *Parser, FILE *Stream, char *StrIn, char *Format, struct StdVararg *Args) {
-   struct Value *ThisArg = Args->Param[0];
+int StdioBaseScanf(ParseState Parser, FILE *Stream, char *StrIn, char *Format, StdVararg Args) {
+   Value ThisArg = Args->Param[0];
    int ArgCount = 0;
    void *ScanfArg[MAX_SCANF_ARGS];
    if (Args->NumArgs > MAX_SCANF_ARGS)
       ProgramFail(Parser, "too many arguments to scanf() - %d max", MAX_SCANF_ARGS);
    for (ArgCount = 0; ArgCount < Args->NumArgs; ArgCount++) {
-      ThisArg = (struct Value *)((char *)ThisArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(ThisArg)));
+      ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(ThisArg)));
       if (ThisArg->Typ->Base == TypePointer)
          ScanfArg[ArgCount] = ThisArg->Val->Pointer;
       else if (ThisArg->Typ->Base == TypeArray)
@@ -321,63 +321,63 @@ int StdioBaseScanf(struct ParseState *Parser, FILE *Stream, char *StrIn, char *F
 }
 
 // stdio calls.
-void StdioFopen(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFopen(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = fopen(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void StdioFreopen(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFreopen(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = freopen(Param[0]->Val->Pointer, Param[1]->Val->Pointer, Param[2]->Val->Pointer);
 }
 
-void StdioFclose(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFclose(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fclose(Param[0]->Val->Pointer);
 }
 
-void StdioFread(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFread(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fread(Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Integer, Param[3]->Val->Pointer);
 }
 
-void StdioFwrite(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFwrite(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fwrite(Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Integer, Param[3]->Val->Pointer);
 }
 
-void StdioFgetc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFgetc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fgetc(Param[0]->Val->Pointer);
 }
 
-void StdioFgets(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFgets(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = fgets(Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Pointer);
 }
 
-void StdioRemove(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioRemove(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = remove(Param[0]->Val->Pointer);
 }
 
-void StdioRename(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioRename(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = rename(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void StdioRewind(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioRewind(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    rewind(Param[0]->Val->Pointer);
 }
 
-void StdioTmpfile(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioTmpfile(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = tmpfile();
 }
 
-void StdioClearerr(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioClearerr(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    clearerr((FILE *) Param[0]->Val->Pointer);
 }
 
-void StdioFeof(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFeof(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = feof((FILE *) Param[0]->Val->Pointer);
 }
 
-void StdioFerror(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFerror(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = ferror((FILE *) Param[0]->Val->Pointer);
 }
 
-void StdioFileno(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFileno(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 #ifndef WIN32
    ReturnValue->Val->Integer = fileno(Param[0]->Val->Pointer);
 #else
@@ -385,63 +385,63 @@ void StdioFileno(struct ParseState *Parser, struct Value *ReturnValue, struct Va
 #endif
 }
 
-void StdioFflush(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFflush(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fflush(Param[0]->Val->Pointer);
 }
 
-void StdioFgetpos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFgetpos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fgetpos(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void StdioFsetpos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFsetpos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fsetpos(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void StdioFputc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFputc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fputc(Param[0]->Val->Integer, Param[1]->Val->Pointer);
 }
 
-void StdioFputs(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFputs(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fputs(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void StdioFtell(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFtell(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = ftell(Param[0]->Val->Pointer);
 }
 
-void StdioFseek(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFseek(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = fseek(Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Integer);
 }
 
-void StdioPerror(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioPerror(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    perror(Param[0]->Val->Pointer);
 }
 
-void StdioPutc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioPutc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = putc(Param[0]->Val->Integer, Param[1]->Val->Pointer);
 }
 
-void StdioPutchar(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioPutchar(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = putchar(Param[0]->Val->Integer);
 }
 
-void StdioSetbuf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioSetbuf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    setbuf(Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void StdioSetvbuf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioSetvbuf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    setvbuf(Param[0]->Val->Pointer, Param[1]->Val->Pointer, Param[2]->Val->Integer, Param[3]->Val->Integer);
 }
 
-void StdioUngetc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioUngetc(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = ungetc(Param[0]->Val->Integer, Param[1]->Val->Pointer);
 }
 
-void StdioPuts(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioPuts(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = puts(Param[0]->Val->Pointer);
 }
 
-void StdioGets(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioGets(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Pointer = fgets(Param[0]->Val->Pointer, GETS_MAXValue, stdin);
    if (ReturnValue->Val->Pointer != NULL) {
       char *EOLPos = strchr(Param[0]->Val->Pointer, '\n');
@@ -450,84 +450,84 @@ void StdioGets(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
    }
 }
 
-void StdioGetchar(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioGetchar(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = getchar();
 }
 
-void StdioPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    struct StdVararg PrintfArgs;
    PrintfArgs.Param = Param;
    PrintfArgs.NumArgs = NumArgs - 1;
    ReturnValue->Val->Integer = StdioBasePrintf(Parser, stdout, NULL, 0, Param[0]->Val->Pointer, &PrintfArgs);
 }
 
-void StdioVprintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioVprintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = StdioBasePrintf(Parser, stdout, NULL, 0, Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void StdioFprintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFprintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    struct StdVararg PrintfArgs;
    PrintfArgs.Param = Param + 1;
    PrintfArgs.NumArgs = NumArgs - 2;
    ReturnValue->Val->Integer = StdioBasePrintf(Parser, Param[0]->Val->Pointer, NULL, 0, Param[1]->Val->Pointer, &PrintfArgs);
 }
 
-void StdioVfprintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioVfprintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = StdioBasePrintf(Parser, Param[0]->Val->Pointer, NULL, 0, Param[1]->Val->Pointer, Param[2]->Val->Pointer);
 }
 
-void StdioSprintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioSprintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    struct StdVararg PrintfArgs;
    PrintfArgs.Param = Param + 1;
    PrintfArgs.NumArgs = NumArgs - 2;
    ReturnValue->Val->Integer = StdioBasePrintf(Parser, NULL, Param[0]->Val->Pointer, -1, Param[1]->Val->Pointer, &PrintfArgs);
 }
 
-void StdioSnprintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioSnprintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    struct StdVararg PrintfArgs;
    PrintfArgs.Param = Param + 2;
    PrintfArgs.NumArgs = NumArgs - 3;
    ReturnValue->Val->Integer = StdioBasePrintf(Parser, NULL, Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Pointer, &PrintfArgs);
 }
 
-void StdioScanf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioScanf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    struct StdVararg ScanfArgs;
    ScanfArgs.Param = Param;
    ScanfArgs.NumArgs = NumArgs - 1;
    ReturnValue->Val->Integer = StdioBaseScanf(Parser, stdin, NULL, Param[0]->Val->Pointer, &ScanfArgs);
 }
 
-void StdioFscanf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioFscanf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    struct StdVararg ScanfArgs;
    ScanfArgs.Param = Param + 1;
    ScanfArgs.NumArgs = NumArgs - 2;
    ReturnValue->Val->Integer = StdioBaseScanf(Parser, Param[0]->Val->Pointer, NULL, Param[1]->Val->Pointer, &ScanfArgs);
 }
 
-void StdioSscanf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioSscanf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    struct StdVararg ScanfArgs;
    ScanfArgs.Param = Param + 1;
    ScanfArgs.NumArgs = NumArgs - 2;
    ReturnValue->Val->Integer = StdioBaseScanf(Parser, NULL, Param[0]->Val->Pointer, Param[1]->Val->Pointer, &ScanfArgs);
 }
 
-void StdioVsprintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioVsprintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = StdioBasePrintf(Parser, NULL, Param[0]->Val->Pointer, -1, Param[1]->Val->Pointer, Param[2]->Val->Pointer);
 }
 
-void StdioVsnprintf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioVsnprintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = StdioBasePrintf(Parser, NULL, Param[0]->Val->Pointer, Param[1]->Val->Integer, Param[2]->Val->Pointer, Param[3]->Val->Pointer);
 }
 
-void StdioVscanf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioVscanf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = StdioBaseScanf(Parser, stdin, NULL, Param[0]->Val->Pointer, Param[1]->Val->Pointer);
 }
 
-void StdioVfscanf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioVfscanf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = StdioBaseScanf(Parser, Param[0]->Val->Pointer, NULL, Param[1]->Val->Pointer, Param[2]->Val->Pointer);
 }
 
-void StdioVsscanf(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+void StdioVsscanf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    ReturnValue->Val->Integer = StdioBaseScanf(Parser, NULL, Param[0]->Val->Pointer, Param[1]->Val->Pointer, Param[2]->Val->Pointer);
 }
 
@@ -589,9 +589,9 @@ struct LibraryFunction StdioFunctions[] = {
 };
 
 // Creates various system-dependent definitions.
-void StdioSetupFunc(Picoc *pc) {
-   struct ValueType *StructFileType;
-   struct ValueType *FilePtrType;
+void StdioSetupFunc(State pc) {
+   ValueType StructFileType;
+   ValueType FilePtrType;
 // Make a "struct __FILEStruct" which is the same size as a native FILE structure.
    StructFileType = TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "__FILEStruct"), sizeof(FILE));
 // Get a FILE * type.
@@ -599,24 +599,24 @@ void StdioSetupFunc(Picoc *pc) {
 // Make a "struct __va_listStruct" which is the same size as our struct StdVararg.
    TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "__va_listStruct"), sizeof(FILE));
 // Define EOF equal to the system EOF.
-   VariableDefinePlatformVar(pc, NULL, "EOF", &pc->IntType, (union AnyValue *)&EOFValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "SEEK_SET", &pc->IntType, (union AnyValue *)&SEEK_SETValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "SEEK_CUR", &pc->IntType, (union AnyValue *)&SEEK_CURValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "SEEK_END", &pc->IntType, (union AnyValue *)&SEEK_ENDValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "BUFSIZ", &pc->IntType, (union AnyValue *)&BUFSIZValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "FILENAME_MAX", &pc->IntType, (union AnyValue *)&FILENAME_MAXValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "_IOFBF", &pc->IntType, (union AnyValue *)&_IOFBFValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "_IOLBF", &pc->IntType, (union AnyValue *)&_IOLBFValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "_IONBF", &pc->IntType, (union AnyValue *)&_IONBFValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "L_tmpnam", &pc->IntType, (union AnyValue *)&L_tmpnamValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "GETS_MAX", &pc->IntType, (union AnyValue *)&GETS_MAXValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "EOF", &pc->IntType, (AnyValue)&EOFValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "SEEK_SET", &pc->IntType, (AnyValue)&SEEK_SETValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "SEEK_CUR", &pc->IntType, (AnyValue)&SEEK_CURValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "SEEK_END", &pc->IntType, (AnyValue)&SEEK_ENDValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "BUFSIZ", &pc->IntType, (AnyValue)&BUFSIZValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "FILENAME_MAX", &pc->IntType, (AnyValue)&FILENAME_MAXValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "_IOFBF", &pc->IntType, (AnyValue)&_IOFBFValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "_IOLBF", &pc->IntType, (AnyValue)&_IOLBFValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "_IONBF", &pc->IntType, (AnyValue)&_IONBFValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "L_tmpnam", &pc->IntType, (AnyValue)&L_tmpnamValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "GETS_MAX", &pc->IntType, (AnyValue)&GETS_MAXValue, FALSE);
 // Define stdin, stdout and stderr.
-   VariableDefinePlatformVar(pc, NULL, "stdin", FilePtrType, (union AnyValue *)&stdinValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "stdout", FilePtrType, (union AnyValue *)&stdoutValue, FALSE);
-   VariableDefinePlatformVar(pc, NULL, "stderr", FilePtrType, (union AnyValue *)&stderrValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "stdin", FilePtrType, (AnyValue)&stdinValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "stdout", FilePtrType, (AnyValue)&stdoutValue, FALSE);
+   VariableDefinePlatformVar(pc, NULL, "stderr", FilePtrType, (AnyValue)&stderrValue, FALSE);
 // Define NULL, TRUE and FALSE.
    if (!VariableDefined(pc, TableStrRegister(pc, "NULL")))
-      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (union AnyValue *)&Stdio_ZeroValue, FALSE);
+      VariableDefinePlatformVar(pc, NULL, "NULL", &pc->IntType, (AnyValue)&Stdio_ZeroValue, FALSE);
 }
 
 // Portability-related I/O calls.

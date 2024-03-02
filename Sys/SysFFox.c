@@ -17,7 +17,7 @@ int PlatformGetCharacter() {
 }
 
 // Write a character to the console.
-void PlatformPutc(unsigned char OutCh, union OutputStreamInfo *Stream) {
+void PlatformPutc(unsigned char OutCh, OutputStreamInfo Stream) {
 // XXX - unimplemented so far.
 }
 
