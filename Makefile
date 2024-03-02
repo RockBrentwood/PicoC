@@ -5,9 +5,9 @@ LIBS=-lm -lreadline
 
 APP	= picoc
 MOD	= \
-	picoc table lex parse expression heap type variable clibrary platform include debug \
-	platform/platform_unix platform/library_unix \
-	cstdlib/stdio cstdlib/math cstdlib/string cstdlib/stdlib cstdlib/time cstdlib/errno cstdlib/ctype cstdlib/stdbool cstdlib/unistd
+	Main Table Lex Syn Exp Heap Type Var Lib Sys Inc Debug \
+	Sys/SysUNIX Sys/LibUNIX \
+	Lib/stdio Lib/math Lib/string Lib/stdlib Lib/time Lib/errno Lib/ctype Lib/stdbool Lib/unistd
 SRC	:= $(MOD:%=%.c)
 OBJ	:= $(MOD:%=%.o)
 
@@ -15,9 +15,9 @@ all: $(APP)
 $(APP): $(OBJ)
 	$(CC) $(CFLAGS) $^ $(LIBS) -o $@
 csmith:	all
-	(cd tests; make csmith)
+	(cd Test; make csmith)
 test:	all
-	(cd tests; make test)
+	(cd Test; make test)
 clean:
 	$(RM) $(OBJ)
 	$(RM) *~
@@ -26,37 +26,37 @@ clobber: clean
 
 count:
 	@echo "Core:"
-	@cat picoc.h interpreter.h picoc.c table.c lex.c parse.c expression.c platform.c heap.c type.c variable.c include.c debug.c | grep -v '^[ 	]*/\*' | grep -v '^[ 	]*$$' | wc
+	@cat Main.h Extern.h Main.c Table.c Lex.c Syn.c Exp.c Sys.c Heap.c Type.c Var.c Inc.c Debug.c | grep -v '^[ 	]*/\*' | grep -v '^[ 	]*$$' | wc
 	@echo ""
 	@echo "Everything:"
 	@cat $(SRC) *.h */*.h | wc
 
-.PHONY: clibrary.c
+.PHONY: Lib.c
 
-picoc.o parse.o clibrary.o platform.o include.o platform/platform_unix.o: picoc.h
-table.o lex.o parse.o expression.o heap.o type.o variable.o clibrary.o platform.o include.o debug.o: interpreter.h platform.h
-platform/platform_unix.o platform/library_unix.o: interpreter.h platform.h
-cstdlib/stdio.o cstdlib/math.o cstdlib/string.o cstdlib/stdlib.o cstdlib/time.o cstdlib/errno.o cstdlib/ctype.o cstdlib/stdbool.o cstdlib/unistd.o: interpreter.h platform.h
-picoc.o: picoc.c
-table.o: table.c
-lex.o: lex.c
-parse.o: parse.c
-expression.o: expression.c
-heap.o: heap.c
-type.o: type.c
-variable.o: variable.c
-clibrary.o: clibrary.c
-platform.o: platform.c
-include.o: include.c
-debug.o: debug.c
-platform/platform_unix.o: platform/platform_unix.c
-platform/library_unix.o: platform/library_unix.c
-cstdlib/stdio.o: cstdlib/stdio.c
-cstdlib/math.o: cstdlib/math.c
-cstdlib/string.o: cstdlib/string.c
-cstdlib/stdlib.o: cstdlib/stdlib.c
-cstdlib/time.o: cstdlib/time.c
-cstdlib/errno.o: cstdlib/errno.c
-cstdlib/ctype.o: cstdlib/ctype.c
-cstdlib/stdbool.o: cstdlib/stdbool.c
-cstdlib/unistd.o: cstdlib/unistd.c
+Main.o Syn.o Lib.o Sys.o Inc.o Sys/SysUNIX.o: Main.h
+Table.o Lex.o Syn.o Exp.o Heap.o Type.o Var.o Lib.o Sys.o Inc.o Debug.o: Extern.h Sys.h
+Sys/SysUNIX.o Sys/LibUNIX.o: Extern.h Sys.h
+Lib/stdio.o Lib/math.o Lib/string.o Lib/stdlib.o Lib/time.o Lib/errno.o Lib/ctype.o Lib/stdbool.o Lib/unistd.o: Extern.h Sys.h
+Main.o: Main.c
+Table.o: Table.c
+Lex.o: Lex.c
+Syn.o: Syn.c
+Exp.o: Exp.c
+Heap.o: Heap.c
+Type.o: Type.c
+Var.o: Var.c
+Lib.o: Lib.c
+Sys.o: Sys.c
+Inc.o: Inc.c
+Debug.o: Debug.c
+Sys/SysUNIX.o: Sys/SysUNIX.c
+Sys/LibUNIX.o: Sys/LibUNIX.c
+Lib/stdio.o: Lib/stdio.c
+Lib/math.o: Lib/math.c
+Lib/string.o: Lib/string.c
+Lib/stdlib.o: Lib/stdlib.c
+Lib/time.o: Lib/time.c
+Lib/errno.o: Lib/errno.c
+Lib/ctype.o: Lib/ctype.c
+Lib/stdbool.o: Lib/stdbool.c
+Lib/unistd.o: Lib/unistd.c
