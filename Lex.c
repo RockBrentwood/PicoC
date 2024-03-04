@@ -104,6 +104,13 @@ static Lexical LexCheckReservedWord(State pc, const char *Word) {
       return NoneL;
 }
 
+// Lexer state.
+typedef struct LexState {
+   const char *SourceText, *Pos, *End, *FileName;
+   int CharacterPos, Line, EmitExtraNewlines;
+   enum { NormalLx, IncludeLx, DefineLx, DeclareLx, NameLx } Mode;
+} *LexState;
+
 #define IncLex(L) ((L)->Pos++, (L)->CharacterPos++)
 #define AddLex(L, N) ((L)->Pos += (N), (L)->CharacterPos += (N))
 #define NextIs2(L, Ch, Ch0, T0, T) ((Ch) == (Ch0)? (IncLex(L), (T0)): (T))
@@ -262,6 +269,17 @@ static unsigned char LexUnEscapeCharacter(const char **From, const char *End) {
       return *(*From)++;
 }
 
+// Exit lexing with a message.
+static void LexError(State pc, LexState Lexer, const char *Message, ...) {
+   va_list Args;
+   PrintSourceTextErrorLine(pc->CStdOut, Lexer->FileName, Lexer->SourceText, Lexer->Line, Lexer->CharacterPos);
+   va_start(Args, Message);
+   PlatformVPrintf(pc->CStdOut, Message, Args);
+   va_end(Args);
+   PlatformPrintf(pc->CStdOut, "\n");
+   PlatformExit(pc, 1);
+}
+
 // Get a string constant - used while scanning.
 static Lexical LexGetStringConstant(State pc, LexState Lexer, Value Val, char EndChar) {
    bool Escape = false;
@@ -290,7 +308,7 @@ static Lexical LexGetStringConstant(State pc, LexState Lexer, Value Val, char En
    EndPos = Lexer->Pos;
    EscBuf = HeapAllocStack(pc, EndPos - StartPos);
    if (EscBuf == NULL)
-      LexFail(pc, Lexer, "out of memory");
+      LexError(pc, Lexer, "out of memory");
    for (EscBufPos = EscBuf, Lexer->Pos = StartPos; Lexer->Pos != EndPos;)
       *EscBufPos++ = LexUnEscapeCharacter(&Lexer->Pos, EndPos);
 // Try to find an existing copy of this string literal.
@@ -317,7 +335,7 @@ static Lexical LexGetCharacterConstant(State pc, LexState Lexer, Value Val) {
    Val->Typ = &pc->CharType;
    Val->Val->Character = LexUnEscapeCharacter(&Lexer->Pos, Lexer->End);
    if (Lexer->Pos != Lexer->End && *Lexer->Pos != '\'')
-      LexFail(pc, Lexer, "expected \"'\"");
+      LexError(pc, Lexer, "expected \"'\"");
    IncLex(Lexer);
    return CharLitL;
 }
@@ -413,7 +431,7 @@ static Lexical LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
          case '.': GotToken = NextMatches3(Lexer, NextChar, '.', '.', DotsL, DotL); break;
          case '?': GotToken = QuestL; break;
          case ':': GotToken = ColonL; break;
-         default: LexFail(pc, Lexer, "illegal character '%c'", ThisChar); break;
+         default: LexError(pc, Lexer, "illegal character '%c'", ThisChar); break;
       }
    } while (GotToken == NoneL);
    return GotToken;
@@ -442,7 +460,7 @@ static void *LexTokenize(State pc, LexState Lexer, int *TokenLen) {
    char *TokenPos = (char *)TokenSpace;
    int LastCharacterPos = 0;
    if (TokenSpace == NULL)
-      LexFail(pc, Lexer, "out of memory");
+      LexError(pc, Lexer, "out of memory");
    do {
    // Store the token at the end of the stack area.
       Token = LexScanGetToken(pc, Lexer, &GotValue);
@@ -466,7 +484,7 @@ static void *LexTokenize(State pc, LexState Lexer, int *TokenLen) {
    } while (Token != EofL);
    HeapMem = HeapAllocMem(pc, MemUsed);
    if (HeapMem == NULL)
-      LexFail(pc, Lexer, "out of memory");
+      LexError(pc, Lexer, "out of memory");
    assert(ReserveSpace >= MemUsed);
    memcpy(HeapMem, TokenSpace, MemUsed);
    HeapPopStack(pc, TokenSpace, ReserveSpace);

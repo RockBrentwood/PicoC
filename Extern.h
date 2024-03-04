@@ -233,18 +233,6 @@ struct StackFrame {
    StackFrame PreviousStackFrame; // The next lower stack frame.
 };
 
-// Lexer state.
-typedef struct LexState {
-   const char *Pos;
-   const char *End;
-   const char *FileName;
-   int Line;
-   int CharacterPos;
-   const char *SourceText;
-   enum { NormalLx, IncludeLx, DefineLx, DeclareLx, NameLx } Mode;
-   int EmitExtraNewlines;
-} *LexState;
-
 // Library function definition.
 typedef struct LibraryFunction {
    void (*Func)(ParseState Parser, Value, Value *, int);
@@ -520,10 +508,10 @@ int PicocPlatformSetExitPoint(State pc);
 void PicocPlatformScanFile(State pc, const char *FileName);
 #endif
 void PrintSourceTextErrorLine(OutFile Stream, const char *FileName, const char *SourceText, int Line, int CharacterPos);
+void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args);
 void ProgramFail(ParseState Parser, const char *Message, ...);
 void ProgramFailNoParser(State pc, const char *Message, ...);
 void AssignFail(ParseState Parser, const char *Format, ValueType Type1, ValueType Type2, int Num1, int Num2, const char *FuncName, int ParamNo);
-void LexFail(State pc, LexState Lexer, const char *Message, ...);
 void PlatformPrintf(OutFile Stream, const char *Format, ...);
 char *PlatformMakeTempName(State pc, char *TempNameBuffer);
 // Defined in the following places:

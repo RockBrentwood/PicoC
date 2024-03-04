@@ -97,7 +97,7 @@ void PrintSourceTextErrorLine(OutFile Stream, const char *FileName, const char *
    PlatformPrintf(Stream, "^\n%s:%d:%d ", FileName, Line, CharacterPos);
 }
 
-static void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args) {
+void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args) {
    const char *FPos;
    for (FPos = Format; *FPos != '\0'; FPos++) {
       if (*FPos == '%') {
@@ -152,17 +152,6 @@ void AssignFail(ParseState Parser, const char *Format, ValueType Type1, ValueTyp
       PlatformPrintf(Stream, " in argument %d of call to %s()", ParamNo, FuncName);
    PlatformPrintf(Stream, "\n");
    PlatformExit(Parser->pc, 1);
-}
-
-// Exit lexing with a message.
-void LexFail(State pc, LexState Lexer, const char *Message, ...) {
-   va_list Args;
-   PrintSourceTextErrorLine(pc->CStdOut, Lexer->FileName, Lexer->SourceText, Lexer->Line, Lexer->CharacterPos);
-   va_start(Args, Message);
-   PlatformVPrintf(pc->CStdOut, Message, Args);
-   va_end(Args);
-   PlatformPrintf(pc->CStdOut, "\n");
-   PlatformExit(pc, 1);
 }
 
 // Printf for compiler error reporting.
