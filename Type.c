@@ -192,8 +192,8 @@ static void TypeParseStruct(ParseState Parser, ValueType *Typ, bool IsStruct) {
    (*Typ)->Members->HashTable = (TableEntry *)((char *)(*Typ)->Members + sizeof *(*Typ)->Members);
    TableInitTable((*Typ)->Members, (TableEntry *)((char *)(*Typ)->Members + sizeof *(*Typ)->Members), MemTabMax, true);
    do {
-      ValueType MemberType; char *MemberIdentifier;
-      TypeParse(Parser, &MemberType, &MemberIdentifier, NULL);
+      char *MemberIdentifier;
+      ValueType MemberType = TypeParse(Parser, &MemberIdentifier, NULL);
       if (MemberType == NULL || MemberIdentifier == NULL)
          ProgramFail(Parser, "invalid type in struct");
       Value MemberValue = VariableAllocValueAndData(pc, Parser, sizeof(int), false, NULL, true);
@@ -286,8 +286,8 @@ static void TypeParseEnum(ParseState Parser, ValueType *Typ) {
 }
 
 // Parse a type - just the basic type.
-bool TypeParseFront(ParseState Parser, ValueType *Typ, bool *IsStatic) {
-   *Typ = NULL;
+ValueType TypeParseFront(ParseState Parser, bool *IsStatic) {
+   ValueType Type = NULL;
 // Ignore leading type qualifiers.
    struct ParseState Before;
    ParserCopy(&Before, Parser);
@@ -307,39 +307,35 @@ bool TypeParseFront(ParseState Parser, ValueType *Typ, bool *IsStatic) {
    if (Token == SignedL || Token == UnsignedL) {
       Lexical FollowToken = LexGetToken(Parser, &LexerValue, false);
       if (FollowToken != IntL && FollowToken != LongL && FollowToken != ShortL && FollowToken != CharL) {
-         *Typ = Token == UnsignedL? &pc->UnsignedIntType: &pc->IntType;
-         return true;
+         Type = Token == UnsignedL? &pc->UnsignedIntType: &pc->IntType;
+         return Type;
       }
       Token = LexGetToken(Parser, &LexerValue, true);
    }
    switch (Token) {
-      case IntL: *Typ = Unsigned? &pc->UnsignedIntType: &pc->IntType; break;
-      case ShortL: *Typ = Unsigned? &pc->UnsignedShortType: &pc->ShortType; break;
-      case CharL: *Typ = Unsigned? &pc->UnsignedCharType: &pc->CharType; break;
-      case LongL: *Typ = Unsigned? &pc->UnsignedLongType: &pc->LongType; break;
+      case IntL: Type = Unsigned? &pc->UnsignedIntType: &pc->IntType; break;
+      case ShortL: Type = Unsigned? &pc->UnsignedShortType: &pc->ShortType; break;
+      case CharL: Type = Unsigned? &pc->UnsignedCharType: &pc->CharType; break;
+      case LongL: Type = Unsigned? &pc->UnsignedLongType: &pc->LongType; break;
 #ifndef NO_FP
-      case FloatL: case DoubleL: *Typ = &pc->FPType; break;
+      case FloatL: case DoubleL: Type = &pc->FPType; break;
 #endif
-      case VoidL: *Typ = &pc->VoidType; break;
+      case VoidL: Type = &pc->VoidType; break;
       case StructL: case UnionL:
-         if (*Typ != NULL)
+         if (Type != NULL)
             ProgramFail(Parser, "bad type declaration");
-         TypeParseStruct(Parser, Typ, Token == StructL);
+         TypeParseStruct(Parser, &Type, Token == StructL);
       break;
       case EnumL:
-         if (*Typ != NULL)
+         if (Type != NULL)
             ProgramFail(Parser, "bad type declaration");
-         TypeParseEnum(Parser, Typ);
+         TypeParseEnum(Parser, &Type);
       break;
    // We already know it's a typedef-defined type because we got here.
-      case IdL: {
-         Value VarValue;
-         VariableGet(pc, Parser, LexerValue->Val->Identifier, &VarValue), *Typ = VarValue->Val->Typ;
-      }
-      break;
-      default: ParserCopy(Parser, &Before); return false;
+      case IdL: Type = VariableGet(pc, Parser, LexerValue->Val->Identifier)->Val->Typ; break;
+      default: ParserCopy(Parser, &Before); return Type;
    }
-   return true;
+   return Type;
 }
 
 // Parse a type - the part at the end after the identifier. e.g. array specifications etc.
@@ -371,8 +367,8 @@ static ValueType TypeParseBack(ParseState Parser, ValueType FromType) {
 }
 
 // Parse a type - the part which is repeated with each identifier in a declaration list.
-void TypeParseIdentPart(ParseState Parser, ValueType BasicTyp, ValueType *Typ, char **Identifier) {
-   *Typ = BasicTyp;
+ValueType TypeParseIdentPart(ParseState Parser, ValueType BasicTyp, char **Identifier) {
+   ValueType Type = BasicTyp;
    *Identifier = Parser->pc->StrEmpty;
    bool Done = false;
    while (!Done) {
@@ -382,19 +378,19 @@ void TypeParseIdentPart(ParseState Parser, ValueType BasicTyp, ValueType *Typ, c
       Lexical Token = LexGetToken(Parser, &LexValue, true);
       switch (Token) {
          case LParL:
-            if (*Typ != NULL)
+            if (Type != NULL)
                ProgramFail(Parser, "bad type declaration");
-            TypeParse(Parser, Typ, Identifier, NULL);
+            Type = TypeParse(Parser, Identifier, NULL);
             if (LexGetToken(Parser, NULL, true) != RParL)
                ProgramFail(Parser, "')' expected");
          break;
          case StarL:
-            if (*Typ == NULL)
+            if (Type == NULL)
                ProgramFail(Parser, "bad type declaration");
-            *Typ = TypeGetMatching(Parser->pc, Parser, *Typ, PointerT, 0, Parser->pc->StrEmpty, true);
+            Type = TypeGetMatching(Parser->pc, Parser, Type, PointerT, 0, Parser->pc->StrEmpty, true);
          break;
          case IdL:
-            if (*Typ == NULL || *Identifier != Parser->pc->StrEmpty)
+            if (Type == NULL || *Identifier != Parser->pc->StrEmpty)
                ProgramFail(Parser, "bad type declaration");
             *Identifier = LexValue->Val->Identifier;
             Done = true;
@@ -402,19 +398,19 @@ void TypeParseIdentPart(ParseState Parser, ValueType BasicTyp, ValueType *Typ, c
          default: ParserCopy(Parser, &Before), Done = true; break;
       }
    }
-   if (*Typ == NULL)
+   if (Type == NULL)
       ProgramFail(Parser, "bad type declaration");
    if (*Identifier != Parser->pc->StrEmpty) {
    // Parse stuff after the identifier.
-      *Typ = TypeParseBack(Parser, *Typ);
+      Type = TypeParseBack(Parser, Type);
    }
+   return Type;
 }
 
 // Parse a type - a complete declaration including identifier.
-void TypeParse(ParseState Parser, ValueType *Typ, char **Identifier, bool *IsStatic) {
-   ValueType BasicType;
-   TypeParseFront(Parser, &BasicType, IsStatic);
-   TypeParseIdentPart(Parser, BasicType, Typ, Identifier);
+ValueType TypeParse(ParseState Parser, char **Identifier, bool *IsStatic) {
+   ValueType BasicType = TypeParseFront(Parser, IsStatic);
+   return TypeParseIdentPart(Parser, BasicType, Identifier);
 }
 
 // Check if a type has been fully defined - otherwise it's just a forward declaration.

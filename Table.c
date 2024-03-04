@@ -61,18 +61,18 @@ bool TableSet(State pc, Table Tbl, char *Key, Value Val, const char *DeclFileNam
 // Find a value in a table.
 // Returns false if not found.
 // Key must be a shared string from TableStrRegister().
-bool TableGet(Table Tbl, const char *Key, Value *Val, const char **DeclFileName, int *DeclLine, int *DeclColumn) {
+Value TableGet(Table Tbl, const char *Key, const char **DeclFileName, int *DeclLine, int *DeclColumn) {
    int AddAt;
    TableEntry FoundEntry = TableSearch(Tbl, Key, &AddAt);
    if (FoundEntry == NULL)
-      return false;
-   *Val = FoundEntry->p.v.Val;
+      return NULL;
+   Value Val = FoundEntry->p.v.Val;
    if (DeclFileName != NULL) {
       *DeclFileName = FoundEntry->DeclFileName;
       *DeclLine = FoundEntry->DeclLine;
       *DeclColumn = FoundEntry->DeclColumn;
    }
-   return true;
+   return Val;
 }
 
 // Remove an entry from the table.

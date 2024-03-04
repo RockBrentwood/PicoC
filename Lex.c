@@ -95,8 +95,8 @@ void LexCleanup(State pc) {
 
 // Check if a word is a reserved word - used while scanning.
 static Lexical LexCheckReservedWord(State pc, const char *Word) {
-   Value val;
-   return TableGet(&pc->ReservedWordTable, Word, &val, NULL, NULL, NULL)? ((ReservedWord)val)->Token: NoneL;
+   Value Val = TableGet(&pc->ReservedWordTable, Word, NULL, NULL, NULL);
+   return Val != NULL? ((ReservedWord)Val)->Token: NoneL;
 }
 
 // Lexer state.
@@ -484,18 +484,20 @@ void *LexAnalyse(State pc, const char *FileName, const char *Source, int SourceL
 }
 
 // Prepare to parse a pre-tokenized buffer.
-void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *TokenSource, char *FileName, bool RunIt, bool EnableDebugger) {
-   Parser->pc = pc;
-   Parser->Pos = TokenSource;
-   Parser->Line = 1;
-   Parser->FileName = FileName;
-   Parser->Mode = RunIt? RunM: SkipM;
-   Parser->SearchLabel = 0;
-   Parser->HashIfLevel = 0;
-   Parser->HashIfEvaluateToLevel = 0;
-   Parser->CharacterPos = 0;
-   Parser->SourceText = SourceText;
-   Parser->DebugMode = EnableDebugger;
+struct ParseState LexInitParser(State pc, const char *SourceText, void *TokenSource, char *FileName, bool RunIt, bool EnableDebugger) {
+   struct ParseState Syn;
+   Syn.pc = pc;
+   Syn.Pos = TokenSource;
+   Syn.Line = 1;
+   Syn.FileName = FileName;
+   Syn.Mode = RunIt? RunM: SkipM;
+   Syn.SearchLabel = 0;
+   Syn.HashIfLevel = 0;
+   Syn.HashIfEvaluateToLevel = 0;
+   Syn.CharacterPos = 0;
+   Syn.SourceText = SourceText;
+   Syn.DebugMode = EnableDebugger;
+   return Syn;
 }
 
 // Get the next token, without pre-processing.
@@ -602,8 +604,8 @@ static void LexHashIfdef(ParseState Parser, bool IfNot) {
    if (Token != IdL)
       ProgramFail(Parser, "identifier expected");
 // Is the identifier defined?
-   Value SavedValue;
-   bool IsDefined = TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, &SavedValue, NULL, NULL, NULL);
+   Value SavedValue = TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, NULL, NULL, NULL);
+   bool IsDefined = SavedValue != NULL;
    if (Parser->HashIfEvaluateToLevel == Parser->HashIfLevel && IsDefined != IfNot) {
    // #if is active, evaluate to this new level.
       Parser->HashIfEvaluateToLevel++;
@@ -618,8 +620,8 @@ static void LexHashIf(ParseState Parser) {
    Lexical Token = LexGetRawToken(Parser, &IdentValue, true);
    if (Token == IdL) {
    // Look up a value from a macro definition.
-      Value SavedValue = NULL;
-      if (!TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, &SavedValue, NULL, NULL, NULL))
+      Value SavedValue = TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, NULL, NULL, NULL);
+      if (SavedValue == NULL)
          ProgramFail(Parser, "'%s' is undefined", IdentValue->Val->Identifier);
       if (SavedValue->Typ->Base != MacroT)
          ProgramFail(Parser, "value expected");

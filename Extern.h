@@ -381,7 +381,7 @@ struct State {
 void TableInit(State pc);
 void TableInitTable(Table Tbl, TableEntry *HashTable, int Size, bool OnHeap);
 bool TableSet(State pc, Table Tbl, char *Key, Value Val, const char *DeclFileName, int DeclLine, int DeclColumn);
-bool TableGet(Table Tbl, const char *Key, Value *Val, const char **DeclFileName, int *DeclLine, int *DeclColumn);
+Value TableGet(Table Tbl, const char *Key, const char **DeclFileName, int *DeclLine, int *DeclColumn);
 Value TableDelete(State pc, Table Tbl, const char *Key);
 char *TableStrRegister2(State pc, const char *Str, int Len);
 char *TableStrRegister(State pc, const char *Str);
@@ -391,7 +391,7 @@ void TableStrFree(State pc);
 void LexInit(State pc);
 void LexCleanup(State pc);
 void *LexAnalyse(State pc, const char *FileName, const char *Source, int SourceLen, int *TokenLen);
-void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *TokenSource, char *FileName, bool RunIt, bool EnableDebugger);
+struct ParseState LexInitParser(State pc, const char *SourceText, void *TokenSource, char *FileName, bool RunIt, bool EnableDebugger);
 Lexical LexGetToken(ParseState Parser, Value *ValP, int IncPos);
 Lexical LexRawPeekToken(ParseState Parser);
 void LexToEndOfLine(ParseState Parser);
@@ -419,7 +419,7 @@ unsigned long ExpressionCoerceUnsignedInteger(Value Val);
 double ExpressionCoerceFP(Value Val);
 #endif
 void ExpressionAssign(ParseState Parser, Value DestValue, Value SourceValue, bool Force, const char *FuncName, int ParamNo, bool AllowPointerCoercion);
-bool ExpressionParse(ParseState Parser, Value *Result);
+Value ExpressionParse(ParseState Parser);
 long ExpressionParseInt(ParseState Parser);
 
 // Type.c:
@@ -432,9 +432,9 @@ int TypeStackSizeValue(Value Val);
 // Isn't defined anywhere.
 int TypeLastAccessibleOffset(State pc, Value Val);
 #endif
-bool TypeParseFront(ParseState Parser, ValueType *Typ, bool *IsStatic);
-void TypeParseIdentPart(ParseState Parser, ValueType BasicTyp, ValueType *Typ, char **Identifier);
-void TypeParse(ParseState Parser, ValueType *Typ, char **Identifier, bool *IsStatic);
+ValueType TypeParseFront(ParseState Parser, bool *IsStatic);
+ValueType TypeParseIdentPart(ParseState Parser, ValueType BasicTyp, char **Identifier);
+ValueType TypeParse(ParseState Parser, char **Identifier, bool *IsStatic);
 ValueType TypeGetMatching(State pc, ParseState Parser, ValueType ParentType, BaseType Base, int ArraySize, const char *Identifier, bool AllowDuplicates);
 ValueType TypeCreateOpaqueStruct(State pc, ParseState Parser, const char *StructName, int Size);
 bool TypeIsForwardDeclared(ParseState Parser, ValueType Typ);
@@ -468,7 +468,7 @@ bool VariableDefinedAndOutOfScope(State pc, const char *Ident);
 Value VariableDefine(State pc, ParseState Parser, char *Ident, Value InitValue, ValueType Typ, bool MakeWritable);
 Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType Typ, bool IsStatic, bool *FirstVisit);
 bool VariableDefined(State pc, const char *Ident);
-void VariableGet(State pc, ParseState Parser, const char *Ident, Value *LVal);
+Value VariableGet(State pc, ParseState Parser, const char *Ident);
 void VariableDefinePlatformVar(State pc, ParseState Parser, char *Ident, ValueType Typ, AnyValue FromValue, bool IsWritable);
 void VariableStackPop(ParseState Parser, Value Var);
 void VariableStackFrameAdd(ParseState Parser, const char *FuncName, int NumParams);

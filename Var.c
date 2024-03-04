@@ -236,8 +236,9 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
       strncpy(MNPos, Ident, MNEnd - MNPos);
       const char *RegisteredMangledName = TableStrRegister(pc, MangledName);
    // Is this static already defined?
-      Value ExistingValue; const char *DeclFileName; int DeclLine, DeclColumn;
-      if (!TableGet(&pc->GlobalTable, RegisteredMangledName, &ExistingValue, &DeclFileName, &DeclLine, &DeclColumn)) {
+      const char *DeclFileName; int DeclLine, DeclColumn;
+      Value ExistingValue = TableGet(&pc->GlobalTable, RegisteredMangledName, &DeclFileName, &DeclLine, &DeclColumn);
+      if (ExistingValue == NULL) {
       // Define the mangled-named static variable store in the global scope.
          ExistingValue = VariableAllocValueFromType(Parser->pc, Parser, Typ, true, NULL, true);
          TableSet(pc, &pc->GlobalTable, (char *)RegisteredMangledName, ExistingValue, (char *)Parser->FileName, Parser->Line, Parser->CharacterPos);
@@ -248,10 +249,10 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
       return ExistingValue;
    } else if (Parser->Line == 0) return false;
    else {
-      Value ExistingValue; const char *DeclFileName; int DeclLine, DeclColumn;
+      const char *DeclFileName; int DeclLine, DeclColumn;
+      Value ExistingValue = TableGet(pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable, Ident, &DeclFileName, &DeclLine, &DeclColumn);
       return
-         TableGet(pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable, Ident, &ExistingValue, &DeclFileName, &DeclLine, &DeclColumn) &&
-         DeclFileName == Parser->FileName && DeclLine == Parser->Line && DeclColumn == Parser->CharacterPos?
+         ExistingValue != NULL && DeclFileName == Parser->FileName && DeclLine == Parser->Line && DeclColumn == Parser->CharacterPos?
          ExistingValue:
          VariableDefine(Parser->pc, Parser, Ident, NULL, Typ, true);
    }
@@ -260,21 +261,22 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
 // Check if a variable with a given name is defined.
 // Ident must be registered.
 bool VariableDefined(State pc, const char *Ident) {
-   Value FoundValue;
    return
-      (pc->TopStackFrame != NULL && TableGet(&pc->TopStackFrame->LocalTable, Ident, &FoundValue, NULL, NULL, NULL)) ||
-      TableGet(&pc->GlobalTable, Ident, &FoundValue, NULL, NULL, NULL);
+      (pc->TopStackFrame != NULL && TableGet(&pc->TopStackFrame->LocalTable, Ident, NULL, NULL, NULL) != NULL) ||
+      TableGet(&pc->GlobalTable, Ident, NULL, NULL, NULL) != NULL;
 }
 
 // Get the value of a variable.
 // Must be defined.
 // Ident must be registered.
-void VariableGet(State pc, ParseState Parser, const char *Ident, Value *LVal) {
-   if (pc->TopStackFrame == NULL || !TableGet(&pc->TopStackFrame->LocalTable, Ident, LVal, NULL, NULL, NULL)) {
-      if (!TableGet(&pc->GlobalTable, Ident, LVal, NULL, NULL, NULL)) {
+Value VariableGet(State pc, ParseState Parser, const char *Ident) {
+   Value LVal = pc->TopStackFrame == NULL? NULL: TableGet(&pc->TopStackFrame->LocalTable, Ident, NULL, NULL, NULL);
+   if (LVal == NULL) {
+      if ((LVal = TableGet(&pc->GlobalTable, Ident, NULL, NULL, NULL)) == NULL) {
          ProgramFail(Parser, "'%s' %s", Ident, VariableDefinedAndOutOfScope(pc, Ident)? "is out of scope": "is undefined");
       }
    }
+   return LVal;
 }
 
 // Define a global variable shared with a platform global.
@@ -334,8 +336,7 @@ void VariableStackFramePop(ParseState Parser) {
 // Assumes that Ident is already registered.
 // NULL if not found.
 Value VariableStringLiteralGet(State pc, char *Ident) {
-   Value LVal = NULL;
-   return TableGet(&pc->StringLiteralTable, Ident, &LVal, NULL, NULL, NULL)? LVal: NULL;
+   return TableGet(&pc->StringLiteralTable, Ident, NULL, NULL, NULL);
 }
 
 // Define a string literal.

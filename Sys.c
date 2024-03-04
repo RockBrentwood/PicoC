@@ -46,8 +46,7 @@ void PicocCallMain(State pc, int AC, char **AV) {
 // Check if the program wants arguments.
    if (!VariableDefined(pc, TableStrRegister(pc, "main")))
       ProgramFailNoParser(pc, "main() is not defined");
-   Value FuncValue = NULL;
-   VariableGet(pc, NULL, TableStrRegister(pc, "main"), &FuncValue);
+   Value FuncValue = VariableGet(pc, NULL, TableStrRegister(pc, "main"));
    if (FuncValue->Typ->Base != FunctionT)
       ProgramFailNoParser(pc, "main is not a function - can't call it");
    if (FuncValue->Val->FuncDef.NumParams != 0) {

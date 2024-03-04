@@ -140,8 +140,7 @@ static bool IsTypeToken(ParseState Parser, Lexical t, Value LexValue) {
 // typedef'ed type?
    if (t == IdL) { // See TypeParseFront(), case IdL and ParseTypedef().
       if (VariableDefined(Parser->pc, LexValue->Val->Pointer)) {
-         Value VarValue;
-         VariableGet(Parser->pc, Parser, LexValue->Val->Pointer, &VarValue);
+         Value VarValue = VariableGet(Parser->pc, Parser, LexValue->Val->Pointer);
          if (VarValue->Typ == &Parser->pc->TypeType)
             return true;
       }
@@ -824,8 +823,8 @@ static void ExpressionGetStructElement(ParseState Parser, ExpressionStack *Stack
          DerefDataLoc = VariableDereferencePointer(Parser, ParamVal, &StructVal, NULL, &StructType, NULL);
       if (StructType->Base != StructT && StructType->Base != UnionT)
          ProgramFail(Parser, "can't use '%s' on something that's not a struct or union %s: it's a %t", Token == DotL? ".": "->", Token == ArrowL? "pointer": "", ParamVal->Typ);
-      Value MemberValue = NULL;
-      if (!TableGet(StructType->Members, Ident->Val->Identifier, &MemberValue, NULL, NULL, NULL))
+      Value MemberValue = TableGet(StructType->Members, Ident->Val->Identifier, NULL, NULL, NULL);
+      if (MemberValue == NULL)
          ProgramFail(Parser, "doesn't have a member called '%s'", Ident->Val->Identifier);
    // Pop the value - assume it'll still be there until we're done.
       HeapPopStack(Parser->pc, ParamVal, sizeof **StackTop + sizeof *StructVal + TypeStackSizeValue(StructVal));
@@ -837,7 +836,7 @@ static void ExpressionGetStructElement(ParseState Parser, ExpressionStack *Stack
 }
 
 // Parse an expression with operator precedence.
-bool ExpressionParse(ParseState Parser, Value *Result) {
+Value ExpressionParse(ParseState Parser) {
    DebugF("ExpressionParse():\n");
    bool PrefixState = true;
    bool Done = false;
@@ -864,8 +863,8 @@ bool ExpressionParse(ParseState Parser, Value *Result) {
                Lexical BracketToken = LexGetToken(Parser, &LexValue, false);
                if (IsTypeToken(Parser, BracketToken, LexValue) && (StackTop == NULL || StackTop->Op != SizeOfL)) {
                // It's a cast - get the new type.
-                  ValueType CastType; char *CastIdentifier;
-                  TypeParse(Parser, &CastType, &CastIdentifier, NULL);
+                  char *CastIdentifier;
+                  ValueType CastType = TypeParse(Parser, &CastIdentifier, NULL);
                   if (LexGetToken(Parser, &LexValue, true) != RParL)
                      ProgramFail(Parser, "brackets not closed");
                // Scan and collapse the stack to the precedence of this infix cast operator, then push.
@@ -957,8 +956,7 @@ bool ExpressionParse(ParseState Parser, Value *Result) {
             ExpressionParseFunctionCall(Parser, &StackTop, LexValue->Val->Identifier, Parser->Mode == RunM && Precedence < IgnorePrecedence);
          } else {
             if (Parser->Mode == RunM/* && Precedence < IgnorePrecedence*/) {
-               Value VariableValue = NULL;
-               VariableGet(Parser->pc, Parser, LexValue->Val->Identifier, &VariableValue);
+               Value VariableValue = VariableGet(Parser->pc, Parser, LexValue->Val->Identifier);
                if (VariableValue->Typ->Base == MacroT) {
                // Evaluate a macro as a kind of simple subroutine.
                   struct ParseState MacroParser;
@@ -966,8 +964,8 @@ bool ExpressionParse(ParseState Parser, Value *Result) {
                   MacroParser.Mode = Parser->Mode;
                   if (VariableValue->Val->MacroDef.NumParams != 0)
                      ProgramFail(&MacroParser, "macro arguments missing");
-                  Value MacroResult;
-                  if (!ExpressionParse(&MacroParser, &MacroResult) || LexGetToken(&MacroParser, NULL, false) != EndFnL)
+                  Value MacroResult = ExpressionParse(&MacroParser);
+                  if (MacroResult == NULL || LexGetToken(&MacroParser, NULL, false) != EndFnL)
                      ProgramFail(&MacroParser, "expression expected");
                   ExpressionStackPushValueNode(Parser, &StackTop, MacroResult);
                } else if (VariableValue->Typ == &Parser->pc->VoidType)
@@ -995,8 +993,8 @@ bool ExpressionParse(ParseState Parser, Value *Result) {
             ProgramFail(Parser, "type not expected here");
          PrefixState = false;
          ParserCopy(Parser, &PreState);
-         ValueType Typ; char *Identifier;
-         TypeParse(Parser, &Typ, &Identifier, NULL);
+         char *Identifier;
+         ValueType Typ = TypeParse(Parser, &Identifier, NULL);
          Value TypeValue = VariableAllocValueFromType(Parser->pc, Parser, &Parser->pc->TypeType, false, NULL, false);
          TypeValue->Val->Typ = Typ;
          ExpressionStackPushValueNode(Parser, &StackTop, TypeValue);
@@ -1012,12 +1010,12 @@ bool ExpressionParse(ParseState Parser, Value *Result) {
 // Scan and collapse the stack to precedence 0.
    ExpressionStackCollapse(Parser, &StackTop, 0, &IgnorePrecedence);
 // Fix up the stack and return the result if we're in run mode.
+   Value Result = StackTop == NULL? NULL: StackTop->Val;
    if (StackTop != NULL) {
    // All that should be left is a single value on the stack.
       if (Parser->Mode == RunM) {
          if (StackTop->Order != NoFix || StackTop->Next != NULL)
             ProgramFail(Parser, "invalid expression");
-         *Result = StackTop->Val;
          HeapPopStack(Parser->pc, StackTop, sizeof *StackTop);
       } else
          HeapPopStack(Parser->pc, StackTop->Val, sizeof *StackTop + sizeof *StackTop->Val + TypeStackSizeValue(StackTop->Val));
@@ -1026,7 +1024,7 @@ bool ExpressionParse(ParseState Parser, Value *Result) {
 #ifdef DEBUG_EXPRESSIONS
    ExpressionStackShow(Parser->pc, StackTop);
 #endif
-   return StackTop != NULL;
+   return Result;
 }
 
 // Do a parameterized macro call.
@@ -1051,8 +1049,8 @@ static void ExpressionParseMacroCall(ParseState Parser, ExpressionStack *StackTo
    int ArgCount = 0;
    Lexical Token;
    do {
-      Value Param;
-      if (ExpressionParse(Parser, &Param)) {
+      Value Param = ExpressionParse(Parser);
+      if (Param != NULL) {
          if (Parser->Mode == RunM) {
             if (ArgCount < MDef->NumParams)
                ParamArray[ArgCount] = Param;
@@ -1084,8 +1082,7 @@ static void ExpressionParseMacroCall(ParseState Parser, ExpressionStack *StackTo
       Parser->pc->TopStackFrame->ReturnValue = ReturnValue;
       for (int Count = 0; Count < MDef->NumParams; Count++)
          VariableDefine(Parser->pc, Parser, MDef->ParamName[Count], ParamArray[Count], NULL, true);
-      Value EvalValue;
-      ExpressionParse(&MacroParser, &EvalValue);
+      Value EvalValue = ExpressionParse(&MacroParser);
       ExpressionAssign(Parser, ReturnValue, EvalValue, true, MacroName, 0, false);
       VariableStackFramePop(Parser);
       HeapPopStackFrame(Parser->pc);
@@ -1097,11 +1094,10 @@ static void ExpressionParseFunctionCall(ParseState Parser, ExpressionStack *Stac
    Lexical Token = LexGetToken(Parser, NULL, true); // Open bracket.
    RunMode OldMode = Parser->Mode;
    Value ReturnValue = NULL;
-   Value FuncValue = NULL;
    Value *ParamArray = NULL;
+// Get the function definition, if running.
+   Value FuncValue = RunIt? VariableGet(Parser->pc, Parser, FuncName): NULL;
    if (RunIt) {
-   // Get the function definition.
-      VariableGet(Parser->pc, Parser, FuncName, &FuncValue);
       if (FuncValue->Typ->Base == MacroT) {
       // This is actually a macro, not a function.
          ExpressionParseMacroCall(Parser, StackTop, FuncName, &FuncValue->Val->MacroDef);
@@ -1124,8 +1120,8 @@ static void ExpressionParseFunctionCall(ParseState Parser, ExpressionStack *Stac
    do {
       if (RunIt && ArgCount < FuncValue->Val->FuncDef.NumParams)
          ParamArray[ArgCount] = VariableAllocValueFromType(Parser->pc, Parser, FuncValue->Val->FuncDef.ParamType[ArgCount], false, NULL, false);
-      Value Param;
-      if (ExpressionParse(Parser, &Param)) {
+      Value Param = ExpressionParse(Parser);
+      if (Param != NULL) {
          if (RunIt) {
             if (ArgCount < FuncValue->Val->FuncDef.NumParams) {
                ExpressionAssign(Parser, ParamArray[ArgCount], Param, true, FuncName, ArgCount + 1, false);
@@ -1183,8 +1179,8 @@ static void ExpressionParseFunctionCall(ParseState Parser, ExpressionStack *Stac
 
 // Parse an expression.
 long ExpressionParseInt(ParseState Parser) {
-   Value Val;
-   if (!ExpressionParse(Parser, &Val))
+   Value Val = ExpressionParse(Parser);
+   if (Val == NULL)
       ProgramFail(Parser, "expression expected");
    long Result = 0;
    if (Parser->Mode == RunM) {

@@ -26,10 +26,9 @@ void LibraryAdd(State pc, Table GlobalTable, const char *LibraryName, LibraryFun
 // Read all the library definitions.
    for (int Count = 0; FuncList[Count].Prototype != NULL; Count++) {
       void *Tokens = LexAnalyse(pc, IntrinsicName, FuncList[Count].Prototype, strlen((char *)FuncList[Count].Prototype), NULL);
-      struct ParseState Parser;
-      LexInitParser(&Parser, pc, FuncList[Count].Prototype, Tokens, IntrinsicName, true, false);
-      ValueType ReturnType; char *Identifier;
-      TypeParse(&Parser, &ReturnType, &Identifier, NULL);
+      struct ParseState Parser = LexInitParser(pc, FuncList[Count].Prototype, Tokens, IntrinsicName, true, false);
+      char *Identifier;
+      ValueType ReturnType = TypeParse(&Parser, &Identifier, NULL);
       Value NewValue = ParseFunctionDefinition(&Parser, ReturnType, Identifier);
       NewValue->Val->FuncDef.Intrinsic = FuncList[Count].Func;
       HeapFreeMem(pc, Tokens);
