@@ -169,55 +169,34 @@ int StdioBasePrintf(ParseState Parser, FILE *Stream, char *StrOut, int StrOutLen
          OneFormatCount = 1;
          do {
             switch (*FPos) {
-               case 'd':
-               case 'i':
-                  ShowType = &pc->IntType;
-               break; // Integer decimal.
-               case 'o':
-               case 'u':
-               case 'x':
-               case 'X':
-                  ShowType = &pc->IntType;
-               break; // Integer base conversions.
+            // Integer decimal.
+               case 'd': case 'i': ShowType = &pc->IntType; break;
+            // Integer base conversions.
+               case 'o': case 'u': case 'x': case 'X': ShowType = &pc->IntType; break;
 #ifndef NO_FP
-               case 'e':
-               case 'E':
-                  ShowType = &pc->FPType;
-               break; // Double, exponent form.
-               case 'f':
-               case 'F':
-                  ShowType = &pc->FPType;
-               break; // Double, fixed-point.
-               case 'g':
-               case 'G':
-                  ShowType = &pc->FPType;
-               break; // Double, flexible format.
+            // Double, exponent form.
+               case 'e': case 'E': ShowType = &pc->FPType; break;
+            // Double, fixed-point.
+               case 'f': case 'F': ShowType = &pc->FPType; break;
+            // Double, flexible format.
+               case 'g': case 'G': ShowType = &pc->FPType; break;
 #endif
-               case 'a':
-               case 'A':
-                  ShowType = &pc->IntType;
-               break; // Hexadecimal, 0x- format.
-               case 'c':
-                  ShowType = &pc->IntType;
-               break; // Character.
-               case 's':
-                  ShowType = pc->CharPtrType;
-               break; // String.
-               case 'p':
-                  ShowType = pc->VoidPtrType;
-               break; // Pointer.
-               case 'n':
-                  ShowType = &pc->VoidType;
-               break; // Number of characters written.
-               case 'm':
-                  ShowType = &pc->VoidType;
-               break; // strerror(errno).
-               case '%':
-                  ShowType = &pc->VoidType;
-               break; // Just a '%' character.
-               case '\0':
-                  ShowType = &pc->VoidType;
-               break; // End of format string.
+            // Hexadecimal, 0x- format.
+               case 'a': case 'A': ShowType = &pc->IntType; break;
+            // Character.
+               case 'c': ShowType = &pc->IntType; break;
+            // String.
+               case 's': ShowType = pc->CharPtrType; break;
+            // Pointer.
+               case 'p': ShowType = pc->VoidPtrType; break;
+            // Number of characters written.
+               case 'n': ShowType = &pc->VoidType; break;
+            // strerror(errno).
+               case 'm': ShowType = &pc->VoidType; break;
+            // Just a '%' character.
+               case '%': ShowType = &pc->VoidType; break;
+            // End of format string.
+               case '\0': ShowType = &pc->VoidType; break;
             }
          // Copy one character of format across to the OneFormatBuf.
             OneFormatBuf[OneFormatCount] = *FPos;
@@ -225,19 +204,12 @@ int StdioBasePrintf(ParseState Parser, FILE *Stream, char *StrOut, int StrOutLen
          // Do special actions depending on the conversion type.
             if (ShowType == &pc->VoidType) {
                switch (*FPos) {
-                  case 'm':
-                     StdioOutPuts(strerror(errno), &SOStream);
-                  break;
-                  case '%':
-                     StdioOutPutc(*FPos, &SOStream);
-                  break;
-                  case '\0':
-                     OneFormatBuf[OneFormatCount] = '\0';
-                     StdioOutPutc(*FPos, &SOStream);
-                  break;
+                  case 'm': StdioOutPuts(strerror(errno), &SOStream); break;
+                  case '%': StdioOutPutc(*FPos, &SOStream); break;
+                  case '\0': OneFormatBuf[OneFormatCount] = '\0', StdioOutPutc(*FPos, &SOStream); break;
                   case 'n':
                      ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof *ThisArg + TypeStackSizeValue(ThisArg)));
-                     if (ThisArg->Typ->Base == TypeArray && ThisArg->Typ->FromType->Base == TypeInt)
+                     if (ThisArg->Typ->Base == ArrayT && ThisArg->Typ->FromType->Base == IntT)
                         *(int *)ThisArg->Val->Pointer = SOStream.CharCount;
                   break;
                }
@@ -269,16 +241,16 @@ int StdioBasePrintf(ParseState Parser, FILE *Stream, char *StrOut, int StrOutLen
                }
 #endif
                else if (ShowType == pc->CharPtrType) {
-                  if (ThisArg->Typ->Base == TypePointer)
+                  if (ThisArg->Typ->Base == PointerT)
                      StdioFprintfPointer(&SOStream, OneFormatBuf, ThisArg->Val->Pointer);
-                  else if (ThisArg->Typ->Base == TypeArray && ThisArg->Typ->FromType->Base == TypeChar)
+                  else if (ThisArg->Typ->Base == ArrayT && ThisArg->Typ->FromType->Base == CharT)
                      StdioFprintfPointer(&SOStream, OneFormatBuf, &ThisArg->Val->ArrayMem[0]);
                   else
                      StdioOutPuts("XXX", &SOStream);
                } else if (ShowType == pc->VoidPtrType) {
-                  if (ThisArg->Typ->Base == TypePointer)
+                  if (ThisArg->Typ->Base == PointerT)
                      StdioFprintfPointer(&SOStream, OneFormatBuf, ThisArg->Val->Pointer);
-                  else if (ThisArg->Typ->Base == TypeArray)
+                  else if (ThisArg->Typ->Base == ArrayT)
                      StdioFprintfPointer(&SOStream, OneFormatBuf, &ThisArg->Val->ArrayMem[0]);
                   else
                      StdioOutPuts("XXX", &SOStream);
@@ -307,9 +279,9 @@ int StdioBaseScanf(ParseState Parser, FILE *Stream, char *StrIn, char *Format, S
       ProgramFail(Parser, "too many arguments to scanf() - %d max", MAX_SCANF_ARGS);
    for (ArgCount = 0; ArgCount < Args->NumArgs; ArgCount++) {
       ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof *ThisArg + TypeStackSizeValue(ThisArg)));
-      if (ThisArg->Typ->Base == TypePointer)
+      if (ThisArg->Typ->Base == PointerT)
          ScanfArg[ArgCount] = ThisArg->Val->Pointer;
-      else if (ThisArg->Typ->Base == TypeArray)
+      else if (ThisArg->Typ->Base == ArrayT)
          ScanfArg[ArgCount] = &ThisArg->Val->ArrayMem[0];
       else
          ProgramFail(Parser, "non-pointer argument to scanf() - argument %d after format", ArgCount + 1);
@@ -595,7 +567,7 @@ void StdioSetupFunc(State pc) {
 // Make a "struct __FILEStruct" which is the same size as a native FILE structure.
    StructFileType = TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "__FILEStruct"), sizeof(FILE));
 // Get a FILE * type.
-   FilePtrType = TypeGetMatching(pc, NULL, StructFileType, TypePointer, 0, pc->StrEmpty, true);
+   FilePtrType = TypeGetMatching(pc, NULL, StructFileType, PointerT, 0, pc->StrEmpty, true);
 // Make a "struct __va_listStruct" which is the same size as our struct StdVararg.
    TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "__va_listStruct"), sizeof(FILE));
 // Define EOF equal to the system EOF.

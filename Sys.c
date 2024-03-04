@@ -53,7 +53,7 @@ void PicocCallMain(State pc, int argc, char **argv) {
    if (!VariableDefined(pc, TableStrRegister(pc, "main")))
       ProgramFailNoParser(pc, "main() is not defined");
    VariableGet(pc, NULL, TableStrRegister(pc, "main"), &FuncValue);
-   if (FuncValue->Typ->Base != TypeFunction)
+   if (FuncValue->Typ->Base != FunctionT)
       ProgramFailNoParser(pc, "main is not a function - can't call it");
    if (FuncValue->Val->FuncDef.NumParams != 0) {
    // Define the arguments.
@@ -111,29 +111,15 @@ static void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args) {
       if (*FPos == '%') {
          FPos++;
          switch (*FPos) {
-            case 's':
-               PrintStr(va_arg(Args, char *), Stream);
-            break;
-            case 'd':
-               PrintSimpleInt(va_arg(Args, int), Stream);
-            break;
-            case 'c':
-               PrintCh(va_arg(Args, int), Stream);
-            break;
-            case 't':
-               PrintType(va_arg(Args, ValueType), Stream);
-            break;
+            case 's': PrintStr(va_arg(Args, char *), Stream); break;
+            case 'd': PrintSimpleInt(va_arg(Args, int), Stream); break;
+            case 'c': PrintCh(va_arg(Args, int), Stream); break;
+            case 't': PrintType(va_arg(Args, ValueType), Stream); break;
 #ifndef NO_FP
-            case 'f':
-               PrintFP(va_arg(Args, double), Stream);
-            break;
+            case 'f': PrintFP(va_arg(Args, double), Stream); break;
 #endif
-            case '%':
-               PrintCh('%', Stream);
-            break;
-            case '\0':
-               FPos--;
-            break;
+            case '%': PrintCh('%', Stream); break;
+            case '\0': FPos--; break;
          }
       } else
          PrintCh(*FPos, Stream);

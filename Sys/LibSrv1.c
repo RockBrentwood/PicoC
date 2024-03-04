@@ -7,7 +7,7 @@ static int ScanVect[16], NNVect[NUM_OUTPUT];
 ValueType IntArrayType;
 
 void SRV1SetupFunc(State pc) {
-   pc->IntArrayType = TypeGetMatching(pc, NULL, &pc->IntType, TypeArray, 16, StrEmpty, true);
+   pc->IntArrayType = TypeGetMatching(pc, NULL, &pc->IntType, ArrayT, 16, StrEmpty, true);
    VariableDefinePlatformVar(pc, NULL, "scanvect", pc->IntArrayType, (AnyValue)&ScanVect, false);
    VariableDefinePlatformVar(pc, NULL, "neuron", pc->IntArrayType, (AnyValue)&NNVect, false);
    VariableDefinePlatformVar(pc, NULL, "blobcnt", &pc->IntType, (AnyValue)&Blobcnt, false);
@@ -77,57 +77,37 @@ void Ciowrite(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 void Cpeek(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int size, ptr;
-   unsigned char *cp;
-   unsigned short *sp;
-   unsigned int *ip;
 // x = peek(addr, size);
 // Mask ptr to align with word size.
    ptr = Param[0]->Val->Integer;
    size = Param[1]->Val->Integer;
    switch (size) {
-      case 1: // char *:
-         cp = (unsigned char *)ptr;
-         ReturnValue->Val->Integer = (int)((unsigned int)*cp);
-      break;
-      case 2: // short *:
-         sp = (unsigned short *)(ptr&0xFFFFFFFE); // Align with even boundary.
-         ReturnValue->Val->Integer = (int)((unsigned short)*sp);
-      break;
-      case 4: // int *:
-         ip = (unsigned int *)(ptr&0xFFFFFFFC); // Align with quad boundary.
-         ReturnValue->Val->Integer = (int)*ip;
-      break;
-      default:
-         ReturnValue->Val->Integer = 0;
-      break;
+   // char *:
+      case 1: ReturnValue->Val->Integer = (int)(unsigned int)*(unsigned char *)ptr; break;
+   // short *: Align with even boundary.
+      case 2: ReturnValue->Val->Integer = (int)(unsigned short)*(unsigned short *)(ptr&~1); break;
+   // int *: Align with quad boundary.
+      case 4: ReturnValue->Val->Integer = (int)*(unsigned int *)(ptr&~3); break;
+      default: ReturnValue->Val->Integer = 0; break;
    }
 }
 
 void Cpoke(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int size, ptr, val;
-   unsigned char *cp;
-   unsigned short *sp;
-   unsigned int *ip;
 // x = poke(addr, size, val);
 // Mask ptr to align with word size.
    ptr = Param[0]->Val->Integer;
    size = Param[1]->Val->Integer;
    val = Param[2]->Val->Integer;
    switch (size) {
-      case 1: // char *:
-         cp = (unsigned char *)ptr;
-         *cp = (unsigned char)(val&0x000000FF);
-      break;
-      case 2: // short *:
-         sp = (unsigned short *)(ptr&0xFFFFFFFE);
-         *sp = (unsigned short)(val&0x0000FFFF);
-      break;
-      case 4: // int *:
-         ip = (unsigned int *)(ptr&0xFFFFFFFC);
-         *ip = val;
-      break;
-      default: // Don't bother with bad value.
-      break;
+   // char *:
+      case 1: *(unsigned char *)ptr = (unsigned char)(val&0xff); break;
+   // short *:
+      case 2: *(unsigned short *)(ptr&~1) = (unsigned short)(val&0xffff); break;
+   // int *:
+      case 4: *(unsigned int *)(ptr&~3) = val; break;
+   // Don't bother with bad value.
+      default: break;
    }
 }
 
@@ -204,17 +184,14 @@ void Cservos2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 // Laser(1) turns them on, laser(0) turns them off.
 void Claser(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   *pPORTHIO &= 0xFD7F; // Turn off both lasers.
+   *pPORTHIO &= ~0x0280; // Turn off both lasers.
    switch (Param[0]->Val->Integer) {
-      case 1:
-         *pPORTHIO |= 0x0080; // Turn on left laser.
-      break;
-      case 2:
-         *pPORTHIO |= 0x0200; // Turn on right laser.
-      break;
-      case 3:
-         *pPORTHIO |= 0x0280; // Turn on both lasers.
-      break;
+   // Turn on left laser.
+      case 1: *pPORTHIO |= 0x0080; break;
+   // Turn on right laser.
+      case 2: *pPORTHIO |= 0x0200; break;
+   // Turn on both lasers.
+      case 3: *pPORTHIO |= 0x0280; break;
    }
 }
 
@@ -399,15 +376,12 @@ void Canalog(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
       ProgramFail(NULL, "analog():  invalid channel");
    device_id = 0;
    switch (ix/10) {
-      case 0:
-         device_id = 0x20; // Channels 1-8.
-      break;
-      case 1:
-         device_id = 0x23; // Channels 11-18.
-      break;
-      case 2:
-         device_id = 0x24; // Channels 21-28.
-      break;
+   // Channels 1-8.
+      case 0: device_id = 0x20; break;
+   // Channels 11-18.
+      case 1: device_id = 0x23; break;
+   // Channels 21-28.
+      case 2: device_id = 0x24; break;
    }
    channel = ix%10;
    if ((channel < 1) || (channel > 8))

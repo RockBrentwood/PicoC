@@ -25,53 +25,53 @@
 
 typedef struct ReservedWord {
    const char *Word;
-   LexToken Token;
+   Lexical Token;
 } *ReservedWord;
 
 static struct ReservedWord ReservedWords[] = {
-   { "#define", TokenHashDefine },
-   { "#else", TokenHashElse },
-   { "#endif", TokenHashEndif },
-   { "#if", TokenHashIf },
-   { "#ifdef", TokenHashIfdef },
-   { "#ifndef", TokenHashIfndef },
-   { "#include", TokenHashInclude },
-   { "auto", TokenAutoType },
-   { "break", TokenBreak },
-   { "case", TokenCase },
-   { "char", TokenCharType },
-   { "continue", TokenContinue },
-   { "default", TokenDefault },
-   { "delete", TokenDelete },
-   { "do", TokenDo },
+   { "#define", DefineP },
+   { "#else", ElseP },
+   { "#endif", EndIfP },
+   { "#if", IfP },
+   { "#ifdef", IfDefP },
+   { "#ifndef", IfNDefP },
+   { "#include", IncludeP },
+   { "auto", AutoL },
+   { "break", BreakL },
+   { "case", CaseL },
+   { "char", CharL },
+   { "continue", ContinueL },
+   { "default", DefaultL },
+   { "delete", DeleteL },
+   { "do", DoL },
 #ifndef NO_FP
-   { "double", TokenDoubleType },
+   { "double", DoubleL },
 #endif
-   { "else", TokenElse },
-   { "enum", TokenEnumType },
-   { "extern", TokenExternType },
+   { "else", ElseL },
+   { "enum", EnumL },
+   { "extern", ExternL },
 #ifndef NO_FP
-   { "float", TokenFloatType },
+   { "float", FloatL },
 #endif
-   { "for", TokenFor },
-   { "goto", TokenGoto },
-   { "if", TokenIf },
-   { "int", TokenIntType },
-   { "long", TokenLongType },
-   { "new", TokenNew },
-   { "register", TokenRegisterType },
-   { "return", TokenReturn },
-   { "short", TokenShortType },
-   { "signed", TokenSignedType },
-   { "sizeof", TokenSizeof },
-   { "static", TokenStaticType },
-   { "struct", TokenStructType },
-   { "switch", TokenSwitch },
-   { "typedef", TokenTypedef },
-   { "union", TokenUnionType },
-   { "unsigned", TokenUnsignedType },
-   { "void", TokenVoidType },
-   { "while", TokenWhile }
+   { "for", ForL },
+   { "goto", GotoL },
+   { "if", IfL },
+   { "int", IntL },
+   { "long", LongL },
+   { "new", NewL },
+   { "register", RegisterL },
+   { "return", ReturnL },
+   { "short", ShortL },
+   { "signed", SignedL },
+   { "sizeof", SizeOfL },
+   { "static", StaticL },
+   { "struct", StructL },
+   { "switch", SwitchL },
+   { "typedef", TypeDefL },
+   { "union", UnionL },
+   { "unsigned", UnsignedL },
+   { "void", VoidL },
+   { "while", WhileL }
 };
 const size_t ReservedWordN = sizeof ReservedWords/sizeof ReservedWords[0];
 
@@ -100,19 +100,19 @@ void LexCleanup(State pc) {
 }
 
 // Check if a word is a reserved word - used while scanning.
-static LexToken LexCheckReservedWord(State pc, const char *Word) {
+static Lexical LexCheckReservedWord(State pc, const char *Word) {
    Value val;
    if (TableGet(&pc->ReservedWordTable, Word, &val, NULL, NULL, NULL))
       return ((ReservedWord)val)->Token;
    else
-      return TokenNone;
+      return NoneL;
 }
 
 // Get a numeric literal - used while scanning.
-static LexToken LexGetNumber(State pc, LexState Lexer, Value Val) {
+static Lexical LexGetNumber(State pc, LexState Lexer, Value Val) {
    long Result = 0;
    long Base = 10;
-   LexToken ResultToken;
+   Lexical ResultToken;
 #ifndef NO_FP
    double FPResult;
    double FPDiv;
@@ -153,7 +153,7 @@ static LexToken LexGetNumber(State pc, LexState Lexer, Value Val) {
    }
    Val->Typ = &pc->LongType; // Ignored?
    Val->Val->LongInteger = Result;
-   ResultToken = TokenIntegerConstant;
+   ResultToken = IntLitL;
    if (Lexer->Pos == Lexer->End)
       return ResultToken;
 #ifndef NO_FP
@@ -188,16 +188,16 @@ static LexToken LexGetNumber(State pc, LexState Lexer, Value Val) {
    Val->Val->FP = FPResult;
    if (*Lexer->Pos == 'f' || *Lexer->Pos == 'F')
       LEXER_INC(Lexer);
-   return TokenFPConstant;
+   return RatLitL;
 #else
    return ResultToken;
 #endif
 }
 
 // Get a reserved word or identifier - used while scanning.
-static LexToken LexGetWord(State pc, LexState Lexer, Value Val) {
+static Lexical LexGetWord(State pc, LexState Lexer, Value Val) {
    const char *StartPos = Lexer->Pos;
-   LexToken Token;
+   Lexical Token;
    do {
       LEXER_INC(Lexer);
    } while (Lexer->Pos != Lexer->End && isCident((int)*Lexer->Pos));
@@ -205,20 +205,15 @@ static LexToken LexGetWord(State pc, LexState Lexer, Value Val) {
    Val->Val->Identifier = TableStrRegister2(pc, StartPos, Lexer->Pos - StartPos);
    Token = LexCheckReservedWord(pc, Val->Val->Identifier);
    switch (Token) {
-      case TokenHashInclude:
-         Lexer->Mode = LexModeHashInclude;
-      break;
-      case TokenHashDefine:
-         Lexer->Mode = LexModeHashDefine;
-      break;
-      default:
-      break;
+      case IncludeP: Lexer->Mode = IncludeLx; break;
+      case DefineP: Lexer->Mode = DefineLx; break;
+      default: break;
    }
-   if (Token != TokenNone)
+   if (Token != NoneL)
       return Token;
-   if (Lexer->Mode == LexModeHashDefineSpace)
-      Lexer->Mode = LexModeHashDefineSpaceIdent;
-   return TokenIdentifier;
+   if (Lexer->Mode == DeclareLx)
+      Lexer->Mode = NameLx;
+   return IdL;
 }
 
 // Unescape a character from an octal character constant.
@@ -246,42 +241,23 @@ static unsigned char LexUnEscapeCharacter(const char **From, const char *End) {
          return '\\';
       ThisChar = *(*From)++;
       switch (ThisChar) {
-         case '\\':
-         return '\\';
-         case '\'':
-         return '\'';
-         case '"':
-         return '"';
-         case 'a':
-         return '\a';
-         case 'b':
-         return '\b';
-         case 'f':
-         return '\f';
-         case 'n':
-         return '\n';
-         case 'r':
-         return '\r';
-         case 't':
-         return '\t';
-         case 'v':
-         return '\v';
-         case '0':
-         case '1':
-         case '2':
-         case '3':
-         return LexUnEscapeCharacterConstant(From, End, ThisChar, 8);
-         case 'x':
-         return LexUnEscapeCharacterConstant(From, End, '0', 16);
-         default:
-         return ThisChar;
+         case 'a': return '\a';
+         case 'b': return '\b';
+         case 'f': return '\f';
+         case 'n': return '\n';
+         case 'r': return '\r';
+         case 't': return '\t';
+         case 'v': return '\v';
+         case '0': case '1': case '2': case '3': return LexUnEscapeCharacterConstant(From, End, ThisChar, 8);
+         case 'x': return LexUnEscapeCharacterConstant(From, End, '0', 16);
+         case '\\': case '\'': case '"': default: return ThisChar;
       }
    } else
       return *(*From)++;
 }
 
 // Get a string constant - used while scanning.
-static LexToken LexGetStringConstant(State pc, LexState Lexer, Value Val, char EndChar) {
+static Lexical LexGetStringConstant(State pc, LexState Lexer, Value Val, char EndChar) {
    bool Escape = false;
    const char *StartPos = Lexer->Pos;
    const char *EndPos;
@@ -327,21 +303,21 @@ static LexToken LexGetStringConstant(State pc, LexState Lexer, Value Val, char E
    Val->Val->Pointer = RegString;
    if (*Lexer->Pos == EndChar)
       LEXER_INC(Lexer);
-   return TokenStringConstant;
+   return StrLitL;
 }
 
 // Get a character constant - used while scanning.
-static LexToken LexGetCharacterConstant(State pc, LexState Lexer, Value Val) {
+static Lexical LexGetCharacterConstant(State pc, LexState Lexer, Value Val) {
    Val->Typ = &pc->CharType;
    Val->Val->Character = LexUnEscapeCharacter(&Lexer->Pos, Lexer->End);
    if (Lexer->Pos != Lexer->End && *Lexer->Pos != '\'')
       LexFail(pc, Lexer, "expected \"'\"");
    LEXER_INC(Lexer);
-   return TokenCharacterConstant;
+   return CharLitL;
 }
 
 // Skip a comment - used while scanning.
-void LexSkipComment(LexState Lexer, char NextChar, LexToken *ReturnToken) {
+void LexSkipComment(LexState Lexer, char NextChar, Lexical *ReturnToken) {
    if (NextChar == '*') {
    // Conventional C comment.
       while (Lexer->Pos != Lexer->End && (*(Lexer->Pos - 1) != '*' || *Lexer->Pos != '/')) {
@@ -351,7 +327,7 @@ void LexSkipComment(LexState Lexer, char NextChar, LexToken *ReturnToken) {
       }
       if (Lexer->Pos != Lexer->End)
          LEXER_INC(Lexer);
-      Lexer->Mode = LexModeNormal;
+      Lexer->Mode = NormalLx;
    } else {
    // C++ style comment.
       while (Lexer->Pos != Lexer->End && *Lexer->Pos != '\n')
@@ -360,14 +336,14 @@ void LexSkipComment(LexState Lexer, char NextChar, LexToken *ReturnToken) {
 }
 
 // Get a single token from the source - used while scanning.
-static LexToken LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
+static Lexical LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
    char ThisChar;
    char NextChar;
-   LexToken GotToken = TokenNone;
+   Lexical GotToken = NoneL;
 // Handle cases line multi-line comments or string constants which mess up the line count.
    if (Lexer->EmitExtraNewlines > 0) {
       Lexer->EmitExtraNewlines--;
-      return TokenEndOfLine;
+      return EolL;
    }
 // Scan for a token.
    do {
@@ -376,17 +352,17 @@ static LexToken LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
          if (*Lexer->Pos == '\n') {
             Lexer->Line++;
             Lexer->Pos++;
-            Lexer->Mode = LexModeNormal;
+            Lexer->Mode = NormalLx;
             Lexer->CharacterPos = 0;
-            return TokenEndOfLine;
-         } else if (Lexer->Mode == LexModeHashDefine || Lexer->Mode == LexModeHashDefineSpace)
-            Lexer->Mode = LexModeHashDefineSpace;
-         else if (Lexer->Mode == LexModeHashDefineSpaceIdent)
-            Lexer->Mode = LexModeNormal;
+            return EolL;
+         } else if (Lexer->Mode == DefineLx || Lexer->Mode == DeclareLx)
+            Lexer->Mode = DeclareLx;
+         else if (Lexer->Mode == NameLx)
+            Lexer->Mode = NormalLx;
          LEXER_INC(Lexer);
       }
       if (Lexer->Pos == Lexer->End || *Lexer->Pos == '\0')
-         return TokenEOF;
+         return EofL;
       ThisChar = *Lexer->Pos;
       if (isCidstart((int)ThisChar))
          return LexGetWord(pc, Lexer, *ValP);
@@ -395,120 +371,62 @@ static LexToken LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
       NextChar = (Lexer->Pos + 1 != Lexer->End)? *(Lexer->Pos + 1): 0;
       LEXER_INC(Lexer);
       switch (ThisChar) {
-         case '"':
-            GotToken = LexGetStringConstant(pc, Lexer, *ValP, '"');
-         break;
-         case '\'':
-            GotToken = LexGetCharacterConstant(pc, Lexer, *ValP);
-         break;
-         case '(':
-            if (Lexer->Mode == LexModeHashDefineSpaceIdent) GotToken = TokenOpenMacroBracket;
-            else GotToken = TokenOpenBracket;
-            Lexer->Mode = LexModeNormal;
-         break;
-         case ')':
-            GotToken = TokenCloseBracket;
-         break;
-         case '=':
-            NEXTIS('=', TokenEqual, TokenAssign);
-         break;
-         case '+':
-            NEXTIS3('=', TokenAddAssign, '+', TokenIncrement, TokenPlus);
-         break;
-         case '-':
-            NEXTIS4('=', TokenSubtractAssign, '>', TokenArrow, '-', TokenDecrement, TokenMinus);
-         break;
-         case '*':
-            NEXTIS('=', TokenMultiplyAssign, TokenAsterisk);
-         break;
+         case '"': GotToken = LexGetStringConstant(pc, Lexer, *ValP, '"'); break;
+         case '\'': GotToken = LexGetCharacterConstant(pc, Lexer, *ValP); break;
+         case '(': GotToken = Lexer->Mode == NameLx? LParP: LParL, Lexer->Mode = NormalLx; break;
+         case ')': GotToken = RParL; break;
+         case '=': NEXTIS('=', RelEqL, EquL); break;
+         case '+': NEXTIS3('=', AddEquL, '+', IncOpL, AddL); break;
+         case '-': NEXTIS4('=', SubEquL, '>', ArrowL, '-', DecOpL, SubL); break;
+         case '*': NEXTIS('=', MulEquL, StarL); break;
          case '/':
             if (NextChar == '/' || NextChar == '*') {
                LEXER_INC(Lexer);
                LexSkipComment(Lexer, NextChar, &GotToken);
-            } else NEXTIS('=', TokenDivideAssign, TokenSlash);
+            } else NEXTIS('=', DivEquL, DivL);
          break;
-         case '%':
-            NEXTIS('=', TokenModulusAssign, TokenModulus);
-         break;
+         case '%': NEXTIS('=', ModEquL, ModL); break;
          case '<':
-            if (Lexer->Mode == LexModeHashInclude) GotToken = LexGetStringConstant(pc, Lexer, *ValP, '>');
+            if (Lexer->Mode == IncludeLx) GotToken = LexGetStringConstant(pc, Lexer, *ValP, '>');
             else {
-               NEXTIS3PLUS('=', TokenLessEqual, '<', TokenShiftLeft, '=', TokenShiftLeftAssign, TokenLessThan);
+               NEXTIS3PLUS('=', RelLeL, '<', ShLL, '=', ShLEquL, RelLtL);
             }
          break;
-         case '>':
-            NEXTIS3PLUS('=', TokenGreaterEqual, '>', TokenShiftRight, '=', TokenShiftRightAssign, TokenGreaterThan);
-         break;
-         case ';':
-            GotToken = TokenSemicolon;
-         break;
-         case '&':
-            NEXTIS3('=', TokenArithmeticAndAssign, '&', TokenLogicalAnd, TokenAmpersand);
-         break;
-         case '|':
-            NEXTIS3('=', TokenArithmeticOrAssign, '|', TokenLogicalOr, TokenArithmeticOr);
-         break;
-         case '{':
-            GotToken = TokenLeftBrace;
-         break;
-         case '}':
-            GotToken = TokenRightBrace;
-         break;
-         case '[':
-            GotToken = TokenLeftSquareBracket;
-         break;
-         case ']':
-            GotToken = TokenRightSquareBracket;
-         break;
-         case '!':
-            NEXTIS('=', TokenNotEqual, TokenUnaryNot);
-         break;
-         case '^':
-            NEXTIS('=', TokenArithmeticExorAssign, TokenArithmeticExor);
-         break;
-         case '~':
-            GotToken = TokenUnaryExor;
-         break;
-         case ',':
-            GotToken = TokenComma;
-         break;
-         case '.':
-            NEXTISEXACTLY3('.', '.', TokenEllipsis, TokenDot);
-         break;
-         case '?':
-            GotToken = TokenQuestionMark;
-         break;
-         case ':':
-            GotToken = TokenColon;
-         break;
-         default:
-            LexFail(pc, Lexer, "illegal character '%c'", ThisChar);
-         break;
+         case '>': NEXTIS3PLUS('=', RelGeL, '>', ShRL, '=', ShREquL, RelGtL); break;
+         case ';': GotToken = SemiL; break;
+         case '&': NEXTIS3('=', AndEquL, '&', AndAndL, AndL); break;
+         case '|': NEXTIS3('=', OrEquL, '|', OrOrL, OrL); break;
+         case '{': GotToken = LCurlL; break;
+         case '}': GotToken = RCurlL; break;
+         case '[': GotToken = LBrL; break;
+         case ']': GotToken = RBrL; break;
+         case '!': NEXTIS('=', RelNeL, NotL); break;
+         case '^': NEXTIS('=', XOrEquL, XOrL); break;
+         case '~': GotToken = CplL; break;
+         case ',': GotToken = CommaL; break;
+         case '.': NEXTISEXACTLY3('.', '.', DotsL, DotL); break;
+         case '?': GotToken = QuestL; break;
+         case ':': GotToken = ColonL; break;
+         default: LexFail(pc, Lexer, "illegal character '%c'", ThisChar); break;
       }
-   } while (GotToken == TokenNone);
+   } while (GotToken == NoneL);
    return GotToken;
 }
 
 // What size value goes with each token.
-static int LexTokenSize(LexToken Token) {
+static int LexTokenSize(Lexical Token) {
    switch (Token) {
-      case TokenIdentifier:
-      case TokenStringConstant:
-      return sizeof(char *);
-      case TokenIntegerConstant:
-      return sizeof(long);
-      case TokenCharacterConstant:
-      return sizeof(unsigned char);
-      case TokenFPConstant:
-      return sizeof(double);
-      default:
-      return 0;
+      case IdL: case StrLitL: return sizeof(char *);
+      case IntLitL: return sizeof(long);
+      case CharLitL: return sizeof(unsigned char);
+      case RatLitL: return sizeof(double);
+      default: return 0;
    }
 }
 
 // Produce tokens from the lexer and return a heap buffer with the result - used for scanning.
 static void *LexTokenize(State pc, LexState Lexer, int *TokenLen) {
-   LexToken Token;
+   Lexical Token;
    void *HeapMem;
    Value GotValue;
    int MemUsed = 0;
@@ -539,7 +457,7 @@ static void *LexTokenize(State pc, LexState Lexer, int *TokenLen) {
          MemUsed += ValueSize;
       }
       LastCharacterPos = Lexer->CharacterPos;
-   } while (Token != TokenEOF);
+   } while (Token != EofL);
    HeapMem = HeapAllocMem(pc, MemUsed);
    if (HeapMem == NULL)
       LexFail(pc, Lexer, "out of memory");
@@ -567,7 +485,7 @@ void *LexAnalyse(State pc, const char *FileName, const char *Source, int SourceL
    Lexer.End = Source + SourceLen;
    Lexer.Line = 1;
    Lexer.FileName = FileName;
-   Lexer.Mode = LexModeNormal;
+   Lexer.Mode = NormalLx;
    Lexer.EmitExtraNewlines = 0;
    Lexer.CharacterPos = 1;
    Lexer.SourceText = Source;
@@ -580,7 +498,7 @@ void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *To
    Parser->Pos = TokenSource;
    Parser->Line = 1;
    Parser->FileName = FileName;
-   Parser->Mode = RunIt? RunModeRun: RunModeSkip;
+   Parser->Mode = RunIt? RunM: SkipM;
    Parser->SearchLabel = 0;
    Parser->HashIfLevel = 0;
    Parser->HashIfEvaluateToLevel = 0;
@@ -590,8 +508,8 @@ void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *To
 }
 
 // Get the next token, without pre-processing.
-static LexToken LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
-   LexToken Token = TokenNone;
+static Lexical LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
+   Lexical Token = NoneL;
    int ValueSize;
    char *Prompt = NULL;
    State pc = Parser->pc;
@@ -601,12 +519,12 @@ static LexToken LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
          Parser->Pos = pc->InteractiveHead->Tokens;
       if (Parser->FileName != pc->StrEmpty || pc->InteractiveHead != NULL) {
       // Skip leading newlines.
-         while ((Token = (LexToken)*(unsigned char *)Parser->Pos) == TokenEndOfLine) {
+         while ((Token = (Lexical)*(unsigned char *)Parser->Pos) == EolL) {
             Parser->Line++;
             Parser->Pos += TOKEN_DATA_OFFSET;
          }
       }
-      if (Parser->FileName == pc->StrEmpty && (pc->InteractiveHead == NULL || Token == TokenEOF)) {
+      if (Parser->FileName == pc->StrEmpty && (pc->InteractiveHead == NULL || Token == EofL)) {
       // We're at the end of an interactive input token list.
          char LineBuffer[LINEBUFFER_MAX];
          void *LineTokens;
@@ -620,7 +538,7 @@ static LexToken LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
             } else
                Prompt = INTERACTIVE_PROMPT_LINE;
             if (PlatformGetLine(&LineBuffer[0], LINEBUFFER_MAX, Prompt) == NULL)
-               return TokenEOF;
+               return EofL;
          // Put the new line at the end of the linked list of interactive lines.
             LineTokens = LexAnalyse(pc, pc->StrEmpty, &LineBuffer[0], strlen(LineBuffer), &LineBytes);
             LineNode = VariableAlloc(pc, Parser, sizeof *LineNode, true);
@@ -649,34 +567,23 @@ static LexToken LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
             assert(pc->InteractiveCurrentLine != NULL);
             Parser->Pos = pc->InteractiveCurrentLine->Tokens;
          }
-         Token = (LexToken)*(unsigned char *)Parser->Pos;
+         Token = (Lexical)*(unsigned char *)Parser->Pos;
       }
-   } while ((Parser->FileName == pc->StrEmpty && Token == TokenEOF) || Token == TokenEndOfLine);
+   } while ((Parser->FileName == pc->StrEmpty && Token == EofL) || Token == EolL);
    Parser->CharacterPos = *((unsigned char *)Parser->Pos + 1);
    ValueSize = LexTokenSize(Token);
    if (ValueSize > 0) {
    // This token requires a value - unpack it.
       if (ValP != NULL) {
          switch (Token) {
-            case TokenStringConstant:
-               pc->LexValue.Typ = pc->CharPtrType;
-            break;
-            case TokenIdentifier:
-               pc->LexValue.Typ = NULL;
-            break;
-            case TokenIntegerConstant:
-               pc->LexValue.Typ = &pc->LongType;
-            break;
-            case TokenCharacterConstant:
-               pc->LexValue.Typ = &pc->CharType;
-            break;
+            case StrLitL: pc->LexValue.Typ = pc->CharPtrType; break;
+            case IdL: pc->LexValue.Typ = NULL; break;
+            case IntLitL: pc->LexValue.Typ = &pc->LongType; break;
+            case CharLitL: pc->LexValue.Typ = &pc->CharType; break;
 #ifndef NO_FP
-            case TokenFPConstant:
-               pc->LexValue.Typ = &pc->FPType;
-            break;
+            case RatLitL: pc->LexValue.Typ = &pc->FPType; break;
 #endif
-            default:
-            break;
+            default: break;
          }
          memcpy((void *)pc->LexValue.Val, (void *)((char *)Parser->Pos + TOKEN_DATA_OFFSET), ValueSize);
          pc->LexValue.ValOnHeap = false;
@@ -688,13 +595,13 @@ static LexToken LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
       if (IncPos)
          Parser->Pos += ValueSize + TOKEN_DATA_OFFSET;
    } else {
-      if (IncPos && Token != TokenEOF)
+      if (IncPos && Token != EofL)
          Parser->Pos += TOKEN_DATA_OFFSET;
    }
 #ifdef DEBUG_LEXER
    printf("Got token=%02x inc=%d pos=%d\n", Token, IncPos, Parser->CharacterPos);
 #endif
-   assert(Token >= TokenNone && Token <= TokenEndOfFunction);
+   assert(Token >= NoneL && Token <= EndFnL);
    return Token;
 }
 
@@ -710,8 +617,8 @@ static void LexHashIfdef(ParseState Parser, bool IfNot) {
    Value IdentValue;
    Value SavedValue;
    bool IsDefined;
-   LexToken Token = LexGetRawToken(Parser, &IdentValue, true);
-   if (Token != TokenIdentifier)
+   Lexical Token = LexGetRawToken(Parser, &IdentValue, true);
+   if (Token != IdL)
       ProgramFail(Parser, "identifier expected");
 // Is the identifier defined?
    IsDefined = TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, &SavedValue, NULL, NULL, NULL);
@@ -728,17 +635,17 @@ static void LexHashIf(ParseState Parser) {
    Value IdentValue;
    Value SavedValue = NULL;
    struct ParseState MacroParser;
-   LexToken Token = LexGetRawToken(Parser, &IdentValue, true);
-   if (Token == TokenIdentifier) {
+   Lexical Token = LexGetRawToken(Parser, &IdentValue, true);
+   if (Token == IdL) {
    // Look up a value from a macro definition.
       if (!TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, &SavedValue, NULL, NULL, NULL))
          ProgramFail(Parser, "'%s' is undefined", IdentValue->Val->Identifier);
-      if (SavedValue->Typ->Base != TypeMacro)
+      if (SavedValue->Typ->Base != MacroT)
          ProgramFail(Parser, "value expected");
       ParserCopy(&MacroParser, &SavedValue->Val->MacroDef.Body);
       Token = LexGetRawToken(&MacroParser, &IdentValue, true);
    }
-   if (Token != TokenCharacterConstant && Token != TokenIntegerConstant)
+   if (Token != CharLitL && Token != IntLitL)
       ProgramFail(Parser, "value expected");
 // Is the identifier defined?
    if (Parser->HashIfEvaluateToLevel == Parser->HashIfLevel && IdentValue->Val->Character) {
@@ -770,76 +677,47 @@ static void LexHashEndif(ParseState Parser) {
 }
 
 #if 0 // Useful for debug.
-void LexPrintToken(LexToken Token) {
+void LexPrintToken(Lexical Token) {
    char *TokenNames[] = {
-   /*0x00*/ "None",
-   /*0x01*/ "Comma",
-   /*0x02*/ "Assign", "AddAssign", "SubtractAssign", "MultiplyAssign", "DivideAssign", "ModulusAssign",
-   /*0x08*/ "ShiftLeftAssign", "ShiftRightAssign", "ArithmeticAndAssign", "ArithmeticOrAssign", "ArithmeticExorAssign",
-   /*0x0d*/ "QuestionMark", "Colon",
-   /*0x0f*/ "LogicalOr",
-   /*0x10*/ "LogicalAnd",
-   /*0x11*/ "ArithmeticOr",
-   /*0x12*/ "ArithmeticExor",
-   /*0x13*/ "Ampersand",
-   /*0x14*/ "Equal", "NotEqual",
-   /*0x16*/ "LessThan", "GreaterThan", "LessEqual", "GreaterEqual",
-   /*0x1a*/ "ShiftLeft", "ShiftRight",
-   /*0x1c*/ "Plus", "Minus",
-   /*0x1e*/ "Asterisk", "Slash", "Modulus",
-   /*0x21*/ "Increment", "Decrement", "UnaryNot", "UnaryExor", "Sizeof", "Cast",
-   /*0x27*/ "LeftSquareBracket", "RightSquareBracket", "Dot", "Arrow",
-   /*0x2b*/ "OpenBracket", "CloseBracket",
-   /*0x2d*/ "Identifier", "IntegerConstant", "FPConstant", "StringConstant", "CharacterConstant",
-   /*0x32*/ "Semicolon", "Ellipsis",
-   /*0x34*/ "LeftBrace", "RightBrace",
-   /*0x36*/ "IntType", "CharType", "FloatType", "DoubleType", "VoidType", "EnumType",
-   /*0x3c*/ "LongType", "SignedType", "ShortType", "StaticType", "AutoType", "RegisterType", "ExternType", "StructType", "UnionType", "UnsignedType", "Typedef",
-   /*0x46*/ "Continue", "Do", "Else", "For", "Goto", "If", "While", "Break", "Switch", "Case", "Default", "Return",
-   /*0x52*/ "HashDefine", "HashInclude", "HashIf", "HashIfdef", "HashIfndef", "HashElse", "HashEndif",
-   /*0x59*/ "New", "Delete",
-   /*0x5b*/ "OpenMacroBracket",
-   /*0x5c*/ "EOF", "EndOfLine", "EndOfFunction"
+      "None", ",",
+      "=", "+=", "-=", "*=", "/=", "%=", "<<=", ">>=", "&=", "|=", "^=",
+      "?", ":", "||", "&&",
+      "|", "^", "&",
+      "==", "!=", "<", ">", "<=", ">=",
+      "<<", ">>", "+", "-", "*", "/", "%",
+      "++", "--", "!", "~", "sizeof", "Cast",
+      "[", "]", ".", "->", "(", ")",
+      "Name", "Integer", "Rational", "String", "Character",
+      ";", "...", "{", "}",
+      "int", "char", "float", "double", "void", "enum", "long", "signed", "short",
+      "static", "auto", "register", "extern", "struct", "union", "unsigned", "typedef",
+      "continue", "do", "else", "for", "goto", "if", "while", "break", "switch", "case", "default", "return",
+      "#define", "#include", "#if", "#ifdef", "#ifndef", "#else", "#endif", "OpenMacro",
+      "New", "Delete",
+      "EndOfFile", "EndOfLine", "EndOfFunction"
    };
    printf("{%s}", TokenNames[Token]);
 }
 #endif
 
 // Get the next token given a parser state, pre-processing as we go.
-LexToken LexGetToken(ParseState Parser, Value *ValP, int IncPos) {
-   LexToken Token;
+Lexical LexGetToken(ParseState Parser, Value *ValP, int IncPos) {
+   Lexical Token;
    bool TryNextToken;
 // Implements the pre-processor #if commands.
    do {
       int WasPreProcToken = true;
       Token = LexGetRawToken(Parser, ValP, IncPos);
       switch (Token) {
-         case TokenHashIfdef:
-            LexHashIncPos(Parser, IncPos);
-            LexHashIfdef(Parser, false);
-         break;
-         case TokenHashIfndef:
-            LexHashIncPos(Parser, IncPos);
-            LexHashIfdef(Parser, true);
-         break;
-         case TokenHashIf:
-            LexHashIncPos(Parser, IncPos);
-            LexHashIf(Parser);
-         break;
-         case TokenHashElse:
-            LexHashIncPos(Parser, IncPos);
-            LexHashElse(Parser);
-         break;
-         case TokenHashEndif:
-            LexHashIncPos(Parser, IncPos);
-            LexHashEndif(Parser);
-         break;
-         default:
-            WasPreProcToken = false;
-         break;
+         case IfDefP: LexHashIncPos(Parser, IncPos), LexHashIfdef(Parser, false); break;
+         case IfNDefP: LexHashIncPos(Parser, IncPos), LexHashIfdef(Parser, true); break;
+         case IfP: LexHashIncPos(Parser, IncPos), LexHashIf(Parser); break;
+         case ElseP: LexHashIncPos(Parser, IncPos), LexHashElse(Parser); break;
+         case EndIfP: LexHashIncPos(Parser, IncPos), LexHashEndif(Parser); break;
+         default: WasPreProcToken = false; break;
       }
    // If we're going to reject this token, increment the token pointer to the next one.
-      TryNextToken = (Parser->HashIfEvaluateToLevel < Parser->HashIfLevel && Token != TokenEOF) || WasPreProcToken;
+      TryNextToken = (Parser->HashIfEvaluateToLevel < Parser->HashIfLevel && Token != EofL) || WasPreProcToken;
       if (!IncPos && TryNextToken)
          LexGetRawToken(Parser, NULL, true);
    } while (TryNextToken);
@@ -847,22 +725,22 @@ LexToken LexGetToken(ParseState Parser, Value *ValP, int IncPos) {
 }
 
 // Take a quick peek at the next token, skipping any pre-processing.
-LexToken LexRawPeekToken(ParseState Parser) {
-   return (LexToken)*(unsigned char *)Parser->Pos;
+Lexical LexRawPeekToken(ParseState Parser) {
+   return (Lexical)*(unsigned char *)Parser->Pos;
 }
 
 // Find the end of the line.
 void LexToEndOfLine(ParseState Parser) {
    while (true) {
-      LexToken Token = (LexToken)*(unsigned char *)Parser->Pos;
-      if (Token == TokenEndOfLine || Token == TokenEOF)
+      Lexical Token = (Lexical)*(unsigned char *)Parser->Pos;
+      if (Token == EolL || Token == EofL)
          return;
       else
          LexGetRawToken(Parser, NULL, true);
    }
 }
 
-// Copy the tokens from StartParser to EndParser into new memory, removing TokenEOFs and terminate with a TokenEndOfFunction.
+// Copy the tokens from StartParser to EndParser into new memory, removing TokenEOFs and terminate with a EndFnL.
 void *LexCopyTokens(ParseState StartParser, ParseState EndParser) {
    int MemSize = 0;
    int CopySize;
@@ -904,7 +782,7 @@ void *LexCopyTokens(ParseState StartParser, ParseState EndParser) {
          memcpy(NewTokenPos, &ILine->Tokens[0], EndParser->Pos - &ILine->Tokens[0]);
       }
    }
-   NewTokens[MemSize] = (unsigned char)TokenEndOfFunction;
+   NewTokens[MemSize] = (unsigned char)EndFnL;
    return NewTokens;
 }
 

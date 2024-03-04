@@ -17,10 +17,10 @@ void ParseCleanup(State pc) {
 
 // Parse a statement, but only run it if Condition is true.
 static ParseResult ParseStatementMaybeRun(ParseState Parser, bool Condition, bool CheckTrailingSemicolon) {
-   if (Parser->Mode != RunModeSkip && !Condition) {
+   if (Parser->Mode != SkipM && !Condition) {
       RunMode OldMode = Parser->Mode;
       int Result;
-      Parser->Mode = RunModeSkip;
+      Parser->Mode = SkipM;
       Result = ParseStatement(Parser, CheckTrailingSemicolon);
       Parser->Mode = OldMode;
       return Result;
@@ -31,12 +31,12 @@ static ParseResult ParseStatementMaybeRun(ParseState Parser, bool Condition, boo
 // Count the number of parameters to a function or macro.
 static int ParseCountParams(ParseState Parser) {
    int ParamCount = 0;
-   LexToken Token = LexGetToken(Parser, NULL, true);
-   if (Token != TokenCloseBracket && Token != TokenEOF) {
+   Lexical Token = LexGetToken(Parser, NULL, true);
+   if (Token != RParL && Token != EofL) {
    // Count the number of parameters.
       ParamCount++;
-      while ((Token = LexGetToken(Parser, NULL, true)) != TokenCloseBracket && Token != TokenEOF) {
-         if (Token == TokenComma)
+      while ((Token = LexGetToken(Parser, NULL, true)) != RParL && Token != EofL) {
+         if (Token == CommaL)
             ParamCount++;
       }
    }
@@ -47,7 +47,7 @@ static int ParseCountParams(ParseState Parser) {
 Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Identifier) {
    ValueType ParamType;
    char *ParamIdentifier;
-   LexToken Token = TokenNone;
+   Lexical Token = NoneL;
    struct ParseState ParamParser;
    Value FuncValue;
    Value OldFuncValue;
@@ -70,7 +70,7 @@ Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Ide
    FuncValue->Val->FuncDef.ParamName = (char **)((char *)FuncValue->Val->FuncDef.ParamType + ParamCount*sizeof(ValueType));
    for (ParamCount = 0; ParamCount < FuncValue->Val->FuncDef.NumParams; ParamCount++) {
    // Harvest the parameters into the function definition.
-      if (ParamCount == FuncValue->Val->FuncDef.NumParams - 1 && LexGetToken(&ParamParser, NULL, false) == TokenEllipsis) {
+      if (ParamCount == FuncValue->Val->FuncDef.NumParams - 1 && LexGetToken(&ParamParser, NULL, false) == DotsL) {
       // Ellipsis at end.
          FuncValue->Val->FuncDef.NumParams--;
          FuncValue->Val->FuncDef.VarArgs = true;
@@ -78,7 +78,7 @@ Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Ide
       } else {
       // Add a parameter.
          TypeParse(&ParamParser, &ParamType, &ParamIdentifier, NULL);
-         if (ParamType->Base == TypeVoid) {
+         if (ParamType->Base == VoidT) {
          // This isn't a real parameter at all - delete it.
             ParamCount--;
             FuncValue->Val->FuncDef.NumParams--;
@@ -88,10 +88,10 @@ Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Ide
          }
       }
       Token = LexGetToken(&ParamParser, NULL, true);
-      if (Token != TokenComma && ParamCount < FuncValue->Val->FuncDef.NumParams - 1)
+      if (Token != CommaL && ParamCount < FuncValue->Val->FuncDef.NumParams - 1)
          ProgramFail(&ParamParser, "comma expected");
    }
-   if (FuncValue->Val->FuncDef.NumParams != 0 && Token != TokenCloseBracket && Token != TokenComma && Token != TokenEllipsis)
+   if (FuncValue->Val->FuncDef.NumParams != 0 && Token != RParL && Token != CommaL && Token != DotsL)
       ProgramFail(&ParamParser, "bad parameter");
    if (strcmp(Identifier, "main") == 0) {
    // Make sure it's int main().
@@ -102,14 +102,14 @@ Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Ide
    }
 // Look for a function body.
    Token = LexGetToken(Parser, NULL, false);
-   if (Token == TokenSemicolon)
+   if (Token == SemiL)
       LexGetToken(Parser, NULL, true); // It's a prototype, absorb the trailing semicolon.
    else {
    // It's a full function definition with a body.
-      if (Token != TokenLeftBrace)
+      if (Token != LCurlL)
          ProgramFail(Parser, "bad function definition");
       ParserCopy(&FuncBody, Parser);
-      if (ParseStatementMaybeRun(Parser, false, true) != ParseResultOk)
+      if (ParseStatementMaybeRun(Parser, false, true) != OkSyn)
          ProgramFail(Parser, "function definition expected");
       FuncValue->Val->FuncDef.Body = FuncBody;
       FuncValue->Val->FuncDef.Body.Pos = LexCopyTokens(&FuncBody, Parser);
@@ -130,15 +130,15 @@ Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Ide
 // Parse an array initializer and assign to a variable.
 static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAssignment) {
    int ArrayIndex = 0;
-   LexToken Token;
+   Lexical Token;
    Value CValue;
 // Count the number of elements in the array.
-   if (DoAssignment && Parser->Mode == RunModeRun) {
+   if (DoAssignment && Parser->Mode == RunM) {
       struct ParseState CountParser;
       int NumElements;
       ParserCopy(&CountParser, Parser);
       NumElements = ParseArrayInitializer(&CountParser, NewVariable, false);
-      if (NewVariable->Typ->Base != TypeArray)
+      if (NewVariable->Typ->Base != ArrayT)
          AssignFail(Parser, "%t from array initializer", NewVariable->Typ, NULL, 0, 0, NULL, 0);
       if (NewVariable->Typ->ArraySize == 0) {
          NewVariable->Typ = TypeGetMatching(Parser->pc, Parser, NewVariable->Typ->FromType, NewVariable->Typ->Base, NumElements, NewVariable->Typ->Identifier, true);
@@ -151,12 +151,12 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
    }
 // Parse the array initializer.
    Token = LexGetToken(Parser, NULL, false);
-   while (Token != TokenRightBrace) {
-      if (LexGetToken(Parser, NULL, false) == TokenLeftBrace) {
+   while (Token != RCurlL) {
+      if (LexGetToken(Parser, NULL, false) == LCurlL) {
       // This is a sub-array initializer.
          int SubArraySize = 0;
          Value SubArray = NewVariable;
-         if (Parser->Mode == RunModeRun && DoAssignment) {
+         if (Parser->Mode == RunM && DoAssignment) {
             SubArraySize = TypeSize(NewVariable->Typ->FromType, NewVariable->Typ->FromType->ArraySize, true);
             SubArray = VariableAllocValueFromExistingData(Parser, NewVariable->Typ->FromType, (AnyValue)(&NewVariable->Val->ArrayMem[0] + SubArraySize*ArrayIndex), true, NewVariable);
 #ifdef DEBUG_ARRAY_INITIALIZER
@@ -172,16 +172,16 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
          ParseArrayInitializer(Parser, SubArray, DoAssignment);
       } else {
          Value ArrayElement = NULL;
-         if (Parser->Mode == RunModeRun && DoAssignment) {
+         if (Parser->Mode == RunM && DoAssignment) {
             ValueType ElementType = NewVariable->Typ;
             int TotalSize = 1;
             int ElementSize = 0;
          // int x[3][3] = {1,2,3,4} => handle it just like int x[9] = {1,2,3,4}.
-            while (ElementType->Base == TypeArray) {
+            while (ElementType->Base == ArrayT) {
                TotalSize *= ElementType->ArraySize;
                ElementType = ElementType->FromType;
             // char x[10][10] = {"abc", "def"} => assign "abc" to x[0], "def" to x[1] etc.
-               if (LexGetToken(Parser, NULL, false) == TokenStringConstant && ElementType->FromType->Base == TypeChar)
+               if (LexGetToken(Parser, NULL, false) == StrLitL && ElementType->FromType->Base == CharT)
                   break;
             }
             ElementSize = TypeSize(ElementType, ElementType->ArraySize, true);
@@ -196,7 +196,7 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
       // This is a normal expression initializer.
          if (!ExpressionParse(Parser, &CValue))
             ProgramFail(Parser, "expression expected");
-         if (Parser->Mode == RunModeRun && DoAssignment) {
+         if (Parser->Mode == RunM && DoAssignment) {
             ExpressionAssign(Parser, ArrayElement, CValue, false, NULL, 0, false);
             VariableStackPop(Parser, CValue);
             VariableStackPop(Parser, ArrayElement);
@@ -204,13 +204,13 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
       }
       ArrayIndex++;
       Token = LexGetToken(Parser, NULL, false);
-      if (Token == TokenComma) {
+      if (Token == CommaL) {
          LexGetToken(Parser, NULL, true);
          Token = LexGetToken(Parser, NULL, false);
-      } else if (Token != TokenRightBrace)
+      } else if (Token != RCurlL)
          ProgramFail(Parser, "comma expected");
    }
-   if (Token == TokenRightBrace)
+   if (Token == RCurlL)
       LexGetToken(Parser, NULL, true);
    else
       ProgramFail(Parser, "'}' expected");
@@ -220,7 +220,7 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
 // Assign an initial value to a variable.
 static void ParseDeclarationAssignment(ParseState Parser, Value NewVariable, bool DoAssignment) {
    Value CValue;
-   if (LexGetToken(Parser, NULL, false) == TokenLeftBrace) {
+   if (LexGetToken(Parser, NULL, false) == LCurlL) {
    // This is an array initializer.
       LexGetToken(Parser, NULL, true);
       ParseArrayInitializer(Parser, NewVariable, DoAssignment);
@@ -228,7 +228,7 @@ static void ParseDeclarationAssignment(ParseState Parser, Value NewVariable, boo
    // This is a normal expression initializer.
       if (!ExpressionParse(Parser, &CValue))
          ProgramFail(Parser, "expression expected");
-      if (Parser->Mode == RunModeRun && DoAssignment) {
+      if (Parser->Mode == RunM && DoAssignment) {
          ExpressionAssign(Parser, NewVariable, CValue, false, NULL, 0, false);
          VariableStackPop(Parser, CValue);
       }
@@ -236,7 +236,7 @@ static void ParseDeclarationAssignment(ParseState Parser, Value NewVariable, boo
 }
 
 // Declare a variable or function.
-static bool ParseDeclaration(ParseState Parser, LexToken Token) {
+static bool ParseDeclaration(ParseState Parser, Lexical Token) {
    char *Identifier;
    ValueType BasicType;
    ValueType Typ;
@@ -247,19 +247,19 @@ static bool ParseDeclaration(ParseState Parser, LexToken Token) {
    TypeParseFront(Parser, &BasicType, &IsStatic);
    do {
       TypeParseIdentPart(Parser, BasicType, &Typ, &Identifier);
-      if ((Token != TokenVoidType && Token != TokenStructType && Token != TokenUnionType && Token != TokenEnumType) && Identifier == pc->StrEmpty)
+      if ((Token != VoidL && Token != StructL && Token != UnionL && Token != EnumL) && Identifier == pc->StrEmpty)
          ProgramFail(Parser, "identifier expected");
       if (Identifier != pc->StrEmpty) {
       // Handle function definitions.
-         if (LexGetToken(Parser, NULL, false) == TokenOpenBracket) {
+         if (LexGetToken(Parser, NULL, false) == LParL) {
             ParseFunctionDefinition(Parser, Typ, Identifier);
             return false;
          } else {
             if (Typ == &pc->VoidType && Identifier != pc->StrEmpty)
                ProgramFail(Parser, "can't define a void variable");
-            if (Parser->Mode == RunModeRun || Parser->Mode == RunModeGoto)
+            if (Parser->Mode == RunM || Parser->Mode == GotoM)
                NewVariable = VariableDefineButIgnoreIdentical(Parser, Identifier, Typ, IsStatic, &FirstVisit);
-            if (LexGetToken(Parser, NULL, false) == TokenAssign) {
+            if (LexGetToken(Parser, NULL, false) == EquL) {
             // We're assigning an initial value.
                LexGetToken(Parser, NULL, true);
                ParseDeclarationAssignment(Parser, NewVariable, !IsStatic || FirstVisit);
@@ -267,9 +267,9 @@ static bool ParseDeclaration(ParseState Parser, LexToken Token) {
          }
       }
       Token = LexGetToken(Parser, NULL, false);
-      if (Token == TokenComma)
+      if (Token == CommaL)
          LexGetToken(Parser, NULL, true);
-   } while (Token == TokenComma);
+   } while (Token == CommaL);
    return true;
 }
 
@@ -279,12 +279,12 @@ static void ParseMacroDefinition(ParseState Parser) {
    char *MacroNameStr;
    Value ParamName;
    Value MacroValue;
-   if (LexGetToken(Parser, &MacroName, true) != TokenIdentifier)
+   if (LexGetToken(Parser, &MacroName, true) != IdL)
       ProgramFail(Parser, "identifier expected");
    MacroNameStr = MacroName->Val->Identifier;
-   if (LexRawPeekToken(Parser) == TokenOpenMacroBracket) {
+   if (LexRawPeekToken(Parser) == LParP) {
    // It's a parameterized macro, read the parameters.
-      LexToken Token = LexGetToken(Parser, NULL, true);
+      Lexical Token = LexGetToken(Parser, NULL, true);
       struct ParseState ParamParser;
       int NumParams;
       int ParamCount = 0;
@@ -294,17 +294,17 @@ static void ParseMacroDefinition(ParseState Parser) {
       MacroValue->Val->MacroDef.NumParams = NumParams;
       MacroValue->Val->MacroDef.ParamName = (char **)((char *)MacroValue->Val + sizeof MacroValue->Val->MacroDef);
       Token = LexGetToken(Parser, &ParamName, true);
-      while (Token == TokenIdentifier) {
+      while (Token == IdL) {
       // Store a parameter name.
          MacroValue->Val->MacroDef.ParamName[ParamCount++] = ParamName->Val->Identifier;
       // Get the trailing comma.
          Token = LexGetToken(Parser, NULL, true);
-         if (Token == TokenComma)
+         if (Token == CommaL)
             Token = LexGetToken(Parser, &ParamName, true);
-         else if (Token != TokenCloseBracket)
+         else if (Token != RParL)
             ProgramFail(Parser, "comma expected");
       }
-      if (Token != TokenCloseBracket)
+      if (Token != RParL)
          ProgramFail(Parser, "close bracket expected");
    } else {
    // Allocate a simple unparameterized macro.
@@ -343,44 +343,44 @@ static void ParseFor(ParseState Parser) {
    struct ParseState After;
    RunMode OldMode = Parser->Mode;
    int PrevScopeID = 0, ScopeID = VariableScopeBegin(Parser, &PrevScopeID);
-   if (LexGetToken(Parser, NULL, true) != TokenOpenBracket)
+   if (LexGetToken(Parser, NULL, true) != LParL)
       ProgramFail(Parser, "'(' expected");
-   if (ParseStatement(Parser, true) != ParseResultOk)
+   if (ParseStatement(Parser, true) != OkSyn)
       ProgramFail(Parser, "statement expected");
    ParserCopyPos(&PreConditional, Parser);
-   if (LexGetToken(Parser, NULL, false) == TokenSemicolon)
+   if (LexGetToken(Parser, NULL, false) == SemiL)
       Condition = true;
    else
       Condition = ExpressionParseInt(Parser) != 0;
-   if (LexGetToken(Parser, NULL, true) != TokenSemicolon)
+   if (LexGetToken(Parser, NULL, true) != SemiL)
       ProgramFail(Parser, "';' expected");
    ParserCopyPos(&PreIncrement, Parser);
    ParseStatementMaybeRun(Parser, false, false);
-   if (LexGetToken(Parser, NULL, true) != TokenCloseBracket)
+   if (LexGetToken(Parser, NULL, true) != RParL)
       ProgramFail(Parser, "')' expected");
    ParserCopyPos(&PreStatement, Parser);
-   if (ParseStatementMaybeRun(Parser, Condition, true) != ParseResultOk)
+   if (ParseStatementMaybeRun(Parser, Condition, true) != OkSyn)
       ProgramFail(Parser, "statement expected");
-   if (Parser->Mode == RunModeContinue && OldMode == RunModeRun)
-      Parser->Mode = RunModeRun;
+   if (Parser->Mode == ContinueM && OldMode == RunM)
+      Parser->Mode = RunM;
    ParserCopyPos(&After, Parser);
-   while (Condition && Parser->Mode == RunModeRun) {
+   while (Condition && Parser->Mode == RunM) {
       ParserCopyPos(Parser, &PreIncrement);
       ParseStatement(Parser, false);
       ParserCopyPos(Parser, &PreConditional);
-      if (LexGetToken(Parser, NULL, false) == TokenSemicolon)
+      if (LexGetToken(Parser, NULL, false) == SemiL)
          Condition = true;
       else
          Condition = ExpressionParseInt(Parser) != 0;
       if (Condition) {
          ParserCopyPos(Parser, &PreStatement);
          ParseStatement(Parser, true);
-         if (Parser->Mode == RunModeContinue)
-            Parser->Mode = RunModeRun;
+         if (Parser->Mode == ContinueM)
+            Parser->Mode = RunM;
       }
    }
-   if (Parser->Mode == RunModeBreak && OldMode == RunModeRun)
-      Parser->Mode = RunModeRun;
+   if (Parser->Mode == BreakM && OldMode == RunM)
+      Parser->Mode = RunM;
    VariableScopeEnd(Parser, ScopeID, PrevScopeID);
    ParserCopyPos(Parser, &After);
 }
@@ -388,21 +388,21 @@ static void ParseFor(ParseState Parser) {
 // Parse a block of code and return what mode it returned in.
 static RunMode ParseBlock(ParseState Parser, bool AbsorbOpenBrace, bool Condition) {
    int PrevScopeID = 0, ScopeID = VariableScopeBegin(Parser, &PrevScopeID);
-   if (AbsorbOpenBrace && LexGetToken(Parser, NULL, true) != TokenLeftBrace)
+   if (AbsorbOpenBrace && LexGetToken(Parser, NULL, true) != LCurlL)
       ProgramFail(Parser, "'{' expected");
-   if (Parser->Mode == RunModeSkip || !Condition) {
+   if (Parser->Mode == SkipM || !Condition) {
    // Condition failed - skip this block instead.
       RunMode OldMode = Parser->Mode;
-      Parser->Mode = RunModeSkip;
-      while (ParseStatement(Parser, true) == ParseResultOk) {
+      Parser->Mode = SkipM;
+      while (ParseStatement(Parser, true) == OkSyn) {
       }
       Parser->Mode = OldMode;
    } else {
    // Just run it in its current mode.
-      while (ParseStatement(Parser, true) == ParseResultOk) {
+      while (ParseStatement(Parser, true) == OkSyn) {
       }
    }
-   if (LexGetToken(Parser, NULL, true) != TokenRightBrace)
+   if (LexGetToken(Parser, NULL, true) != RCurlL)
       ProgramFail(Parser, "'}' expected");
    VariableScopeEnd(Parser, ScopeID, PrevScopeID);
    return Parser->Mode;
@@ -415,7 +415,7 @@ static void ParseTypedef(ParseState Parser) {
    char *TypeName;
    struct Value InitValue;
    TypeParse(Parser, &Typ, &TypeName, NULL);
-   if (Parser->Mode == RunModeRun) {
+   if (Parser->Mode == RunM) {
       TypPtr = &Typ;
       InitValue.Typ = &Parser->pc->TypeType;
       InitValue.Val = (AnyValue)TypPtr;
@@ -431,41 +431,40 @@ ParseResult ParseStatement(ParseState Parser, bool CheckTrailingSemicolon) {
    bool Condition;
    int Label;
    struct ParseState PreState;
-   LexToken Token;
+   Lexical Token;
 // If we're debugging, check for a breakpoint.
-   if (Parser->DebugMode && Parser->Mode == RunModeRun)
+   if (Parser->DebugMode && Parser->Mode == RunM)
       DebugCheckStatement(Parser);
 // Take note of where we are and then grab a token to see what statement we have.
    ParserCopy(&PreState, Parser);
    Token = LexGetToken(Parser, &LexerValue, true);
    switch (Token) {
-      case TokenEOF:
-      return ParseResultEOF;
-      case TokenIdentifier:
+      case EofL: return EofSyn;
+      case IdL:
       // Might be a typedef-typed variable declaration or it might be an expression.
          if (VariableDefined(Parser->pc, LexerValue->Val->Identifier)) {
             VariableGet(Parser->pc, Parser, LexerValue->Val->Identifier, &VarValue);
-            if (VarValue->Typ->Base == Type_Type) {
+            if (VarValue->Typ->Base == TypeT) {
                *Parser = PreState;
                ParseDeclaration(Parser, Token);
                break;
             }
          } else {
          // It might be a goto label.
-            LexToken NextToken = LexGetToken(Parser, NULL, false);
-            if (NextToken == TokenColon) {
+            Lexical NextToken = LexGetToken(Parser, NULL, false);
+            if (NextToken == ColonL) {
             // Declare the identifier as a goto label.
                LexGetToken(Parser, NULL, true);
-               if (Parser->Mode == RunModeGoto && LexerValue->Val->Identifier == Parser->SearchGotoLabel)
-                  Parser->Mode = RunModeRun;
+               if (Parser->Mode == GotoM && LexerValue->Val->Identifier == Parser->SearchGotoLabel)
+                  Parser->Mode = RunM;
                CheckTrailingSemicolon = false;
                break;
             }
 #ifdef FEATURE_AUTO_DECLARE_VARIABLES
             else { // New_identifier = something.
          // Try to guess type and declare the variable based on assigned value.
-               if (NextToken == TokenAssign && !VariableDefinedAndOutOfScope(Parser->pc, LexerValue->Val->Identifier)) {
-                  if (Parser->Mode == RunModeRun) {
+               if (NextToken == EquL && !VariableDefinedAndOutOfScope(Parser->pc, LexerValue->Val->Identifier)) {
+                  if (Parser->Mode == RunM) {
                      Value CValue;
                      char *Identifier = LexerValue->Val->Identifier;
                      LexGetToken(Parser, NULL, true);
@@ -484,170 +483,139 @@ ParseResult ParseStatement(ParseState Parser, bool CheckTrailingSemicolon) {
             }
 #endif
          }
-      // Else fallthrough to expression.
-      // No break.
-      case TokenAsterisk:
-      case TokenAmpersand:
-      case TokenIncrement:
-      case TokenDecrement:
-      case TokenOpenBracket:
+      case StarL: case AndL: case IncOpL: case DecOpL: case LParL:
          *Parser = PreState;
          ExpressionParse(Parser, &CValue);
-         if (Parser->Mode == RunModeRun)
+         if (Parser->Mode == RunM)
             VariableStackPop(Parser, CValue);
       break;
-      case TokenLeftBrace:
-         ParseBlock(Parser, false, true);
-         CheckTrailingSemicolon = false;
-      break;
-      case TokenIf:
-         if (LexGetToken(Parser, NULL, true) != TokenOpenBracket)
+      case LCurlL: ParseBlock(Parser, false, true), CheckTrailingSemicolon = false; break;
+      case IfL:
+         if (LexGetToken(Parser, NULL, true) != LParL)
             ProgramFail(Parser, "'(' expected");
          Condition = ExpressionParseInt(Parser) != 0;
-         if (LexGetToken(Parser, NULL, true) != TokenCloseBracket)
+         if (LexGetToken(Parser, NULL, true) != RParL)
             ProgramFail(Parser, "')' expected");
-         if (ParseStatementMaybeRun(Parser, Condition, true) != ParseResultOk)
+         if (ParseStatementMaybeRun(Parser, Condition, true) != OkSyn)
             ProgramFail(Parser, "statement expected");
-         if (LexGetToken(Parser, NULL, false) == TokenElse) {
+         if (LexGetToken(Parser, NULL, false) == ElseL) {
             LexGetToken(Parser, NULL, true);
-            if (ParseStatementMaybeRun(Parser, !Condition, true) != ParseResultOk)
+            if (ParseStatementMaybeRun(Parser, !Condition, true) != OkSyn)
                ProgramFail(Parser, "statement expected");
          }
          CheckTrailingSemicolon = false;
       break;
-      case TokenWhile: {
+      case WhileL: {
          struct ParseState PreConditional;
          RunMode PreMode = Parser->Mode;
-         if (LexGetToken(Parser, NULL, true) != TokenOpenBracket)
+         if (LexGetToken(Parser, NULL, true) != LParL)
             ProgramFail(Parser, "'(' expected");
          ParserCopyPos(&PreConditional, Parser);
          do {
             ParserCopyPos(Parser, &PreConditional);
             Condition = ExpressionParseInt(Parser) != 0;
-            if (LexGetToken(Parser, NULL, true) != TokenCloseBracket)
+            if (LexGetToken(Parser, NULL, true) != RParL)
                ProgramFail(Parser, "')' expected");
-            if (ParseStatementMaybeRun(Parser, Condition, true) != ParseResultOk)
+            if (ParseStatementMaybeRun(Parser, Condition, true) != OkSyn)
                ProgramFail(Parser, "statement expected");
-            if (Parser->Mode == RunModeContinue)
+            if (Parser->Mode == ContinueM)
                Parser->Mode = PreMode;
-         } while (Parser->Mode == RunModeRun && Condition);
-         if (Parser->Mode == RunModeBreak)
+         } while (Parser->Mode == RunM && Condition);
+         if (Parser->Mode == BreakM)
             Parser->Mode = PreMode;
          CheckTrailingSemicolon = false;
       }
       break;
-      case TokenDo: {
+      case DoL: {
          struct ParseState PreStatement;
          RunMode PreMode = Parser->Mode;
          ParserCopyPos(&PreStatement, Parser);
          do {
             ParserCopyPos(Parser, &PreStatement);
-            if (ParseStatement(Parser, true) != ParseResultOk)
+            if (ParseStatement(Parser, true) != OkSyn)
                ProgramFail(Parser, "statement expected");
-            if (Parser->Mode == RunModeContinue)
+            if (Parser->Mode == ContinueM)
                Parser->Mode = PreMode;
-            if (LexGetToken(Parser, NULL, true) != TokenWhile)
+            if (LexGetToken(Parser, NULL, true) != WhileL)
                ProgramFail(Parser, "'while' expected");
-            if (LexGetToken(Parser, NULL, true) != TokenOpenBracket)
+            if (LexGetToken(Parser, NULL, true) != LParL)
                ProgramFail(Parser, "'(' expected");
             Condition = ExpressionParseInt(Parser) != 0;
-            if (LexGetToken(Parser, NULL, true) != TokenCloseBracket)
+            if (LexGetToken(Parser, NULL, true) != RParL)
                ProgramFail(Parser, "')' expected");
-         } while (Condition && Parser->Mode == RunModeRun);
-         if (Parser->Mode == RunModeBreak)
+         } while (Condition && Parser->Mode == RunM);
+         if (Parser->Mode == BreakM)
             Parser->Mode = PreMode;
       }
       break;
-      case TokenFor:
-         ParseFor(Parser);
-         CheckTrailingSemicolon = false;
+      case ForL: ParseFor(Parser), CheckTrailingSemicolon = false; break;
+      case SemiL: CheckTrailingSemicolon = false; break;
+      case IntL: case ShortL: case CharL: case LongL: case FloatL: case DoubleL:
+      case VoidL: case StructL: case UnionL: case EnumL: case SignedL:
+      case UnsignedL: case StaticL: case AutoL: case RegisterL: case ExternL:
+         *Parser = PreState, CheckTrailingSemicolon = ParseDeclaration(Parser, Token);
       break;
-      case TokenSemicolon:
-         CheckTrailingSemicolon = false;
-      break;
-      case TokenIntType:
-      case TokenShortType:
-      case TokenCharType:
-      case TokenLongType:
-      case TokenFloatType:
-      case TokenDoubleType:
-      case TokenVoidType:
-      case TokenStructType:
-      case TokenUnionType:
-      case TokenEnumType:
-      case TokenSignedType:
-      case TokenUnsignedType:
-      case TokenStaticType:
-      case TokenAutoType:
-      case TokenRegisterType:
-      case TokenExternType:
-         *Parser = PreState;
-         CheckTrailingSemicolon = ParseDeclaration(Parser, Token);
-      break;
-      case TokenHashDefine:
-         ParseMacroDefinition(Parser);
-         CheckTrailingSemicolon = false;
-      break;
+      case DefineP: ParseMacroDefinition(Parser), CheckTrailingSemicolon = false; break;
 #ifndef NO_HASH_INCLUDE
-      case TokenHashInclude:
-         if (LexGetToken(Parser, &LexerValue, true) != TokenStringConstant)
+      case IncludeP:
+         if (LexGetToken(Parser, &LexerValue, true) != StrLitL)
             ProgramFail(Parser, "\"filename.h\" expected");
          IncludeFile(Parser->pc, (char *)LexerValue->Val->Pointer);
          CheckTrailingSemicolon = false;
       break;
 #endif
-      case TokenSwitch:
-         if (LexGetToken(Parser, NULL, true) != TokenOpenBracket)
+      case SwitchL:
+         if (LexGetToken(Parser, NULL, true) != LParL)
             ProgramFail(Parser, "'(' expected");
          Label = ExpressionParseInt(Parser);
-         if (LexGetToken(Parser, NULL, true) != TokenCloseBracket)
+         if (LexGetToken(Parser, NULL, true) != RParL)
             ProgramFail(Parser, "')' expected");
-         if (LexGetToken(Parser, NULL, false) != TokenLeftBrace)
+         if (LexGetToken(Parser, NULL, false) != LCurlL)
             ProgramFail(Parser, "'{' expected");
       {
       // New block so we can store parser state.
          RunMode OldMode = Parser->Mode;
          int OldSearchLabel = Parser->SearchLabel;
-         Parser->Mode = RunModeCaseSearch;
+         Parser->Mode = CaseM;
          Parser->SearchLabel = Label;
-         ParseBlock(Parser, true, (OldMode != RunModeSkip) && (OldMode != RunModeReturn));
-         if (Parser->Mode != RunModeReturn)
+         ParseBlock(Parser, true, (OldMode != SkipM) && (OldMode != ReturnM));
+         if (Parser->Mode != ReturnM)
             Parser->Mode = OldMode;
          Parser->SearchLabel = OldSearchLabel;
       }
          CheckTrailingSemicolon = false;
       break;
-      case TokenCase:
-         if (Parser->Mode == RunModeCaseSearch) {
-            Parser->Mode = RunModeRun;
+      case CaseL:
+         if (Parser->Mode == CaseM) {
+            Parser->Mode = RunM;
             Label = ExpressionParseInt(Parser);
-            Parser->Mode = RunModeCaseSearch;
+            Parser->Mode = CaseM;
          } else
             Label = ExpressionParseInt(Parser);
-         if (LexGetToken(Parser, NULL, true) != TokenColon)
+         if (LexGetToken(Parser, NULL, true) != ColonL)
             ProgramFail(Parser, "':' expected");
-         if (Parser->Mode == RunModeCaseSearch && Label == Parser->SearchLabel)
-            Parser->Mode = RunModeRun;
+         if (Parser->Mode == CaseM && Label == Parser->SearchLabel)
+            Parser->Mode = RunM;
          CheckTrailingSemicolon = false;
       break;
-      case TokenDefault:
-         if (LexGetToken(Parser, NULL, true) != TokenColon)
+      case DefaultL:
+         if (LexGetToken(Parser, NULL, true) != ColonL)
             ProgramFail(Parser, "':' expected");
-         if (Parser->Mode == RunModeCaseSearch)
-            Parser->Mode = RunModeRun;
+         if (Parser->Mode == CaseM)
+            Parser->Mode = RunM;
          CheckTrailingSemicolon = false;
       break;
-      case TokenBreak:
-         if (Parser->Mode == RunModeRun)
-            Parser->Mode = RunModeBreak;
+      case BreakL:
+         if (Parser->Mode == RunM)
+            Parser->Mode = BreakM;
       break;
-      case TokenContinue:
-         if (Parser->Mode == RunModeRun)
-            Parser->Mode = RunModeContinue;
+      case ContinueL:
+         if (Parser->Mode == RunM)
+            Parser->Mode = ContinueM;
       break;
-      case TokenReturn:
-         if (Parser->Mode == RunModeRun) {
-            if (!Parser->pc->TopStackFrame || Parser->pc->TopStackFrame->ReturnValue->Typ->Base != TypeVoid) {
+      case ReturnL:
+         if (Parser->Mode == RunM) {
+            if (!Parser->pc->TopStackFrame || Parser->pc->TopStackFrame->ReturnValue->Typ->Base != VoidT) {
                if (!ExpressionParse(Parser, &CValue))
                   ProgramFail(Parser, "value required in return");
                if (!Parser->pc->TopStackFrame) // Return from top-level program?
@@ -659,27 +627,25 @@ ParseResult ParseStatement(ParseState Parser, bool CheckTrailingSemicolon) {
                if (ExpressionParse(Parser, &CValue))
                   ProgramFail(Parser, "value in return from a void function");
             }
-            Parser->Mode = RunModeReturn;
+            Parser->Mode = ReturnM;
          } else
             ExpressionParse(Parser, &CValue);
       break;
-      case TokenTypedef:
-         ParseTypedef(Parser);
-      break;
-      case TokenGoto:
-         if (LexGetToken(Parser, &LexerValue, true) != TokenIdentifier)
+      case TypeDefL: ParseTypedef(Parser); break;
+      case GotoL:
+         if (LexGetToken(Parser, &LexerValue, true) != IdL)
             ProgramFail(Parser, "identifier expected");
-         if (Parser->Mode == RunModeRun) {
+         if (Parser->Mode == RunM) {
          // Start scanning for the goto label.
             Parser->SearchGotoLabel = LexerValue->Val->Identifier;
-            Parser->Mode = RunModeGoto;
+            Parser->Mode = GotoM;
          }
       break;
-      case TokenDelete: {
+      case DeleteL: {
       // Try it as a function or variable name to delete.
-         if (LexGetToken(Parser, &LexerValue, true) != TokenIdentifier)
+         if (LexGetToken(Parser, &LexerValue, true) != IdL)
             ProgramFail(Parser, "identifier expected");
-         if (Parser->Mode == RunModeRun) {
+         if (Parser->Mode == RunM) {
          // Delete this variable or function.
             CValue = TableDelete(Parser->pc, &Parser->pc->GlobalTable, LexerValue->Val->Identifier);
             if (CValue == NULL)
@@ -688,15 +654,13 @@ ParseResult ParseStatement(ParseState Parser, bool CheckTrailingSemicolon) {
          }
       }
       break;
-      default:
-         *Parser = PreState;
-      return ParseResultError;
+      default: *Parser = PreState; return BadSyn;
    }
    if (CheckTrailingSemicolon) {
-      if (LexGetToken(Parser, NULL, true) != TokenSemicolon)
+      if (LexGetToken(Parser, NULL, true) != SemiL)
          ProgramFail(Parser, "';' expected");
    }
-   return ParseResultOk;
+   return OkSyn;
 }
 
 // Quick scan a source file for definitions.
@@ -723,8 +687,8 @@ void PicocParse(State pc, const char *FileName, const char *Source, int SourceLe
    LexInitParser(&Parser, pc, Source, Tokens, RegFileName, RunIt, EnableDebugger);
    do {
       Ok = ParseStatement(&Parser, true);
-   } while (Ok == ParseResultOk);
-   if (Ok == ParseResultError)
+   } while (Ok == OkSyn);
+   if (Ok == BadSyn)
       ProgramFail(&Parser, "parse error");
 // Clean up.
    if (CleanupNow)
@@ -742,8 +706,8 @@ void PicocParseInteractiveNoStartPrompt(State pc, bool EnableDebugger) {
       LexInteractiveStatementPrompt(pc);
       Ok = ParseStatement(&Parser, true);
       LexInteractiveCompleted(pc, &Parser);
-   } while (Ok == ParseResultOk);
-   if (Ok == ParseResultError)
+   } while (Ok == OkSyn);
+   if (Ok == BadSyn)
       ProgramFail(&Parser, "parse error");
    PlatformPrintf(pc->CStdOut, "\n");
 }

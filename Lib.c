@@ -43,72 +43,35 @@ void LibraryAdd(State pc, Table GlobalTable, const char *LibraryName, LibraryFun
 // Print a type to a stream without using printf/sprintf.
 void PrintType(ValueType Typ, OutFile Stream) {
    switch (Typ->Base) {
-      case TypeVoid:
-         PrintStr("void", Stream);
-      break;
-      case TypeInt:
-         PrintStr("int", Stream);
-      break;
-      case TypeShort:
-         PrintStr("short", Stream);
-      break;
-      case TypeChar:
-         PrintStr("char", Stream);
-      break;
-      case TypeLong:
-         PrintStr("long", Stream);
-      break;
-      case TypeUnsignedInt:
-         PrintStr("unsigned int", Stream);
-      break;
-      case TypeUnsignedShort:
-         PrintStr("unsigned short", Stream);
-      break;
-      case TypeUnsignedLong:
-         PrintStr("unsigned long", Stream);
-      break;
-      case TypeUnsignedChar:
-         PrintStr("unsigned char", Stream);
-      break;
+      case VoidT: PrintStr("void", Stream); break;
+      case IntT: PrintStr("int", Stream); break;
+      case ShortIntT: PrintStr("short", Stream); break;
+      case CharT: PrintStr("char", Stream); break;
+      case LongIntT: PrintStr("long", Stream); break;
+      case NatT: PrintStr("unsigned int", Stream); break;
+      case ShortNatT: PrintStr("unsigned short", Stream); break;
+      case LongNatT: PrintStr("unsigned long", Stream); break;
+      case ByteT: PrintStr("unsigned char", Stream); break;
 #ifndef NO_FP
-      case TypeFP:
-         PrintStr("double", Stream);
-      break;
+      case RatT: PrintStr("double", Stream); break;
 #endif
-      case TypeFunction:
-         PrintStr("function", Stream);
-      break;
-      case TypeMacro:
-         PrintStr("macro", Stream);
-      break;
-      case TypePointer:
+      case FunctionT: PrintStr("function", Stream); break;
+      case MacroT: PrintStr("macro", Stream); break;
+      case PointerT:
          if (Typ->FromType) PrintType(Typ->FromType, Stream);
          PrintCh('*', Stream);
       break;
-      case TypeArray:
+      case ArrayT:
          PrintType(Typ->FromType, Stream);
          PrintCh('[', Stream);
          if (Typ->ArraySize != 0) PrintSimpleInt(Typ->ArraySize, Stream);
          PrintCh(']', Stream);
       break;
-      case TypeStruct:
-         PrintStr("struct ", Stream);
-         PrintStr(Typ->Identifier, Stream);
-      break;
-      case TypeUnion:
-         PrintStr("union ", Stream);
-         PrintStr(Typ->Identifier, Stream);
-      break;
-      case TypeEnum:
-         PrintStr("enum ", Stream);
-         PrintStr(Typ->Identifier, Stream);
-      break;
-      case TypeGotoLabel:
-         PrintStr("goto label ", Stream);
-      break;
-      case Type_Type:
-         PrintStr("type ", Stream);
-      break;
+      case StructT: PrintStr("struct ", Stream), PrintStr(Typ->Identifier, Stream); break;
+      case UnionT: PrintStr("union ", Stream), PrintStr(Typ->Identifier, Stream); break;
+      case EnumT: PrintStr("enum ", Stream), PrintStr(Typ->Identifier, Stream); break;
+      case LabelT: PrintStr("goto label ", Stream); break;
+      case TypeT: PrintStr("type ", Stream); break;
    }
 }
 
@@ -252,33 +215,14 @@ static void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, in
             FieldWidth = FieldWidth*10 + (*FPos++ - '0');
       // Now check the format type.
          switch (*FPos) {
-            case 's':
-               FormatType = CharPtrType;
-            break;
-            case 'd':
-            case 'u':
-            case 'x':
-            case 'b':
-            case 'c':
-               FormatType = &IntType;
-            break;
+            case 's': FormatType = CharPtrType; break;
+            case 'd': case 'u': case 'x': case 'b': case 'c': FormatType = &IntType; break;
 #ifndef NO_FP
-            case 'f':
-               FormatType = &FPType;
-            break;
+            case 'f': FormatType = &FPType; break;
 #endif
-            case '%':
-               PrintCh('%', Stream);
-               FormatType = NULL;
-            break;
-            case '\0':
-               FPos--;
-               FormatType = NULL;
-            break;
-            default:
-               PrintCh(*FPos, Stream);
-               FormatType = NULL;
-            break;
+            case '%': PrintCh('%', Stream), FormatType = NULL; break;
+            case '\0': FPos--, FormatType = NULL; break;
+            default: PrintCh(*FPos, Stream), FormatType = NULL; break;
          }
          if (FormatType != NULL) {
          // We have to format something.
@@ -286,41 +230,22 @@ static void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, in
                PrintStr("XXX", Stream); // Not enough parameters for format.
             else {
                NextArg = (Value)((char *)NextArg + MEM_ALIGN(sizeof *NextArg + TypeStackSizeValue(NextArg)));
-               if (NextArg->Typ != FormatType && !((FormatType == &IntType || *FPos == 'f') && IS_NUMERIC_COERCIBLE(NextArg)) && !(FormatType == CharPtrType && (NextArg->Typ->Base == TypePointer || (NextArg->Typ->Base == TypeArray && NextArg->Typ->FromType->Base == TypeChar))))
+               if (NextArg->Typ != FormatType && !((FormatType == &IntType || *FPos == 'f') && IS_NUMERIC_COERCIBLE(NextArg)) && !(FormatType == CharPtrType && (NextArg->Typ->Base == PointerT || (NextArg->Typ->Base == ArrayT && NextArg->Typ->FromType->Base == CharT))))
                   PrintStr("XXX", Stream); // Bad type for format.
                else {
                   switch (*FPos) {
                      case 's': {
-                        char *Str;
-                        if (NextArg->Typ->Base == TypePointer)
-                           Str = NextArg->Val->Pointer;
-                        else
-                           Str = &NextArg->Val->ArrayMem[0];
-                        if (Str == NULL)
-                           PrintStr("NULL", Stream);
-                        else
-                           PrintStr(Str, Stream);
+                        char *Str = NextArg->Typ->Base == PointerT? NextArg->Val->Pointer: &NextArg->Val->ArrayMem[0];
+                        PrintStr(Str == NULL? "NULL": Str, Stream);
                      }
                      break;
-                     case 'd':
-                        PrintInt(ExpressionCoerceInteger(NextArg), FieldWidth, ZeroPad, LeftJustify, Stream);
-                     break;
-                     case 'u':
-                        PrintUnsigned(ExpressionCoerceUnsignedInteger(NextArg), 10, FieldWidth, ZeroPad, LeftJustify, Stream);
-                     break;
-                     case 'x':
-                        PrintUnsigned(ExpressionCoerceUnsignedInteger(NextArg), 16, FieldWidth, ZeroPad, LeftJustify, Stream);
-                     break;
-                     case 'b':
-                        PrintUnsigned(ExpressionCoerceUnsignedInteger(NextArg), 2, FieldWidth, ZeroPad, LeftJustify, Stream);
-                     break;
-                     case 'c':
-                        PrintCh(ExpressionCoerceUnsignedInteger(NextArg), Stream);
-                     break;
+                     case 'd': PrintInt(ExpressionCoerceInteger(NextArg), FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                     case 'u': PrintUnsigned(ExpressionCoerceUnsignedInteger(NextArg), 10, FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                     case 'x': PrintUnsigned(ExpressionCoerceUnsignedInteger(NextArg), 16, FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                     case 'b': PrintUnsigned(ExpressionCoerceUnsignedInteger(NextArg), 2, FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                     case 'c': PrintCh(ExpressionCoerceUnsignedInteger(NextArg), Stream); break;
 #ifndef NO_FP
-                     case 'f':
-                        PrintFP(ExpressionCoerceFP(NextArg), Stream);
-                     break;
+                     case 'f': PrintFP(ExpressionCoerceFP(NextArg), Stream); break;
 #endif
                   }
                }

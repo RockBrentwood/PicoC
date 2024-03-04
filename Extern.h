@@ -33,17 +33,17 @@ typedef FILE OutStruct, *OutFile;
 
 // Coercion of numeric types to other numeric types.
 #ifndef NO_FP
-#   define IS_FP(v) ((v)->Typ->Base == TypeFP)
+#   define IS_FP(v) ((v)->Typ->Base == RatT)
 #   define FP_VAL(v) ((v)->Val->FP)
 #else
 #   define IS_FP(v) false
 #   define FP_VAL(v) 0
 #endif
 
-#define IS_POINTER_COERCIBLE(v, ap) ((ap)? ((v)->Typ->Base == TypePointer): false)
+#define IS_POINTER_COERCIBLE(v, ap) ((ap)? ((v)->Typ->Base == PointerT): false)
 #define POINTER_COERCE(v) ((int)(v)->Val->Pointer)
 
-#define IS_INTEGER_NUMERIC_TYPE(t) ((t)->Base >= TypeInt && (t)->Base <= TypeUnsignedLong)
+#define IS_INTEGER_NUMERIC_TYPE(t) ((t)->Base >= IntT && (t)->Base <= LongNatT)
 #define IS_INTEGER_NUMERIC(v) IS_INTEGER_NUMERIC_TYPE((v)->Typ)
 #define IS_NUMERIC_COERCIBLE(v) (IS_INTEGER_NUMERIC(v) || IS_FP(v))
 #define IS_NUMERIC_COERCIBLE_PLUS_POINTERS(v, ap) (IS_NUMERIC_COERCIBLE(v) || IS_POINTER_COERCIBLE(v, ap))
@@ -52,36 +52,24 @@ typedef struct Table *Table;
 typedef struct State *State;
 
 // Lexical tokens.
-typedef enum LexToken {
-/*0x00*/ TokenNone,
-/*0x01*/ TokenComma,
-/*0x02*/ TokenAssign, TokenAddAssign, TokenSubtractAssign, TokenMultiplyAssign, TokenDivideAssign, TokenModulusAssign,
-/*0x08*/ TokenShiftLeftAssign, TokenShiftRightAssign, TokenArithmeticAndAssign, TokenArithmeticOrAssign, TokenArithmeticExorAssign,
-/*0x0d*/ TokenQuestionMark, TokenColon,
-/*0x0f*/ TokenLogicalOr,
-/*0x10*/ TokenLogicalAnd,
-/*0x11*/ TokenArithmeticOr,
-/*0x12*/ TokenArithmeticExor,
-/*0x13*/ TokenAmpersand,
-/*0x14*/ TokenEqual, TokenNotEqual,
-/*0x16*/ TokenLessThan, TokenGreaterThan, TokenLessEqual, TokenGreaterEqual,
-/*0x1a*/ TokenShiftLeft, TokenShiftRight,
-/*0x1c*/ TokenPlus, TokenMinus,
-/*0x1e*/ TokenAsterisk, TokenSlash, TokenModulus,
-/*0x21*/ TokenIncrement, TokenDecrement, TokenUnaryNot, TokenUnaryExor, TokenSizeof, TokenCast,
-/*0x27*/ TokenLeftSquareBracket, TokenRightSquareBracket, TokenDot, TokenArrow,
-/*0x2b*/ TokenOpenBracket, TokenCloseBracket,
-/*0x2d*/ TokenIdentifier, TokenIntegerConstant, TokenFPConstant, TokenStringConstant, TokenCharacterConstant,
-/*0x32*/ TokenSemicolon, TokenEllipsis,
-/*0x34*/ TokenLeftBrace, TokenRightBrace,
-/*0x36*/ TokenIntType, TokenCharType, TokenFloatType, TokenDoubleType, TokenVoidType, TokenEnumType,
-/*0x3c*/ TokenLongType, TokenSignedType, TokenShortType, TokenStaticType, TokenAutoType, TokenRegisterType, TokenExternType, TokenStructType, TokenUnionType, TokenUnsignedType, TokenTypedef,
-/*0x46*/ TokenContinue, TokenDo, TokenElse, TokenFor, TokenGoto, TokenIf, TokenWhile, TokenBreak, TokenSwitch, TokenCase, TokenDefault, TokenReturn,
-/*0x52*/ TokenHashDefine, TokenHashInclude, TokenHashIf, TokenHashIfdef, TokenHashIfndef, TokenHashElse, TokenHashEndif,
-/*0x59*/ TokenNew, TokenDelete,
-/*0x5b*/ TokenOpenMacroBracket,
-/*0x5c*/ TokenEOF, TokenEndOfLine, TokenEndOfFunction
-} LexToken;
+typedef enum Lexical {
+   NoneL, CommaL,
+   EquL, AddEquL, SubEquL, MulEquL, DivEquL, ModEquL, ShLEquL, ShREquL, AndEquL, OrEquL, XOrEquL,
+   QuestL, ColonL, OrOrL, AndAndL,
+   OrL, XOrL, AndL,
+   RelEqL, RelNeL, RelLtL, RelGtL, RelLeL, RelGeL,
+   ShLL, ShRL, AddL, SubL, StarL, DivL, ModL,
+   IncOpL, DecOpL, NotL, CplL, SizeOfL, CastL,
+   LBrL, RBrL, DotL, ArrowL, LParL, RParL,
+   IdL, IntLitL, RatLitL, StrLitL, CharLitL,
+   SemiL, DotsL, LCurlL, RCurlL,
+   IntL, CharL, FloatL, DoubleL, VoidL, EnumL, LongL, SignedL, ShortL,
+   StaticL, AutoL, RegisterL, ExternL, StructL, UnionL, UnsignedL, TypeDefL,
+   ContinueL, DoL, ElseL, ForL, GotoL, IfL, WhileL, BreakL, SwitchL, CaseL, DefaultL, ReturnL,
+   DefineP, IncludeP, IfP, IfDefP, IfNDefP, ElseP, EndIfP, LParP,
+   NewL, DeleteL,
+   EofL, EolL, EndFnL
+} Lexical;
 
 // Used in dynamic memory allocation.
 typedef struct AllocNode *AllocNode;
@@ -92,13 +80,13 @@ struct AllocNode {
 
 // Whether we're running or skipping code.
 typedef enum RunMode {
-   RunModeRun, // We're running code as we parse it.
-   RunModeSkip, // Skipping code, not running.
-   RunModeReturn, // Returning from a function.
-   RunModeCaseSearch, // Searching for a case label.
-   RunModeBreak, // Breaking out of a switch/while/do.
-   RunModeContinue, // As above but repeat the loop.
-   RunModeGoto // Searching for a goto label.
+   RunM,	// We're running code as we parse it.
+   SkipM,	// Skipping code, not running.
+   ReturnM,	// Returning from a function.
+   CaseM,	// Searching for a case label.
+   BreakM,	// Breaking out of a switch/while/do.
+   ContinueM,	// As above but repeat the loop.
+   GotoM	// Searching for a goto label.
 } RunMode;
 
 // Parser state - has all this detail so we can parse nested files.
@@ -120,27 +108,27 @@ typedef struct ParseState {
 
 // Values.
 typedef enum BaseType {
-   TypeVoid, // No type.
-   TypeInt, // Integer.
-   TypeShort, // Short integer.
-   TypeChar, // A single character (signed).
-   TypeLong, // Long integer.
-   TypeUnsignedInt, // Unsigned integer.
-   TypeUnsignedShort, // Unsigned short integer.
-   TypeUnsignedChar, // Unsigned 8-bit number: must be before unsigned long.
-   TypeUnsignedLong, // Unsigned long integer.
+   VoidT,	// Empty list.
+   IntT,	// Integer.
+   ShortIntT,	// Short integer.
+   CharT,	// Signed character.
+   LongIntT,	// Long integer.
+   NatT,	// Unsigned integer.
+   ShortNatT,	// Unsigned short integer.
+   ByteT,	// Unsigned character / 8-bit number - must be before unsigned long.
+   LongNatT,	// Unsigned long integer.
 #ifndef NO_FP
-   TypeFP, // Floating point.
+   RatT,	// Floating point rational.
 #endif
-   TypeFunction, // A function.
-   TypeMacro, // A macro.
-   TypePointer, // A pointer.
-   TypeArray, // An array of a sub-type.
-   TypeStruct, // Aggregate type.
-   TypeUnion, // Merged type.
-   TypeEnum, // Enumerated integer type.
-   TypeGotoLabel, // A label we can "goto".
-   Type_Type // A type for storing types.
+   FunctionT,	// Function.
+   MacroT,	// Macro.
+   PointerT,	// Pointer.
+   ArrayT,	// Array of sub-type.
+   StructT,	// Product type.
+   UnionT,	// Union type.
+   EnumT,	// Enumerated constant type.
+   LabelT,	// Goto label / continuation.
+   TypeT	// Type.
 } BaseType;
 
 // Data type.
@@ -259,7 +247,7 @@ typedef struct LexState {
    int Line;
    int CharacterPos;
    const char *SourceText;
-   enum { LexModeNormal, LexModeHashInclude, LexModeHashDefine, LexModeHashDefineSpace, LexModeHashDefineSpaceIdent } Mode;
+   enum { NormalLx, IncludeLx, DefineLx, DeclareLx, NameLx } Mode;
    int EmitExtraNewlines;
 } *LexState;
 
@@ -283,7 +271,7 @@ typedef struct OutputStream {
 } *OutputStream;
 
 // Possible results of parsing a statement.
-typedef enum ParseResult { ParseResultEOF, ParseResultError, ParseResultOk } ParseResult;
+typedef enum ParseResult { EofSyn, BadSyn, OkSyn } ParseResult;
 
 // A chunk of heap-allocated tokens we'll cleanup when we're done.
 typedef struct CleanupTokenNode *CleanupTokenNode;
@@ -424,8 +412,8 @@ void LexInit(State pc);
 void LexCleanup(State pc);
 void *LexAnalyse(State pc, const char *FileName, const char *Source, int SourceLen, int *TokenLen);
 void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *TokenSource, char *FileName, bool RunIt, bool EnableDebugger);
-LexToken LexGetToken(ParseState Parser, Value *ValP, int IncPos);
-LexToken LexRawPeekToken(ParseState Parser);
+Lexical LexGetToken(ParseState Parser, Value *ValP, int IncPos);
+Lexical LexRawPeekToken(ParseState Parser);
 void LexToEndOfLine(ParseState Parser);
 void *LexCopyTokens(ParseState StartParser, ParseState EndParser);
 void LexInteractiveClear(State pc, ParseState Parser);
