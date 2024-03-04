@@ -2,13 +2,10 @@
 // This provides ways of defining and accessing variables.
 #include "Extern.h"
 
-// Maximum size of a value to temporarily copy while we create a variable.
-#define MAX_TMP_COPY_BUF 256
-
 // Initialize the variable system.
 void VariableInit(State pc) {
-   TableInitTable(&pc->GlobalTable, pc->GlobalHashTable, GLOBAL_TABLE_SIZE, true);
-   TableInitTable(&pc->StringLiteralTable, pc->StringLiteralHashTable, STRING_LITERAL_TABLE_SIZE, true);
+   TableInitTable(&pc->GlobalTable, pc->GlobalHashTable, GloTabMax, true);
+   TableInitTable(&pc->StringLiteralTable, pc->StringLiteralHashTable, LitTabMax, true);
    pc->TopStackFrame = NULL;
 }
 
@@ -68,8 +65,8 @@ void *VariableAlloc(State pc, ParseState Parser, int Size, bool OnHeap) {
 
 // Allocate a value either on the heap or the stack using space dependent on what type we want.
 Value VariableAllocValueAndData(State pc, ParseState Parser, int DataSize, bool IsLValue, Value LValueFrom, bool OnHeap) {
-   Value NewValue = VariableAlloc(pc, Parser, MEM_ALIGN(sizeof *NewValue) + DataSize, OnHeap);
-   NewValue->Val = (AnyValue)((char *)NewValue + MEM_ALIGN(sizeof *NewValue));
+   Value NewValue = VariableAlloc(pc, Parser, MemAlign(sizeof *NewValue) + DataSize, OnHeap);
+   NewValue->Val = (AnyValue)AddAlign(NewValue, sizeof *NewValue);
    NewValue->ValOnHeap = OnHeap;
    NewValue->AnyValOnHeap = false;
    NewValue->ValOnStack = !OnHeap;
@@ -95,9 +92,9 @@ Value VariableAllocValueFromType(State pc, ParseState Parser, ValueType Typ, boo
 Value VariableAllocValueAndCopy(State pc, ParseState Parser, Value FromValue, bool OnHeap) {
    ValueType DType = FromValue->Typ;
    Value NewValue;
-   char TmpBuf[MAX_TMP_COPY_BUF];
+   char TmpBuf[0x100]; const size_t TmpBufMax = sizeof TmpBuf/sizeof TmpBuf[0];
    int CopySize = TypeSizeValue(FromValue, true);
-   assert(CopySize <= MAX_TMP_COPY_BUF);
+   assert(CopySize <= TmpBufMax);
    memcpy((void *)TmpBuf, (void *)FromValue->Val, CopySize);
    NewValue = VariableAllocValueAndData(pc, Parser, CopySize, FromValue->IsLValue, FromValue->LValueFrom, OnHeap);
    NewValue->Typ = DType;
@@ -156,7 +153,7 @@ int VariableScopeBegin(ParseState Parser, int *OldScopeID) {
             Entry->p.v.Key = (char *)((intptr_t)Entry->p.v.Key&~1);
 #ifdef VAR_SCOPE_DEBUG
             if (!FirstPrint) {
-               PRINT_SOURCE_POS;
+               ShowSourcePos(Parser);
             }
             FirstPrint = true;
             printf(">>> back into scope: %s %x %d\n", Entry->p.v.Key, Entry->p.v.Val->ScopeID, Entry->p.v.Val->Val->Integer);
@@ -183,7 +180,7 @@ void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID) {
          if (Entry->p.v.Val->ScopeID == ScopeID && !Entry->p.v.Val->OutOfScope) {
 #ifdef VAR_SCOPE_DEBUG
             if (!FirstPrint) {
-               PRINT_SOURCE_POS;
+               ShowSourcePos(Parser);
             }
             FirstPrint = true;
             printf(">>> out of scope: %s %x %d\n", Entry->p.v.Key, Entry->p.v.Val->ScopeID, Entry->p.v.Val->Val->Integer);
@@ -243,9 +240,9 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
    if (TypeIsForwardDeclared(Parser, Typ))
       ProgramFail(Parser, "type '%t' isn't defined", Typ);
    if (IsStatic) {
-      char MangledName[LINEBUFFER_MAX];
+      char MangledName[LineBufMax];
       char *MNPos = MangledName;
-      char *MNEnd = &MangledName[LINEBUFFER_MAX - 1];
+      char *MNEnd = &MangledName[LineBufMax - 1];
       const char *RegisteredMangledName;
    // Make the mangled static name (avoiding using sprintf() to minimize library impact).
       memset((void *)&MangledName, '\0', sizeof MangledName);
@@ -344,7 +341,7 @@ void VariableStackFrameAdd(ParseState Parser, const char *FuncName, int NumParam
    ParserCopy(&NewFrame->ReturnParser, Parser);
    NewFrame->FuncName = FuncName;
    NewFrame->Parameter = (NumParams > 0)? ((void *)((char *)NewFrame + sizeof *NewFrame)): NULL;
-   TableInitTable(&NewFrame->LocalTable, NewFrame->LocalHashTable, LOCAL_TABLE_SIZE, false);
+   TableInitTable(&NewFrame->LocalTable, NewFrame->LocalHashTable, LocTabMax, false);
    NewFrame->PreviousStackFrame = Parser->pc->TopStackFrame;
    Parser->pc->TopStackFrame = NewFrame;
 }

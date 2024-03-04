@@ -3,11 +3,11 @@
 
 #include "Extern.h"
 
-#define BREAKPOINT_HASH(p) (((unsigned long)(p)->FileName) ^ (((p)->Line << 16) | ((p)->CharacterPos << 16)))
+#define HashBP(P) (((unsigned long)(P)->FileName) ^ (((P)->Line << 16) | ((P)->CharacterPos << 16)))
 
 // Initialize the debugger by clearing the breakpoint table.
 void DebugInit(State pc) {
-   TableInitTable(&pc->BreakpointTable, pc->BreakpointHashTable, BREAKPOINT_TABLE_SIZE, true);
+   TableInitTable(&pc->BreakpointTable, pc->BreakpointHashTable, DebugMax, true);
    pc->BreakpointCount = 0;
 }
 
@@ -28,7 +28,7 @@ void DebugCleanup(State pc) {
 static TableEntry DebugTableSearchBreakpoint(ParseState Parser, int *AddAt) {
    TableEntry Entry;
    State pc = Parser->pc;
-   int HashValue = BREAKPOINT_HASH(Parser)%pc->BreakpointTable.Size;
+   int HashValue = HashBP(Parser)%pc->BreakpointTable.Size;
    for (Entry = pc->BreakpointHashTable[HashValue]; Entry != NULL; Entry = Entry->Next) {
       if (Entry->p.b.FileName == Parser->FileName && Entry->p.b.Line == Parser->Line && Entry->p.b.CharacterPos == Parser->CharacterPos)
          return Entry; // Found.
@@ -60,7 +60,7 @@ void DebugSetBreakpoint(ParseState Parser) {
 bool DebugClearBreakpoint(ParseState Parser) {
    TableEntry *EntryPtr;
    State pc = Parser->pc;
-   int HashValue = BREAKPOINT_HASH(Parser)%pc->BreakpointTable.Size;
+   int HashValue = HashBP(Parser)%pc->BreakpointTable.Size;
    for (EntryPtr = &pc->BreakpointHashTable[HashValue]; *EntryPtr != NULL; EntryPtr = &(*EntryPtr)->Next) {
       TableEntry DeleteEntry = *EntryPtr;
       if (DeleteEntry->p.b.FileName == Parser->FileName && DeleteEntry->p.b.Line == Parser->Line && DeleteEntry->p.b.CharacterPos == Parser->CharacterPos) {

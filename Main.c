@@ -6,17 +6,15 @@
 
 // Platform-dependent code for running programs is in this file.
 
-#if defined(UNIX_HOST) || defined(WIN32)
+#if defined UNIX_HOST || defined WIN32
 #   include <stdlib.h>
 #   include <stdio.h>
 #   include <string.h>
 
-#   define PICOC_STACK_SIZE (128*1024) // Space for the the stack.
-
 int main(int argc, char **argv) {
    int ParamCount = 1;
    bool DontRunMain = false;
-   int StackSize = getenv("STACKSIZE")? atoi(getenv("STACKSIZE")): PICOC_STACK_SIZE;
+   int StackSize = getenv("STACKSIZE")? atoi(getenv("STACKSIZE")): 0x20000;
    struct State pc;
    if (argc < 2) {
       printf(

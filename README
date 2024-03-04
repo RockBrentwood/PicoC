@@ -45,7 +45,7 @@ Porting the system will involve setting up suitable includes and defines in Sys.
 writing some I/O routines in Sys/Sys*.c, putting whatever user functions you want in Sys/Lib*.c
 and then changing the main program in Main.c to whatever you need to do to get programs into the system.
 
-Sys.h is set to UNIX_HOST by default so tests can be easily run on a UNIX system.
+Sys.h is targeted for UNIX hosts so tests can be easily run on a UNIX system.
 You'll need to specify your own host setup dependent on your target platform.
 
 Copyright

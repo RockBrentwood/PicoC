@@ -57,8 +57,8 @@ int TypeStackSizeValue(Value Val) {
 
 // Memory used by a value.
 int TypeSizeValue(Value Val, bool Compact) {
-   if (IS_INTEGER_NUMERIC(Val) && !Compact)
-      return sizeof(ALIGN_TYPE); // Allow some extra room for type extension.
+   if (IsIntVal(Val) && !Compact)
+      return AlignSize; // Allow some extra room for type extension.
    else if (Val->Typ->Base != ArrayT)
       return Val->Typ->Sizeof;
    else
@@ -67,8 +67,8 @@ int TypeSizeValue(Value Val, bool Compact) {
 
 // Memory used by a variable given its type and array size.
 int TypeSize(ValueType Typ, int ArraySize, bool Compact) {
-   if (IS_INTEGER_NUMERIC_TYPE(Typ) && !Compact)
-      return sizeof(ALIGN_TYPE); // Allow some extra room for type extension.
+   if (IsIntType(Typ) && !Compact)
+      return AlignSize; // Allow some extra room for type extension.
    else if (Typ->Base != ArrayT)
       return Typ->Sizeof;
    else
@@ -203,9 +203,9 @@ static void TypeParseStruct(ParseState Parser, ValueType *Typ, bool IsStruct) {
    if (pc->TopStackFrame != NULL)
       ProgramFail(Parser, "struct/union definitions can only be globals");
    LexGetToken(Parser, NULL, true);
-   (*Typ)->Members = VariableAlloc(pc, Parser, sizeof *(*Typ)->Members + STRUCT_TABLE_SIZE*sizeof(struct TableEntry), true);
+   (*Typ)->Members = VariableAlloc(pc, Parser, sizeof *(*Typ)->Members + MemTabMax*sizeof(struct TableEntry), true);
    (*Typ)->Members->HashTable = (TableEntry *)((char *)(*Typ)->Members + sizeof *(*Typ)->Members);
-   TableInitTable((*Typ)->Members, (TableEntry *)((char *)(*Typ)->Members + sizeof *(*Typ)->Members), STRUCT_TABLE_SIZE, true);
+   TableInitTable((*Typ)->Members, (TableEntry *)((char *)(*Typ)->Members + sizeof *(*Typ)->Members), MemTabMax, true);
    do {
       TypeParse(Parser, &MemberType, &MemberIdentifier, NULL);
       if (MemberType == NULL || MemberIdentifier == NULL)
@@ -245,9 +245,9 @@ static void TypeParseStruct(ParseState Parser, ValueType *Typ, bool IsStruct) {
 ValueType TypeCreateOpaqueStruct(State pc, ParseState Parser, const char *StructName, int Size) {
    ValueType Typ = TypeGetMatching(pc, Parser, &pc->UberType, StructT, 0, StructName, false);
 // Create the (empty) table.
-   Typ->Members = VariableAlloc(pc, Parser, sizeof *Typ->Members + STRUCT_TABLE_SIZE*sizeof(struct TableEntry), true);
+   Typ->Members = VariableAlloc(pc, Parser, sizeof *Typ->Members + MemTabMax*sizeof(struct TableEntry), true);
    Typ->Members->HashTable = (TableEntry *)((char *)Typ->Members + sizeof *Typ->Members);
-   TableInitTable(Typ->Members, (TableEntry *)((char *)Typ->Members + sizeof *Typ->Members), STRUCT_TABLE_SIZE, true);
+   TableInitTable(Typ->Members, (TableEntry *)((char *)Typ->Members + sizeof *Typ->Members), MemTabMax, true);
    Typ->Sizeof = Size;
    return Typ;
 }

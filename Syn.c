@@ -59,8 +59,8 @@ Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Ide
    LexGetToken(Parser, NULL, true); // Open bracket.
    ParserCopy(&ParamParser, Parser);
    ParamCount = ParseCountParams(Parser);
-   if (ParamCount > PARAMETER_MAX)
-      ProgramFail(Parser, "too many parameters (%d allowed)", PARAMETER_MAX);
+   if (ParamCount > ParameterMax)
+      ProgramFail(Parser, "too many parameters (%d allowed)", ParameterMax);
    FuncValue = VariableAllocValueAndData(pc, Parser, sizeof FuncValue->Val->FuncDef + ParamCount*(sizeof(ValueType) + sizeof(const char *)), false, NULL, true);
    FuncValue->Typ = &pc->FunctionType;
    FuncValue->Val->FuncDef.ReturnType = ReturnType;
@@ -145,7 +145,7 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
          VariableRealloc(Parser, NewVariable, TypeSizeValue(NewVariable, false));
       }
 #ifdef DEBUG_ARRAY_INITIALIZER
-      PRINT_SOURCE_POS;
+      ShowSourcePos(Parser);
       printf("array size: %d \n", NewVariable->Typ->ArraySize);
 #endif
    }
@@ -161,9 +161,9 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
             SubArray = VariableAllocValueFromExistingData(Parser, NewVariable->Typ->FromType, (AnyValue)(NewVariable->Val->ArrayMem + SubArraySize*ArrayIndex), true, NewVariable);
 #ifdef DEBUG_ARRAY_INITIALIZER
             int FullArraySize = TypeSize(NewVariable->Typ, NewVariable->Typ->ArraySize, true);
-            PRINT_SOURCE_POS;
-            PRINT_TYPE(NewVariable->Typ)
-               printf("[%d] subarray size: %d (full: %d,%d) \n", ArrayIndex, SubArraySize, FullArraySize, NewVariable->Typ->ArraySize);
+            ShowSourcePos(Parser);
+            ShowType(Parser, NewVariable->Typ);
+            printf("[%d] subarray size: %d (full: %d,%d) \n", ArrayIndex, SubArraySize, FullArraySize, NewVariable->Typ->ArraySize);
 #endif
             if (ArrayIndex >= NewVariable->Typ->ArraySize)
                ProgramFail(Parser, "too many array elements");
@@ -186,7 +186,7 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
             }
             ElementSize = TypeSize(ElementType, ElementType->ArraySize, true);
 #ifdef DEBUG_ARRAY_INITIALIZER
-            PRINT_SOURCE_POS;
+            ShowSourcePos(Parser);
             printf("[%d/%d] element size: %d (x%d) \n", ArrayIndex, TotalSize, ElementSize, ElementType->ArraySize);
 #endif
             if (ArrayIndex >= TotalSize)
@@ -472,7 +472,7 @@ ParseResult ParseStatement(ParseState Parser, bool CheckTrailingSemicolon) {
                         ProgramFail(Parser, "expected: expression");
                      }
 #   if 0
-                     PRINT_SOURCE_POS;
+                     ShowSourcePos(Parser);
                      PlatformPrintf(Parser->pc->CStdOut, "%t %s = %d;\n", CValue->Typ, Identifier, CValue->Val->Integer);
                      printf("%d\n", VariableDefined(Parser->pc, Identifier));
 #   endif
@@ -714,6 +714,6 @@ void PicocParseInteractiveNoStartPrompt(State pc, bool EnableDebugger) {
 
 // Parse interactively, showing a startup message.
 void PicocParseInteractive(State pc) {
-   PlatformPrintf(pc->CStdOut, INTERACTIVE_PROMPT_START);
+   PlatformPrintf(pc->CStdOut, PromptStart);
    PicocParseInteractiveNoStartPrompt(pc, true);
 }

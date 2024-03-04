@@ -14,15 +14,15 @@ typedef enum { false, true } bool;
 #   define NULL ((void *)0)
 #endif
 #ifndef min
-#   define min(x, y) (((x) < (y))? (x): (y))
+#   define min(X, Y) ((X) < (Y)? (X): (Y))
 #endif
 
-#define MEM_ALIGN(x) (((x) + sizeof(ALIGN_TYPE) - 1)&~(sizeof(ALIGN_TYPE) - 1))
-#define GETS_BUF_MAX 256
-
 // For debugging.
-#define PRINT_SOURCE_POS ({ PrintSourceTextErrorLine(Parser->pc->CStdOut, Parser->FileName, Parser->SourceText, Parser->Line, Parser->CharacterPos); PlatformPrintf(Parser->pc->CStdOut, "\n"); })
-#define PRINT_TYPE(typ) PlatformPrintf(Parser->pc->CStdOut, "%t\n", typ);
+#define ShowSourcePos(Q) ( \
+   PrintSourceTextErrorLine((Q)->pc->CStdOut, (Q)->FileName, (Q)->SourceText, (Q)->Line, (Q)->CharacterPos), \
+   PlatformPrintf((Q)->pc->CStdOut, "\n") \
+)
+#define ShowType(Q, Type) PlatformPrintf((Q)->pc->CStdOut, "%t\n", Type)
 
 // Small processors use a simplified FILE * for stdio, otherwise use the system FILE *.
 #ifdef BUILTIN_MINI_STDLIB
@@ -33,20 +33,14 @@ typedef FILE OutStruct, *OutFile;
 
 // Coercion of numeric types to other numeric types.
 #ifndef NO_FP
-#   define IS_FP(v) ((v)->Typ->Base == RatT)
-#   define FP_VAL(v) ((v)->Val->FP)
+#   define IsRatVal(V) ((V)->Typ->Base == RatT)
 #else
-#   define IS_FP(v) false
-#   define FP_VAL(v) 0
+#   define IsRatVal(V) false
 #endif
-
-#define IS_POINTER_COERCIBLE(v, ap) ((ap)? ((v)->Typ->Base == PointerT): false)
-#define POINTER_COERCE(v) ((int)(v)->Val->Pointer)
-
-#define IS_INTEGER_NUMERIC_TYPE(t) ((t)->Base >= IntT && (t)->Base <= LongNatT)
-#define IS_INTEGER_NUMERIC(v) IS_INTEGER_NUMERIC_TYPE((v)->Typ)
-#define IS_NUMERIC_COERCIBLE(v) (IS_INTEGER_NUMERIC(v) || IS_FP(v))
-#define IS_NUMERIC_COERCIBLE_PLUS_POINTERS(v, ap) (IS_NUMERIC_COERCIBLE(v) || IS_POINTER_COERCIBLE(v, ap))
+#define IsIntType(T) ((T)->Base >= IntT && (T)->Base <= LongNatT)
+#define IsIntVal(V) IsIntType((V)->Typ)
+#define IsNumVal(V) (IsIntVal(V) || IsRatVal(V))
+#define IsIntOrAddr(V, Pointy) (IsNumVal(V) || ((Pointy) && (V)->Typ->Base == PointerT))
 
 typedef struct Table *Table;
 typedef struct State *State;
@@ -235,7 +229,7 @@ struct StackFrame {
    Value *Parameter; // Array of parameter values.
    int NumParams; // The number of parameters.
    struct Table LocalTable; // The local variables and parameters.
-   TableEntry LocalHashTable[LOCAL_TABLE_SIZE];
+   TableEntry LocalHashTable[LocTabMax];
    StackFrame PreviousStackFrame; // The next lower stack frame.
 };
 
@@ -299,16 +293,15 @@ struct IncludeLibrary {
    IncludeLibrary NextLib;
 };
 
-#define FREELIST_BUCKETS 8 // Freelists for 4, 8, 12 ... 32 byte allocs.
-#define SPLIT_MEM_THRESHOLD 16 // Don't split memory which is close in size.
-#define BREAKPOINT_TABLE_SIZE 21
+#define BucketMax 8 // Freelists for 4, 8, 12 ... 32 byte allocs.
+#define DebugMax 21
 
 // The entire state of the picoc system.
 struct State {
 // Parser global data.
    struct Table GlobalTable;
    CleanupTokenNode CleanupTokenList;
-   TableEntry GlobalHashTable[GLOBAL_TABLE_SIZE];
+   TableEntry GlobalHashTable[GloTabMax];
 // Lexer global data.
    TokenLine InteractiveHead;
    TokenLine InteractiveTail;
@@ -317,10 +310,10 @@ struct State {
    union AnyValue LexAnyValue;
    struct Value LexValue;
    struct Table ReservedWordTable;
-   TableEntry ReservedWordHashTable[RESERVED_WORD_TABLE_SIZE];
+   TableEntry ReservedWordHashTable[KeyTabMax];
 // The table of string literal values.
    struct Table StringLiteralTable;
-   TableEntry StringLiteralHashTable[STRING_LITERAL_TABLE_SIZE];
+   TableEntry StringLiteralHashTable[LitTabMax];
 // The stack.
    StackFrame TopStackFrame;
 // The value passed to exit().
@@ -347,7 +340,7 @@ struct State {
    void *HeapStackTop; // The top of the stack.
 #endif
 #endif
-   AllocNode FreeListBucket[FREELIST_BUCKETS]; // We keep a pool of freelist buckets to reduce fragmentation.
+   AllocNode FreeListBucket[BucketMax]; // We keep a pool of freelist buckets to reduce fragmentation.
    AllocNode FreeListBig; // Free memory which doesn't fit in a bucket.
 // Types.
    struct ValueType UberType;
@@ -374,7 +367,7 @@ struct State {
    ValueType VoidPtrType;
 // Debugger.
    struct Table BreakpointTable;
-   TableEntry BreakpointHashTable[BREAKPOINT_TABLE_SIZE];
+   TableEntry BreakpointHashTable[DebugMax];
    int BreakpointCount;
    int DebugManualBreak;
 // C library.
@@ -385,15 +378,14 @@ struct State {
 // The picoc version string.
    const char *VersionString;
 // Exit longjump buffer.
-#if defined(UNIX_HOST) || defined(WIN32)
+#if defined UNIX_HOST || defined WIN32
    jmp_buf PicocExitBuf;
-#endif
-#ifdef SURVEYOR_HOST
+#elif defined SURVEYOR_HOST
    int PicocExitBuf[41];
 #endif
 // String table.
    struct Table StringTable;
-   TableEntry StringHashTable[STRING_TABLE_SIZE];
+   TableEntry StringHashTable[StrTabMax];
    char *StrEmpty;
 };
 

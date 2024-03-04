@@ -229,8 +229,8 @@ static void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, in
             if (ArgCount >= NumArgs)
                PrintStr("XXX", Stream); // Not enough parameters for format.
             else {
-               NextArg = (Value)((char *)NextArg + MEM_ALIGN(sizeof *NextArg + TypeStackSizeValue(NextArg)));
-               if (NextArg->Typ != FormatType && !((FormatType == &IntType || *FPos == 'f') && IS_NUMERIC_COERCIBLE(NextArg)) && !(FormatType == CharPtrType && (NextArg->Typ->Base == PointerT || (NextArg->Typ->Base == ArrayT && NextArg->Typ->FromType->Base == CharT))))
+               NextArg = (Value)AddAlign(NextArg, sizeof *NextArg + TypeStackSizeValue(NextArg));
+               if (NextArg->Typ != FormatType && !((FormatType == &IntType || *FPos == 'f') && IsNumVal(NextArg)) && !(FormatType == CharPtrType && (NextArg->Typ->Base == PointerT || (NextArg->Typ->Base == ArrayT && NextArg->Typ->FromType->Base == CharT))))
                   PrintStr("XXX", Stream); // Bad type for format.
                else {
                   switch (*FPos) {
@@ -278,7 +278,8 @@ static void LibSPrintf(ParseState Parser, Value ReturnValue, Value *Param, int N
 // Get a line of input.
 // Protected from buffer overrun.
 static void LibGets(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   ReturnValue->Val->Pointer = PlatformGetLine(Param[0]->Val->Pointer, GETS_BUF_MAX, NULL);
+   const size_t GetSBufMax = 0x100;
+   ReturnValue->Val->Pointer = PlatformGetLine(Param[0]->Val->Pointer, GetSBufMax, NULL);
    if (ReturnValue->Val->Pointer != NULL) {
       char *EOLPos = strchr(Param[0]->Val->Pointer, '\n');
       if (EOLPos != NULL)

@@ -41,13 +41,12 @@ void PicocCleanup(State pc) {
 }
 
 // Platform-dependent code for running programs.
-#if defined(UNIX_HOST) || defined(WIN32)
-#   define CALL_MAIN_NO_ARGS_RETURN_VOID "main();"
-#   define CALL_MAIN_WITH_ARGS_RETURN_VOID "main(__argc, __argv);"
-#   define CALL_MAIN_NO_ARGS_RETURN_INT "__exit_value = main();"
-#   define CALL_MAIN_WITH_ARGS_RETURN_INT "__exit_value = main(__argc, __argv);"
-
+#if defined UNIX_HOST || defined WIN32
 void PicocCallMain(State pc, int argc, char **argv) {
+   const char *VoidMainVoid = "main();";
+   const char *VoidMainArgs = "main(__argc, __argv);";
+   const char *IntMainVoid = "__exit_value = main();";
+   const char *IntMainArgs = "__exit_value = main(__argc, __argv);";
 // Check if the program wants arguments.
    Value FuncValue = NULL;
    if (!VariableDefined(pc, TableStrRegister(pc, "main")))
@@ -60,18 +59,11 @@ void PicocCallMain(State pc, int argc, char **argv) {
       VariableDefinePlatformVar(pc, NULL, "__argc", &pc->IntType, (AnyValue)&argc, false);
       VariableDefinePlatformVar(pc, NULL, "__argv", pc->CharPtrPtrType, (AnyValue)&argv, false);
    }
-   if (FuncValue->Val->FuncDef.ReturnType == &pc->VoidType) {
-      if (FuncValue->Val->FuncDef.NumParams == 0)
-         PicocParse(pc, "startup", CALL_MAIN_NO_ARGS_RETURN_VOID, strlen(CALL_MAIN_NO_ARGS_RETURN_VOID), true, true, false, true);
-      else
-         PicocParse(pc, "startup", CALL_MAIN_WITH_ARGS_RETURN_VOID, strlen(CALL_MAIN_WITH_ARGS_RETURN_VOID), true, true, false, true);
-   } else {
-      VariableDefinePlatformVar(pc, NULL, "__exit_value", &pc->IntType, (AnyValue)&pc->PicocExitValue, true);
-      if (FuncValue->Val->FuncDef.NumParams == 0)
-         PicocParse(pc, "startup", CALL_MAIN_NO_ARGS_RETURN_INT, strlen(CALL_MAIN_NO_ARGS_RETURN_INT), true, true, false, true);
-      else
-         PicocParse(pc, "startup", CALL_MAIN_WITH_ARGS_RETURN_INT, strlen(CALL_MAIN_WITH_ARGS_RETURN_INT), true, true, false, true);
-   }
+   bool IntMain = FuncValue->Val->FuncDef.ReturnType != &pc->VoidType;
+   bool MainVoid = FuncValue->Val->FuncDef.NumParams == 0;
+   if (IntMain) VariableDefinePlatformVar(pc, NULL, "__exit_value", &pc->IntType, (AnyValue)&pc->PicocExitValue, true);
+   const char *MainProto = IntMain? (MainVoid? IntMainVoid: IntMainArgs): (MainVoid? VoidMainVoid: VoidMainArgs);
+   PicocParse(pc, "startup", MainProto, strlen(MainProto), true, true, false, true);
 }
 #endif
 
@@ -99,7 +91,7 @@ void PrintSourceTextErrorLine(OutFile Stream, const char *FileName, const char *
       }
    } else {
    // Assume we're in interactive mode - try to make the arrow match up with the input text.
-      for (CCount = 0; CCount < CharacterPos + (int)strlen(INTERACTIVE_PROMPT_STATEMENT); CCount++)
+      for (CCount = 0; CCount < CharacterPos + (int)strlen(PromptStatement); CCount++)
          PrintCh(' ', Stream);
    }
    PlatformPrintf(Stream, "^\n%s:%d:%d ", FileName, Line, CharacterPos);

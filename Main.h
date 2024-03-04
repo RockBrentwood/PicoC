@@ -18,15 +18,15 @@ typedef enum { false, true } bool;
 #endif
 #include "Extern.h"
 
-#if defined(UNIX_HOST) || defined(WIN32)
+#if defined UNIX_HOST || defined WIN32
 #   include <setjmp.h>
 // This has to be a macro, otherwise errors will occur due to the stack being corrupt.
-#   define PicocPlatformSetExitPoint(pc) setjmp((pc)->PicocExitBuf)
+#   define PicocPlatformSetExitPoint(Q) setjmp((Q)->PicocExitBuf)
 #endif
 #ifdef SURVEYOR_HOST
 // Mark where to end the program for platforms which require this.
 extern int PicocExitBuf[];
-#   define PicocPlatformSetExitPoint(pc) setjmp((pc)->PicocExitBuf)
+#   define PicocPlatformSetExitPoint(Q) setjmp((Q)->PicocExitBuf)
 #endif
 
 // Syn.c:

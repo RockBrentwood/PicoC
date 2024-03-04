@@ -4,7 +4,7 @@
 
 // Initialize the shared string system.
 void TableInit(State pc) {
-   TableInitTable(&pc->StringTable, pc->StringHashTable, STRING_TABLE_SIZE, true);
+   TableInitTable(&pc->StringTable, pc->StringHashTable, StrTabMax, true);
    pc->StrEmpty = TableStrRegister(pc, "");
 }
 

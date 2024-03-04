@@ -37,14 +37,14 @@ void HeapInit(State pc, int StackOrHeapSize) {
    pc->HeapStackTop = HeapMemory; // The top of the stack.
 #endif
 #endif
-   while (((unsigned long)&pc->HeapMemory[AlignOffset]&(sizeof(ALIGN_TYPE) - 1)) != 0)
+   while (((unsigned long)&pc->HeapMemory[AlignOffset]&(AlignSize - 1)) != 0)
       AlignOffset++;
    pc->StackFrame = &pc->HeapMemory[AlignOffset];
    pc->HeapStackTop = &pc->HeapMemory[AlignOffset];
    *(void **)(pc->StackFrame) = NULL;
-   pc->HeapBottom = &pc->HeapMemory[StackOrHeapSize - sizeof(ALIGN_TYPE) + AlignOffset];
+   pc->HeapBottom = &pc->HeapMemory[StackOrHeapSize - AlignSize + AlignOffset];
    pc->FreeListBig = NULL;
-   for (Count = 0; Count < FREELIST_BUCKETS; Count++)
+   for (Count = 0; Count < BucketMax; Count++)
       pc->FreeListBucket[Count] = NULL;
 }
 
@@ -59,9 +59,9 @@ void HeapCleanup(State pc) {
 // Can return NULL if out of stack space.
 void *HeapAllocStack(State pc, int Size) {
    char *NewMem = pc->HeapStackTop;
-   char *NewTop = (char *)pc->HeapStackTop + MEM_ALIGN(Size);
+   char *NewTop = AddAlign(pc->HeapStackTop, Size);
 #ifdef DEBUG_HEAP
-   printf("HeapAllocStack(%ld) at 0x%lx\n", (unsigned long)MEM_ALIGN(Size), (unsigned long)pc->HeapStackTop);
+   printf("HeapAllocStack(%ld) at 0x%lx\n", (unsigned long)MemAlign(Size), (unsigned long)pc->HeapStackTop);
 #endif
    if (NewTop > (char *)pc->HeapBottom)
       return NULL;
@@ -73,18 +73,18 @@ void *HeapAllocStack(State pc, int Size) {
 // Allocate some space on the stack, in the current stack frame.
 void HeapUnpopStack(State pc, int Size) {
 #ifdef DEBUG_HEAP
-   printf("HeapUnpopStack(%ld) at 0x%lx\n", (unsigned long)MEM_ALIGN(Size), (unsigned long)pc->HeapStackTop);
+   printf("HeapUnpopStack(%ld) at 0x%lx\n", (unsigned long)MemAlign(Size), (unsigned long)pc->HeapStackTop);
 #endif
-   pc->HeapStackTop = (void *)((char *)pc->HeapStackTop + MEM_ALIGN(Size));
+   pc->HeapStackTop = (void *)AddAlign(pc->HeapStackTop, Size);
 }
 
 // Free some space at the top of the stack.
 bool HeapPopStack(State pc, void *Addr, int Size) {
-   int ToLose = MEM_ALIGN(Size);
+   int ToLose = MemAlign(Size);
    if (ToLose > ((char *)pc->HeapStackTop - (char *)pc->HeapMemory))
       return false;
 #ifdef DEBUG_HEAP
-   printf("HeapPopStack(0x%lx, %ld) back to 0x%lx\n", (unsigned long)Addr, (unsigned long)MEM_ALIGN(Size), (unsigned long)pc->HeapStackTop - ToLose);
+   printf("HeapPopStack(0x%lx, %ld) back to 0x%lx\n", (unsigned long)Addr, (unsigned long)ToLose, (unsigned long)pc->HeapStackTop - ToLose);
 #endif
    pc->HeapStackTop = (void *)((char *)pc->HeapStackTop - ToLose);
    assert(Addr == NULL || pc->HeapStackTop == Addr);
@@ -98,7 +98,7 @@ void HeapPushStackFrame(State pc) {
 #endif
    *(void **)pc->HeapStackTop = pc->StackFrame;
    pc->StackFrame = pc->HeapStackTop;
-   pc->HeapStackTop = (void *)((char *)pc->HeapStackTop + MEM_ALIGN(sizeof(ALIGN_TYPE)));
+   pc->HeapStackTop = (void *)AddAlign(pc->HeapStackTop, AlignSize);
 }
 
 // Pop the current stack frame, freeing all memory in the frame.
@@ -122,9 +122,10 @@ void *HeapAllocMem(State pc, int Size) {
 #ifdef USE_MALLOC_HEAP
    return calloc(Size, 1);
 #else
+   const size_t SplitMemThreshold = 0x10; // Don't split memory which is close in size.
    AllocNode NewMem = NULL;
    AllocNode *FreeNode;
-   int AllocSize = MEM_ALIGN(Size) + MEM_ALIGN(sizeof NewMem->Size);
+   int AllocSize = MemAlign(Size) + MemAlign(sizeof NewMem->Size);
    int Bucket;
    void *ReturnMem;
    if (Size == 0)
@@ -134,7 +135,7 @@ void *HeapAllocMem(State pc, int Size) {
    if (AllocSize < sizeof *NewMem)
       AllocSize = sizeof *NewMem;
    Bucket = AllocSize >> 2;
-   if (Bucket < FREELIST_BUCKETS && pc->FreeListBucket[Bucket] != NULL) {
+   if (Bucket < BucketMax && pc->FreeListBucket[Bucket] != NULL) {
    // Try to allocate from a freelist bucket first.
 #   ifdef DEBUG_HEAP
       printf("allocating %d(%d) from bucket", Size, AllocSize);
@@ -151,7 +152,7 @@ void *HeapAllocMem(State pc, int Size) {
       if (*FreeNode != NULL) {
          assert((unsigned long)*FreeNode >= (unsigned long)pc->HeapMemory && (unsigned char *)*FreeNode - pc->HeapMemory < HEAP_SIZE);
          assert((*FreeNode)->Size < HEAP_SIZE && (*FreeNode)->Size > 0);
-         if ((*FreeNode)->Size < AllocSize + SPLIT_MEM_THRESHOLD) {
+         if ((*FreeNode)->Size < AllocSize + SplitMemThreshold) {
          // Close in size - reduce fragmentation by not splitting.
 #   ifdef DEBUG_HEAP
             printf("allocating %d(%d) from freelist, no split (%d)", Size, AllocSize, (*FreeNode)->Size);
@@ -182,8 +183,8 @@ void *HeapAllocMem(State pc, int Size) {
       NewMem = pc->HeapBottom;
       NewMem->Size = AllocSize;
    }
-   ReturnMem = (void *)((char *)NewMem + MEM_ALIGN(sizeof NewMem->Size));
-   memset(ReturnMem, '\0', AllocSize - MEM_ALIGN(sizeof NewMem->Size));
+   ReturnMem = (void *)AddAlign(NewMem, (sizeof NewMem->Size);
+   memset(ReturnMem, '\0', AllocSize - MemAlign(sizeof NewMem->Size));
 #   ifdef DEBUG_HEAP
    printf(" = %lx\n", (unsigned long)ReturnMem);
 #   endif
@@ -196,7 +197,7 @@ void HeapFreeMem(State pc, void *Mem) {
 #ifdef USE_MALLOC_HEAP
    free(Mem);
 #else
-   AllocNode MemNode = (AllocNode)((char *)Mem - MEM_ALIGN(sizeof MemNode->Size));
+   AllocNode MemNode = (AllocNode)SubAlign(Mem, sizeof MemNode->Size);
    int Bucket = MemNode->Size >> 2;
 #   ifdef DEBUG_HEAP
    printf("HeapFreeMem(0x%lx)\n", (unsigned long)Mem);
@@ -214,7 +215,7 @@ void HeapFreeMem(State pc, void *Mem) {
 #   ifdef DEBUG_HEAP
       ShowBigList(pc);
 #   endif
-   } else if (Bucket < FREELIST_BUCKETS) {
+   } else if (Bucket < BucketMax) {
    // We can fit it in a bucket.
 #   ifdef DEBUG_HEAP
       printf("freeing %d to bucket\n", MemNode->Size);
