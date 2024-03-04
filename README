@@ -1,9 +1,13 @@
-picoc
+PicoC
 ━━━━━
 PicoC is a small C interpreter for scripting.
-Forked from the original, written by Zik Saleeba,
+Forked from the original ‟picoc”, written by Zik Saleeba,
 it was originally written as a script language for a UAV's on-board flight system.
-It's also very suitable for other robotic, embedded and non-embedded applications.
+It was also very suitable for other robotic, embedded and non-embedded applications.
+
+It is now being distinguished from the original by a case-change in name: ‟PicoC”.
+(This may break the compatibility with the MSVC-related files in VC, this has not been checked.)
+Future changes may occur, e.g. to ‟PicoC++”, ‟PicoC99” or ‟PicoC11”.
 
 The core C source code in its early stages was around 3500 lines of code.
 It was not intended to be a complete implementation of ISO C but it had all the essentials.
@@ -11,7 +15,7 @@ When compiled it only takes a few k of code space and is also very sparing of da
 This means it can work well in small embedded devices.
 It's also a fun example of how to create a very small language implementation while still keeping the code readable.
 
-picoc was feature-frozen prior to being forked.
+PicoC was feature-frozen prior to being forked.
 Since it was important that it remain small it was intended that no more major features would be added.
 It's been tested on x86-32, x86-64, powerpc, arm, ultrasparc, HP-PA and blackfin processors and is easy to port to new targets.
 However, it may be brought more up to par with C - at least C99, possibly also with features of C11 included.
@@ -22,16 +26,16 @@ A reference grammar, that is a combined adaptation of the ISO grammar,
 for C 1989/1990, C 1999 and C 2010/2011, has been included as the file SyntaxC.pdf.
 This is subject to later expansion, modification, and rewriting in TeX.
 
-Compiling picoc
+Compiling PicoC
 ───────────────
-picoc can be compiled for a UNIX/Linux/POSIX host by typing "make".
+PicoC can be compiled for a UNIX/Linux/POSIX host by typing "make".
 
 The test suite can be run by typing "make test".
 
 Other configurations were included, with the fork from the original, besides Windows and UNIX,
 but may be discontinued, because they were not consistently maintained or completely developed.
 
-Porting picoc
+Porting PicoC
 ─────────────
 Sys.h is where you select your platform type and specify the includes etc. for your platform.
 
@@ -50,7 +54,7 @@ You'll need to specify your own host setup dependent on your target platform.
 
 Copyright
 ─────────
-picoc is published under the "New BSD License".
+PicoC is published under the "New BSD License".
 	http://www.opensource.org/licenses/bsd-license.php
 
 Copyright (c) 2009-2011, Zik Saleeba

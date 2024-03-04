@@ -1,4 +1,4 @@
-// picoc heap memory allocation.
+// PicoC heap memory allocation.
 // This is a complete (but small) memory allocator for embedded systems which have no memory allocator.
 // Alternatively you can define USE_MALLOC_HEAP to use your system's own malloc() allocator.
 

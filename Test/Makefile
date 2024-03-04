@@ -1,5 +1,5 @@
 RM=rm -f
-APP=../picoc
+APP=../PicoC
 TESTS=	00_assignment.T 01_comment.T 02_printf.T 03_struct.T 04_for.T \
 	05_array.T 06_case.T 07_function.T 08_while.T 09_do_while.T \
 	10_pointer.T 11_precedence.T 12_hashdefine.T 13_integer_literals.T 14_if.T \

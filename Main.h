@@ -1,10 +1,10 @@
-// picoc external interface.
-// This should be the only header you need to use if you're using picoc as a library.
+// PicoC external interface.
+// This should be the only header you need to use if you're using PicoC as a library.
 // Internal details are in Extern.h.
 #ifndef MAIN_H
 #define MAIN_H
 
-// picoc version number.
+// PicoC version number.
 #ifdef VER
 #   define PICOC_VERSION "v2.2 beta r" VER // VER is the subversion version number, obtained via the Makefile.
 #else
@@ -36,7 +36,7 @@ void PicocParseInteractive(State pc);
 // Sys.c:
 void PicocInitialize(State pc, int StackSize);
 void PicocCleanup(State pc);
-void PicocCallMain(State pc, int argc, char **argv);
+void PicocCallMain(State pc, int AC, char **AV);
 // Defined in the following places:
 // PicocPlatformSetExitPoint	Main.h as a macro.
 // PicocPlatformScanFile	Sys/Sys{UNIX,MSVC,FFox}.c

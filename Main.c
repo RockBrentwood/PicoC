@@ -1,5 +1,5 @@
-// picoc main program:
-// This varies depending on your operating system and how you're using picoc.
+// PicoC main program:
+// This varies depending on your operating system and how you're using PicoC.
 
 // Include only Main.h here - should be able to use it with only the external interfaces, no internals from Extern.h.
 #include "Main.h"
@@ -11,26 +11,28 @@
 #   include <stdio.h>
 #   include <string.h>
 
-int main(int argc, char **argv) {
-   int ParamCount = 1;
+int main(int AC, char **AV) {
+   char *App = AC < 1? NULL: AV[1]; if (App == NULL || *App == '\0') App = "PicoC";
+   int A = 1;
    bool DontRunMain = false;
    int StackSize = getenv("STACKSIZE")? atoi(getenv("STACKSIZE")): 0x20000;
    struct State pc;
-   if (argc < 2) {
+   if (AC < 2) {
       printf(
-         "Format: picoc <csource1.c>... [- <arg1>...]    : run a program (calls main() to start it)\n"
-         "        picoc -s <csource1.c>... [- <arg1>...] : script mode - runs the program without calling main()\n"
-         "        picoc -i                               : interactive mode\n"
+         "Format: %s <Source.c>... [- <Arg>...]    : run a program (calls main() to start it)\n"
+         "        %s -s <Source.c>... [- <Arg>...] : script mode - runs the program without calling main()\n"
+         "        %s -i                            : interactive mode\n",
+         App, App, App
       );
       exit(1);
    }
    PicocInitialize(&pc, StackSize);
-   if (strcmp(argv[ParamCount], "-s") == 0 || strcmp(argv[ParamCount], "-m") == 0) {
+   if (strcmp(AV[A], "-s") == 0 || strcmp(AV[A], "-m") == 0) {
       DontRunMain = true;
       PicocIncludeAllSystemHeaders(&pc);
-      ParamCount++;
+      A++;
    }
-   if (argc > ParamCount && strcmp(argv[ParamCount], "-i") == 0) {
+   if (AC > A && strcmp(AV[A], "-i") == 0) {
       PicocIncludeAllSystemHeaders(&pc);
       PicocParseInteractive(&pc);
    } else {
@@ -38,10 +40,10 @@ int main(int argc, char **argv) {
          PicocCleanup(&pc);
          return pc.PicocExitValue;
       }
-      for (; ParamCount < argc && strcmp(argv[ParamCount], "-") != 0; ParamCount++)
-         PicocPlatformScanFile(&pc, argv[ParamCount]);
+      for (; A < AC && strcmp(AV[A], "-") != 0; A++)
+         PicocPlatformScanFile(&pc, AV[A]);
       if (!DontRunMain)
-         PicocCallMain(&pc, argc - ParamCount, &argv[ParamCount]);
+         PicocCallMain(&pc, AC - A, &AV[A]);
    }
    PicocCleanup(&pc);
    return pc.PicocExitValue;
@@ -54,7 +56,7 @@ int main(int argc, char **argv) {
 #   include "../print.h"
 #   include "../string.h"
 
-int picoc(char *SourceStr) {
+int PicoC(char *SourceStr) {
    struct State pc;
    char *pos;
    PicocInitialize(&pc, HEAP_SIZE);

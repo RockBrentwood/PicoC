@@ -1,4 +1,4 @@
-// picoc expression evaluator: a stack-based expression evaluation system which handles operator precedence.
+// PicoC expression evaluator: a stack-based expression evaluation system which handles operator precedence.
 #include "Extern.h"
 
 // Whether evaluation is left to right for a given precedence level.

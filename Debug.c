@@ -1,4 +1,4 @@
-// picoc interactive debugger.
+// PicoC interactive debugger.
 #ifndef NO_DEBUGGER
 
 #include "Extern.h"

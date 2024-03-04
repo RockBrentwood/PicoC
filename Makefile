@@ -3,7 +3,7 @@ CC=gcc
 CFLAGS=-Wall -pedantic -g -DUNIX_HOST -DVER=\"2.1\"
 LIBS=-lm -lreadline
 
-APP	= picoc
+APP	= PicoC
 MOD	= \
 	Main Table Lex Syn Exp Heap Type Var Lib Sys Inc Debug \
 	Sys/SysUNIX Sys/LibUNIX \

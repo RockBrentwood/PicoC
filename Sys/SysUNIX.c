@@ -98,7 +98,7 @@ char *PlatformReadFile(State pc, const char *FileName) {
 // Read and scan a file for definitions.
 void PicocPlatformScanFile(State pc, const char *FileName) {
    char *SourceStr = PlatformReadFile(pc, FileName);
-// Ignore "#!/path/to/picoc" ... by replacing the "#!" with "//".
+// Ignore "#!/path/to/PicoC" ... by replacing the "#!" with "//".
    if (SourceStr != NULL && SourceStr[0] == '#' && SourceStr[1] == '!') {
       SourceStr[0] = '/';
       SourceStr[1] = '/';

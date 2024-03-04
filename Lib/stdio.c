@@ -32,7 +32,7 @@ typedef struct StdOutStream {
    int CharCount;
 } *StdOutStream;
 
-// Our representation of varargs within picoc.
+// Our representation of varargs within PicoC.
 typedef struct StdVararg {
    Value *Param;
    int NumArgs;

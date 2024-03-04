@@ -1,4 +1,4 @@
-// picoc parser
+// PicoC parser
 // Parses source and executes statements.
 #include "Main.h"
 #include "Extern.h"

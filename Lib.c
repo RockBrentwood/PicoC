@@ -1,4 +1,4 @@
-// picoc mini standard C library:
+// PicoC mini standard C library:
 // Provides an optional tiny C standard library if BUILTIN_MINI_STDLIB is defined.
 #include "Main.h"
 #include "Extern.h"

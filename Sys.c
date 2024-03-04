@@ -1,4 +1,4 @@
-// picoc's interface to the underlying platform.
+// PicoC's interface to the underlying platform.
 // Most platform-specific code is in Sys/Sys*.c and Sys/Lib*.c.
 #include "Main.h"
 #include "Extern.h"
@@ -42,7 +42,7 @@ void PicocCleanup(State pc) {
 
 // Platform-dependent code for running programs.
 #if defined UNIX_HOST || defined WIN32
-void PicocCallMain(State pc, int argc, char **argv) {
+void PicocCallMain(State pc, int AC, char **AV) {
    const char *VoidMainVoid = "main();";
    const char *VoidMainArgs = "main(__argc, __argv);";
    const char *IntMainVoid = "__exit_value = main();";
@@ -56,8 +56,8 @@ void PicocCallMain(State pc, int argc, char **argv) {
       ProgramFailNoParser(pc, "main is not a function - can't call it");
    if (FuncValue->Val->FuncDef.NumParams != 0) {
    // Define the arguments.
-      VariableDefinePlatformVar(pc, NULL, "__argc", &pc->IntType, (AnyValue)&argc, false);
-      VariableDefinePlatformVar(pc, NULL, "__argv", pc->CharPtrPtrType, (AnyValue)&argv, false);
+      VariableDefinePlatformVar(pc, NULL, "__argc", &pc->IntType, (AnyValue)&AC, false);
+      VariableDefinePlatformVar(pc, NULL, "__argv", pc->CharPtrPtrType, (AnyValue)&AV, false);
    }
    bool IntMain = FuncValue->Val->FuncDef.ReturnType != &pc->VoidType;
    bool MainVoid = FuncValue->Val->FuncDef.NumParams == 0;

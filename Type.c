@@ -1,4 +1,4 @@
-// picoc data type module.
+// PicoC data type module.
 // This manages a tree of data types and has facilities for parsing data types.
 #include "Extern.h"
 

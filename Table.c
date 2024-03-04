@@ -1,4 +1,4 @@
-// picoc hash table module.
+// PicoC hash table module.
 // This hash table code is used for both symbol tables and the shared string table.
 #include "Extern.h"
 

@@ -1,6 +1,6 @@
-// picoc main header file:
+// PicoC main header file:
 // This has all the main data structures and function prototypes.
-// If you're just calling picoc you should look at the external interface instead, in Main.h.
+// If you're just calling PicoC you should look at the external interface instead, in Main.h.
 #ifndef EXTERN_H
 #define EXTERN_H
 
@@ -85,7 +85,7 @@ typedef enum RunMode {
 
 // Parser state - has all this detail so we can parse nested files.
 typedef struct ParseState {
-   State pc; // The picoc instance this parser is a part of.
+   State pc; // The PicoC instance this parser is a part of.
    const unsigned char *Pos; // The character position in the source text.
    char *FileName; // What file we're executing (registered string).
    short int Line; // Line number we're executing.
@@ -296,7 +296,7 @@ struct IncludeLibrary {
 #define BucketMax 8 // Freelists for 4, 8, 12 ... 32 byte allocs.
 #define DebugMax 21
 
-// The entire state of the picoc system.
+// The entire state of the PicoC system.
 struct State {
 // Parser global data.
    struct Table GlobalTable;
@@ -375,7 +375,7 @@ struct State {
    int LittleEndian;
    OutFile CStdOut;
    OutStruct CStdOutBase;
-// The picoc version string.
+// The PicoC version string.
    const char *VersionString;
 // Exit longjump buffer.
 #if defined UNIX_HOST || defined WIN32
@@ -512,7 +512,7 @@ void LibPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs);
 // The following are declared in Main.h:
 void PicocInitialize(State pc, int StackSize);
 void PicocCleanup(State pc);
-void PicocCallMain(State pc, int argc, char **argv);
+void PicocCallMain(State pc, int AC, char **AV);
 // Defined in the following places:
 // PicocPlatformSetExitPoint	Main.h as a macro.
 // PicocPlatformScanFile	Sys/Sys{UNIX,MSVC,FFox}.c

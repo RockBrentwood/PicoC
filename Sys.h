@@ -36,8 +36,8 @@
 #define LocTabMax 11		// The initial capacity of local variable (growable) tables.
 #define MemTabMax 11		// The initial capacity of struct/union member (growable) tables.
 
-#define PromptStart "starting picoc " PICOC_VERSION "\n"
-#define PromptStatement "picoc> "
+#define PromptStart "Starting PicoC " PICOC_VERSION "\n"
+#define PromptStatement "PicoC> "
 #define PromptLine "     > "
 
 // Host platform includes.

@@ -1,4 +1,4 @@
-// picoc include system:
+// PicoC include system:
 // Can emulate system includes from built-in libraries or it can include and parse files if the system has files.
 #include "Main.h"
 #include "Extern.h"

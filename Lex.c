@@ -1,4 +1,4 @@
-// picoc lexer:
+// PicoC lexer:
 // Converts source text into a tokenized form.
 #include "Extern.h"
 

@@ -1,4 +1,4 @@
-// picoc variable storage.
+// PicoC variable storage.
 // This provides ways of defining and accessing variables.
 #include "Extern.h"
 
