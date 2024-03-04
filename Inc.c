@@ -8,18 +8,18 @@
 // Initialize the built-in include libraries.
 void IncludeInit(State pc) {
 #ifndef BUILTIN_MINI_STDLIB
-   IncludeRegister(pc, "ctype.h", NULL, &StdCtypeFunctions[0], NULL);
+   IncludeRegister(pc, "ctype.h", NULL, StdCtypeFunctions, NULL);
    IncludeRegister(pc, "errno.h", &StdErrnoSetupFunc, NULL, NULL);
 #   ifndef NO_FP
-   IncludeRegister(pc, "math.h", &MathSetupFunc, &MathFunctions[0], NULL);
+   IncludeRegister(pc, "math.h", &MathSetupFunc, MathFunctions, NULL);
 #   endif
    IncludeRegister(pc, "stdbool.h", &StdboolSetupFunc, NULL, StdboolDefs);
-   IncludeRegister(pc, "stdio.h", &StdioSetupFunc, &StdioFunctions[0], StdioDefs);
-   IncludeRegister(pc, "stdlib.h", &StdlibSetupFunc, &StdlibFunctions[0], NULL);
-   IncludeRegister(pc, "string.h", &StringSetupFunc, &StringFunctions[0], NULL);
-   IncludeRegister(pc, "time.h", &StdTimeSetupFunc, &StdTimeFunctions[0], StdTimeDefs);
+   IncludeRegister(pc, "stdio.h", &StdioSetupFunc, StdioFunctions, StdioDefs);
+   IncludeRegister(pc, "stdlib.h", &StdlibSetupFunc, StdlibFunctions, NULL);
+   IncludeRegister(pc, "string.h", &StringSetupFunc, StringFunctions, NULL);
+   IncludeRegister(pc, "time.h", &StdTimeSetupFunc, StdTimeFunctions, StdTimeDefs);
 #   ifndef WIN32
-   IncludeRegister(pc, "unistd.h", &UnistdSetupFunc, &UnistdFunctions[0], UnistdDefs);
+   IncludeRegister(pc, "unistd.h", &UnistdSetupFunc, UnistdFunctions, UnistdDefs);
 #   endif
 #endif
 }
@@ -65,7 +65,7 @@ void IncludeFile(State pc, char *FileName) {
             VariableDefine(pc, NULL, FileName, NULL, &pc->VoidType, false);
          // Run an extra startup function if there is one.
             if (LInclude->SetupFunction != NULL)
-               (*LInclude->SetupFunction)(pc);
+               LInclude->SetupFunction(pc);
          // Parse the setup C source code - may define types etc.
             if (LInclude->SetupCSource != NULL)
                PicocParse(pc, FileName, LInclude->SetupCSource, strlen(LInclude->SetupCSource), true, true, false, false);

@@ -35,7 +35,7 @@ void PlatformLibraryInit(State pc) {
    VariableDefinePlatformVar(pc, NULL, "cxmax", &pc->IntType, (AnyValue)&Cxmax, false);
    VariableDefinePlatformVar(pc, NULL, "cymin", &pc->IntType, (AnyValue)&Cymin, false);
    VariableDefinePlatformVar(pc, NULL, "cymax", &pc->IntType, (AnyValue)&Cymax, false);
-   LibraryAdd(pc, &pc->GlobalTable, "platform library", &PlatformLibrary[0]);
+   LibraryAdd(pc, &pc->GlobalTable, "platform library", PlatformLibrary);
 }
 
 // Check for kbhit, return t or nil.
@@ -395,7 +395,7 @@ void Cvscan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    thresh = Param[1]->Val->Integer;
    if ((thresh < 0) || (thresh > 9999))
       ProgramFail(NULL, "vscan():  threshold must be between 0 and 9999");
-   ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, thresh, (unsigned int)col, (unsigned int *)&ScanVect[0]);
+   ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, thresh, (unsigned int)col, (unsigned int *)ScanVect);
    ReturnValue->Val->Integer = ix;
 }
 

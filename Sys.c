@@ -18,7 +18,7 @@ void PicocInitialize(State pc, int StackSize) {
 #endif
    LibraryInit(pc);
 #ifdef BUILTIN_MINI_STDLIB
-   LibraryAdd(pc, &GlobalTable, "c library", &CLibrary[0]);
+   LibraryAdd(pc, &GlobalTable, "c library", CLibrary);
    CLibraryInit(pc);
 #endif
    PlatformLibraryInit(pc);

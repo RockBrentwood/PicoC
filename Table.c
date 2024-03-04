@@ -4,7 +4,7 @@
 
 // Initialize the shared string system.
 void TableInit(State pc) {
-   TableInitTable(&pc->StringTable, &pc->StringHashTable[0], STRING_TABLE_SIZE, true);
+   TableInitTable(&pc->StringTable, pc->StringHashTable, STRING_TABLE_SIZE, true);
    pc->StrEmpty = TableStrRegister(pc, "");
 }
 
@@ -99,7 +99,7 @@ static TableEntry TableSearchIdentifier(Table Tbl, const char *Key, int Len, int
    TableEntry Entry;
    int HashValue = TableHash(Key, Len)%Tbl->Size;
    for (Entry = Tbl->HashTable[HashValue]; Entry != NULL; Entry = Entry->Next) {
-      if (strncmp(&Entry->p.Key[0], (char *)Key, Len) == 0 && Entry->p.Key[Len] == '\0')
+      if (strncmp(Entry->p.Key, (char *)Key, Len) == 0 && Entry->p.Key[Len] == '\0')
          return Entry; // Found.
    }
    *AddAt = HashValue; // Didn't find it in the chain.
@@ -112,16 +112,16 @@ static char *TableSetIdentifier(State pc, Table Tbl, const char *Ident, int Iden
    int AddAt;
    TableEntry FoundEntry = TableSearchIdentifier(Tbl, Ident, IdentLen, &AddAt);
    if (FoundEntry != NULL)
-      return &FoundEntry->p.Key[0];
+      return FoundEntry->p.Key;
    else { // Add it to the table - we economize by not allocating the whole structure here.
       TableEntry NewEntry = HeapAllocMem(pc, sizeof *NewEntry - sizeof NewEntry->p + IdentLen + 1);
       if (NewEntry == NULL)
          ProgramFailNoParser(pc, "out of memory");
-      strncpy((char *)&NewEntry->p.Key[0], (char *)Ident, IdentLen);
+      strncpy((char *)NewEntry->p.Key, (char *)Ident, IdentLen);
       NewEntry->p.Key[IdentLen] = '\0';
       NewEntry->Next = Tbl->HashTable[AddAt];
       Tbl->HashTable[AddAt] = NewEntry;
-      return &NewEntry->p.Key[0];
+      return NewEntry->p.Key;
    }
 }
 

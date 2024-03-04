@@ -158,7 +158,7 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
          Value SubArray = NewVariable;
          if (Parser->Mode == RunM && DoAssignment) {
             SubArraySize = TypeSize(NewVariable->Typ->FromType, NewVariable->Typ->FromType->ArraySize, true);
-            SubArray = VariableAllocValueFromExistingData(Parser, NewVariable->Typ->FromType, (AnyValue)(&NewVariable->Val->ArrayMem[0] + SubArraySize*ArrayIndex), true, NewVariable);
+            SubArray = VariableAllocValueFromExistingData(Parser, NewVariable->Typ->FromType, (AnyValue)(NewVariable->Val->ArrayMem + SubArraySize*ArrayIndex), true, NewVariable);
 #ifdef DEBUG_ARRAY_INITIALIZER
             int FullArraySize = TypeSize(NewVariable->Typ, NewVariable->Typ->ArraySize, true);
             PRINT_SOURCE_POS;
@@ -191,7 +191,7 @@ static int ParseArrayInitializer(ParseState Parser, Value NewVariable, bool DoAs
 #endif
             if (ArrayIndex >= TotalSize)
                ProgramFail(Parser, "too many array elements");
-            ArrayElement = VariableAllocValueFromExistingData(Parser, ElementType, (AnyValue)(&NewVariable->Val->ArrayMem[0] + ElementSize*ArrayIndex), true, NewVariable);
+            ArrayElement = VariableAllocValueFromExistingData(Parser, ElementType, (AnyValue)(NewVariable->Val->ArrayMem + ElementSize*ArrayIndex), true, NewVariable);
          }
       // This is a normal expression initializer.
          if (!ExpressionParse(Parser, &CValue))

@@ -103,7 +103,7 @@ static void SPutc(unsigned char Ch, OutputStreamInfo Stream) {
 
 // Print a character to a stream without using printf/sprintf.
 void PrintCh(char OutCh, OutputStream Stream) {
-   (*Stream->Putch)(OutCh, &Stream->i);
+   Stream->Putch(OutCh, &Stream->i);
 }
 
 // Print a string to a stream without using printf/sprintf.
@@ -235,7 +235,7 @@ static void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, in
                else {
                   switch (*FPos) {
                      case 's': {
-                        char *Str = NextArg->Typ->Base == PointerT? NextArg->Val->Pointer: &NextArg->Val->ArrayMem[0];
+                        char *Str = NextArg->Typ->Base == PointerT? NextArg->Val->Pointer: NextArg->Val->ArrayMem;
                         PrintStr(Str == NULL? "NULL": Str, Stream);
                      }
                      break;

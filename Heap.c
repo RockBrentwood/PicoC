@@ -8,7 +8,7 @@
 #ifdef DEBUG_HEAP
 static void ShowBigList(State pc) {
    AllocNode LPos;
-   printf("Heap: bottom=0x%lx 0x%lx-0x%lx, big freelist=", (long)pc->HeapBottom, (long)&(pc->HeapMemory)[0], (long)&(pc->HeapMemory)[HEAP_SIZE]);
+   printf("Heap: bottom=0x%lx 0x%lx-0x%lx, big freelist=", (long)pc->HeapBottom, (long)pc->HeapMemory, (long)&pc->HeapMemory[HEAP_SIZE]);
    for (LPos = pc->FreeListBig; LPos != NULL; LPos = LPos->NextFree)
       printf("0x%lx:%d ", (long)LPos, LPos->Size);
    printf("\n");
@@ -33,16 +33,16 @@ void HeapInit(State pc, int StackOrHeapSize) {
    pc->HeapMemStart = (void *)C_HEAPSTART;
 #else
    pc->HeapBottom = &HeapMemory[HEAP_SIZE]; // The bottom of the (downward-growing) heap.
-   pc->StackFrame = &HeapMemory[0]; // The current stack frame.
-   pc->HeapStackTop = &HeapMemory[0]; // The top of the stack.
+   pc->StackFrame = HeapMemory; // The current stack frame.
+   pc->HeapStackTop = HeapMemory; // The top of the stack.
 #endif
 #endif
    while (((unsigned long)&pc->HeapMemory[AlignOffset]&(sizeof(ALIGN_TYPE) - 1)) != 0)
       AlignOffset++;
-   pc->StackFrame = &(pc->HeapMemory)[AlignOffset];
-   pc->HeapStackTop = &(pc->HeapMemory)[AlignOffset];
+   pc->StackFrame = &pc->HeapMemory[AlignOffset];
+   pc->HeapStackTop = &pc->HeapMemory[AlignOffset];
    *(void **)(pc->StackFrame) = NULL;
-   pc->HeapBottom = &(pc->HeapMemory)[StackOrHeapSize - sizeof(ALIGN_TYPE) + AlignOffset];
+   pc->HeapBottom = &pc->HeapMemory[StackOrHeapSize - sizeof(ALIGN_TYPE) + AlignOffset];
    pc->FreeListBig = NULL;
    for (Count = 0; Count < FREELIST_BUCKETS; Count++)
       pc->FreeListBucket[Count] = NULL;
@@ -81,7 +81,7 @@ void HeapUnpopStack(State pc, int Size) {
 // Free some space at the top of the stack.
 bool HeapPopStack(State pc, void *Addr, int Size) {
    int ToLose = MEM_ALIGN(Size);
-   if (ToLose > ((char *)pc->HeapStackTop - (char *)&(pc->HeapMemory)[0]))
+   if (ToLose > ((char *)pc->HeapStackTop - (char *)pc->HeapMemory))
       return false;
 #ifdef DEBUG_HEAP
    printf("HeapPopStack(0x%lx, %ld) back to 0x%lx\n", (unsigned long)Addr, (unsigned long)MEM_ALIGN(Size), (unsigned long)pc->HeapStackTop - ToLose);
@@ -140,16 +140,16 @@ void *HeapAllocMem(State pc, int Size) {
       printf("allocating %d(%d) from bucket", Size, AllocSize);
 #   endif
       NewMem = pc->FreeListBucket[Bucket];
-      assert((unsigned long)NewMem >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)NewMem - &(pc->HeapMemory)[0] < HEAP_SIZE);
+      assert((unsigned long)NewMem >= (unsigned long)pc->HeapMemory && (unsigned char *)NewMem - pc->HeapMemory < HEAP_SIZE);
       pc->FreeListBucket[Bucket] = *(AllocNode *)NewMem;
-      assert(pc->FreeListBucket[Bucket] == NULL || ((unsigned long)pc->FreeListBucket[Bucket] >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)pc->FreeListBucket[Bucket] - &(pc->HeapMemory)[0] < HEAP_SIZE));
+      assert(pc->FreeListBucket[Bucket] == NULL || ((unsigned long)pc->FreeListBucket[Bucket] >= (unsigned long)pc->HeapMemory && (unsigned char *)pc->FreeListBucket[Bucket] - pc->HeapMemory < HEAP_SIZE));
       NewMem->Size = AllocSize;
    } else if (pc->FreeListBig != NULL) {
    // Grab the first item from the "big" freelist we can fit in.
       for (FreeNode = &pc->FreeListBig; *FreeNode != NULL && (*FreeNode)->Size < AllocSize; FreeNode = &(*FreeNode)->NextFree) {
       }
       if (*FreeNode != NULL) {
-         assert((unsigned long)*FreeNode >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)*FreeNode - &(pc->HeapMemory)[0] < HEAP_SIZE);
+         assert((unsigned long)*FreeNode >= (unsigned long)pc->HeapMemory && (unsigned char *)*FreeNode - pc->HeapMemory < HEAP_SIZE);
          assert((*FreeNode)->Size < HEAP_SIZE && (*FreeNode)->Size > 0);
          if ((*FreeNode)->Size < AllocSize + SPLIT_MEM_THRESHOLD) {
          // Close in size - reduce fragmentation by not splitting.
@@ -157,7 +157,7 @@ void *HeapAllocMem(State pc, int Size) {
             printf("allocating %d(%d) from freelist, no split (%d)", Size, AllocSize, (*FreeNode)->Size);
 #   endif
             NewMem = *FreeNode;
-            assert((unsigned long)NewMem >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)NewMem - &(pc->HeapMemory)[0] < HEAP_SIZE);
+            assert((unsigned long)NewMem >= (unsigned long)pc->HeapMemory && (unsigned char *)NewMem - pc->HeapMemory < HEAP_SIZE);
             *FreeNode = NewMem->NextFree;
          } else {
          // Split this big memory chunk.
@@ -165,7 +165,7 @@ void *HeapAllocMem(State pc, int Size) {
             printf("allocating %d(%d) from freelist, split chunk (%d)", Size, AllocSize, (*FreeNode)->Size);
 #   endif
             NewMem = (void *)((char *)*FreeNode + (*FreeNode)->Size - AllocSize);
-            assert((unsigned long)NewMem >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)NewMem - &(pc->HeapMemory)[0] < HEAP_SIZE);
+            assert((unsigned long)NewMem >= (unsigned long)pc->HeapMemory && (unsigned char *)NewMem - pc->HeapMemory < HEAP_SIZE);
             (*FreeNode)->Size -= AllocSize;
             NewMem->Size = AllocSize;
          }
@@ -201,7 +201,7 @@ void HeapFreeMem(State pc, void *Mem) {
 #   ifdef DEBUG_HEAP
    printf("HeapFreeMem(0x%lx)\n", (unsigned long)Mem);
 #   endif
-   assert((unsigned long)Mem >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)Mem - &(pc->HeapMemory)[0] < HEAP_SIZE);
+   assert((unsigned long)Mem >= (unsigned long)pc->HeapMemory && (unsigned char *)Mem - pc->HeapMemory < HEAP_SIZE);
    assert(MemNode->Size < HEAP_SIZE && MemNode->Size > 0);
    if (Mem == NULL)
       return;
@@ -219,7 +219,7 @@ void HeapFreeMem(State pc, void *Mem) {
 #   ifdef DEBUG_HEAP
       printf("freeing %d to bucket\n", MemNode->Size);
 #   endif
-      assert(pc->FreeListBucket[Bucket] == NULL || ((unsigned long)pc->FreeListBucket[Bucket] >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)FreeListBucket[Bucket] - &HeapMemory[0] < HEAP_SIZE));
+      assert(pc->FreeListBucket[Bucket] == NULL || ((unsigned long)pc->FreeListBucket[Bucket] >= (unsigned long)pc->HeapMemory && (unsigned char *)FreeListBucket[Bucket] - HeapMemory < HEAP_SIZE));
       *(AllocNode *)MemNode = pc->FreeListBucket[Bucket];
       pc->FreeListBucket[Bucket] = (AllocNode)MemNode;
    } else {
@@ -227,7 +227,7 @@ void HeapFreeMem(State pc, void *Mem) {
 #   ifdef DEBUG_HEAP
       printf("freeing %lx:%d to freelist\n", (unsigned long)Mem, MemNode->Size);
 #   endif
-      assert(pc->FreeListBig == NULL || ((unsigned long)pc->FreeListBig >= (unsigned long)&(pc->HeapMemory)[0] && (unsigned char *)pc->FreeListBig - &(pc->HeapMemory)[0] < HEAP_SIZE));
+      assert(pc->FreeListBig == NULL || ((unsigned long)pc->FreeListBig >= (unsigned long)pc->HeapMemory && (unsigned char *)pc->FreeListBig - pc->HeapMemory < HEAP_SIZE));
       MemNode->NextFree = pc->FreeListBig;
       FreeListBig = MemNode;
 #   ifdef DEBUG_HEAP

@@ -329,7 +329,7 @@ static void ExpressionAssignToPointer(ParseState Parser, Value ToValue, Value Fr
       ToValue->Val->Pointer = FromValue->Val->Pointer; // Plain old pointer assignment.
    else if (FromValue->Typ->Base == ArrayT && (PointedToType == FromValue->Typ->FromType || ToValue->Typ == Parser->pc->VoidPtrType)) {
    // The form is: blah *x = array of blah.
-      ToValue->Val->Pointer = (void *)&FromValue->Val->ArrayMem[0];
+      ToValue->Val->Pointer = (void *)FromValue->Val->ArrayMem;
    } else if (FromValue->Typ->Base == PointerT && FromValue->Typ->FromType->Base == ArrayT && (PointedToType == FromValue->Typ->FromType->FromType || ToValue->Typ == Parser->pc->VoidPtrType)) {
    // The form is: blah *x = pointer to array of blah.
       ToValue->Val->Pointer = VariableDereferencePointer(Parser, FromValue, NULL, NULL, NULL, NULL);
@@ -578,7 +578,7 @@ static void ExpressionInfixOperator(ParseState Parser, ExpressionStack *StackTop
       ArrayIndex = ExpressionCoerceInteger(TopValue);
    // Make the array element result.
       switch (BottomValue->Typ->Base) {
-         case ArrayT: Result = VariableAllocValueFromExistingData(Parser, BottomValue->Typ->FromType, (AnyValue)(&BottomValue->Val->ArrayMem[0] + TypeSize(BottomValue->Typ, ArrayIndex, true)), BottomValue->IsLValue, BottomValue->LValueFrom); break;
+         case ArrayT: Result = VariableAllocValueFromExistingData(Parser, BottomValue->Typ->FromType, (AnyValue)(BottomValue->Val->ArrayMem + TypeSize(BottomValue->Typ, ArrayIndex, true)), BottomValue->IsLValue, BottomValue->LValueFrom); break;
          case PointerT: Result = VariableAllocValueFromExistingData(Parser, BottomValue->Typ->FromType, (AnyValue)((char *)BottomValue->Val->Pointer + TypeSize(BottomValue->Typ->FromType, 0, true)*ArrayIndex), BottomValue->IsLValue, BottomValue->LValueFrom); break;
          default: ProgramFail(Parser, "this %t is not an array", BottomValue->Typ);
       }

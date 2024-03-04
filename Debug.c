@@ -7,7 +7,7 @@
 
 // Initialize the debugger by clearing the breakpoint table.
 void DebugInit(State pc) {
-   TableInitTable(&pc->BreakpointTable, &pc->BreakpointHashTable[0], BREAKPOINT_TABLE_SIZE, true);
+   TableInitTable(&pc->BreakpointTable, pc->BreakpointHashTable, BREAKPOINT_TABLE_SIZE, true);
    pc->BreakpointCount = 0;
 }
 

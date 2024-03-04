@@ -284,7 +284,7 @@ void Cvscan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    thresh = Param[1]->Val->Integer;
    if ((thresh < 0) || (thresh > 9999))
       ProgramFail(NULL, "vscan():  threshold must be between 0 and 9999");
-   ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, thresh, (unsigned int)col, (unsigned int *)&ScanVect[0]);
+   ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, thresh, (unsigned int)col, (unsigned int *)ScanVect);
    ReturnValue->Val->Integer = ix;
 }
 
@@ -706,5 +706,5 @@ struct LibraryFunction SRV1Functions[] = {
 };
 
 void PlatformLibraryInit(State pc) {
-   IncludeRegister(pc, "srv1.h", &SRV1SetupFunc, &SRV1Functions[0], NULL);
+   IncludeRegister(pc, "srv1.h", &SRV1SetupFunc, SRV1Functions, NULL);
 }

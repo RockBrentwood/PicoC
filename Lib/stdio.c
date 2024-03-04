@@ -244,14 +244,14 @@ int StdioBasePrintf(ParseState Parser, FILE *Stream, char *StrOut, int StrOutLen
                   if (ThisArg->Typ->Base == PointerT)
                      StdioFprintfPointer(&SOStream, OneFormatBuf, ThisArg->Val->Pointer);
                   else if (ThisArg->Typ->Base == ArrayT && ThisArg->Typ->FromType->Base == CharT)
-                     StdioFprintfPointer(&SOStream, OneFormatBuf, &ThisArg->Val->ArrayMem[0]);
+                     StdioFprintfPointer(&SOStream, OneFormatBuf, ThisArg->Val->ArrayMem);
                   else
                      StdioOutPuts("XXX", &SOStream);
                } else if (ShowType == pc->VoidPtrType) {
                   if (ThisArg->Typ->Base == PointerT)
                      StdioFprintfPointer(&SOStream, OneFormatBuf, ThisArg->Val->Pointer);
                   else if (ThisArg->Typ->Base == ArrayT)
-                     StdioFprintfPointer(&SOStream, OneFormatBuf, &ThisArg->Val->ArrayMem[0]);
+                     StdioFprintfPointer(&SOStream, OneFormatBuf, ThisArg->Val->ArrayMem);
                   else
                      StdioOutPuts("XXX", &SOStream);
                }
@@ -282,7 +282,7 @@ int StdioBaseScanf(ParseState Parser, FILE *Stream, char *StrIn, char *Format, S
       if (ThisArg->Typ->Base == PointerT)
          ScanfArg[ArgCount] = ThisArg->Val->Pointer;
       else if (ThisArg->Typ->Base == ArrayT)
-         ScanfArg[ArgCount] = &ThisArg->Val->ArrayMem[0];
+         ScanfArg[ArgCount] = ThisArg->Val->ArrayMem;
       else
          ProgramFail(Parser, "non-pointer argument to scanf() - argument %d after format", ArgCount + 1);
    }

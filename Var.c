@@ -7,8 +7,8 @@
 
 // Initialize the variable system.
 void VariableInit(State pc) {
-   TableInitTable(&(pc->GlobalTable), &(pc->GlobalHashTable)[0], GLOBAL_TABLE_SIZE, true);
-   TableInitTable(&pc->StringLiteralTable, &pc->StringLiteralHashTable[0], STRING_LITERAL_TABLE_SIZE, true);
+   TableInitTable(&pc->GlobalTable, pc->GlobalHashTable, GLOBAL_TABLE_SIZE, true);
+   TableInitTable(&pc->StringLiteralTable, pc->StringLiteralHashTable, STRING_LITERAL_TABLE_SIZE, true);
    pc->TopStackFrame = NULL;
 }
 
@@ -98,10 +98,10 @@ Value VariableAllocValueAndCopy(State pc, ParseState Parser, Value FromValue, bo
    char TmpBuf[MAX_TMP_COPY_BUF];
    int CopySize = TypeSizeValue(FromValue, true);
    assert(CopySize <= MAX_TMP_COPY_BUF);
-   memcpy((void *)&TmpBuf[0], (void *)FromValue->Val, CopySize);
+   memcpy((void *)TmpBuf, (void *)FromValue->Val, CopySize);
    NewValue = VariableAllocValueAndData(pc, Parser, CopySize, FromValue->IsLValue, FromValue->LValueFrom, OnHeap);
    NewValue->Typ = DType;
-   memcpy((void *)NewValue->Val, (void *)&TmpBuf[0], CopySize);
+   memcpy((void *)NewValue->Val, (void *)TmpBuf, CopySize);
    return NewValue;
 }
 
@@ -139,7 +139,7 @@ int VariableScopeBegin(ParseState Parser, int *OldScopeID) {
 #ifdef VAR_SCOPE_DEBUG
    bool FirstPrint = false;
 #endif
-   Table HashTable = (pc->TopStackFrame == NULL)? &(pc->GlobalTable): &(pc->TopStackFrame)->LocalTable;
+   Table HashTable = (pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    if (Parser->ScopeID == -1) return -1;
 // XXX dumb hash, let's hope for no collisions...
    *OldScopeID = Parser->ScopeID;
@@ -175,7 +175,7 @@ void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID) {
 #ifdef VAR_SCOPE_DEBUG
    bool FirstPrint = false;
 #endif
-   Table HashTable = (pc->TopStackFrame == NULL)? &(pc->GlobalTable): &(pc->TopStackFrame)->LocalTable;
+   Table HashTable = (pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    if (ScopeID == -1) return;
    for (Count = 0; Count < HashTable->Size; Count++) {
       for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = NextEntry) {
@@ -199,7 +199,7 @@ void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID) {
 bool VariableDefinedAndOutOfScope(State pc, const char *Ident) {
    TableEntry Entry;
    int Count;
-   Table HashTable = (pc->TopStackFrame == NULL)? &(pc->GlobalTable): &(pc->TopStackFrame)->LocalTable;
+   Table HashTable = (pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    for (Count = 0; Count < HashTable->Size; Count++) {
       for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = Entry->Next) {
          if (Entry->p.v.Val->OutOfScope && (char *)((intptr_t)Entry->p.v.Key&~1) == Ident)
@@ -213,7 +213,7 @@ bool VariableDefinedAndOutOfScope(State pc, const char *Ident) {
 // Ident must be registered.
 Value VariableDefine(State pc, ParseState Parser, char *Ident, Value InitValue, ValueType Typ, bool MakeWritable) {
    Value AssignValue;
-   Table currentTable = (pc->TopStackFrame == NULL)? &(pc->GlobalTable): &(pc->TopStackFrame)->LocalTable;
+   Table currentTable = (pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    int ScopeID = Parser? Parser->ScopeID: -1;
 #ifdef VAR_SCOPE_DEBUG
    if (Parser) fprintf(stderr, "def %s %x (%s:%d:%d)\n", Ident, ScopeID, Parser->FileName, Parser->Line, Parser->CharacterPos);
@@ -244,7 +244,7 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
       ProgramFail(Parser, "type '%t' isn't defined", Typ);
    if (IsStatic) {
       char MangledName[LINEBUFFER_MAX];
-      char *MNPos = &MangledName[0];
+      char *MNPos = MangledName;
       char *MNEnd = &MangledName[LINEBUFFER_MAX - 1];
       const char *RegisteredMangledName;
    // Make the mangled static name (avoiding using sprintf() to minimize library impact).
@@ -344,7 +344,7 @@ void VariableStackFrameAdd(ParseState Parser, const char *FuncName, int NumParam
    ParserCopy(&NewFrame->ReturnParser, Parser);
    NewFrame->FuncName = FuncName;
    NewFrame->Parameter = (NumParams > 0)? ((void *)((char *)NewFrame + sizeof *NewFrame)): NULL;
-   TableInitTable(&NewFrame->LocalTable, &NewFrame->LocalHashTable[0], LOCAL_TABLE_SIZE, false);
+   TableInitTable(&NewFrame->LocalTable, NewFrame->LocalHashTable, LOCAL_TABLE_SIZE, false);
    NewFrame->PreviousStackFrame = Parser->pc->TopStackFrame;
    Parser->pc->TopStackFrame = NewFrame;
 }

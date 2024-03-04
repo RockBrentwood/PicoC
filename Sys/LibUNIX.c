@@ -20,5 +20,5 @@ struct LibraryFunction UnixFunctions[] = {
 };
 
 void PlatformLibraryInit(State pc) {
-   IncludeRegister(pc, "picoc_unix.h", &UnixSetupFunc, &UnixFunctions[0], NULL);
+   IncludeRegister(pc, "picoc_unix.h", &UnixSetupFunc, UnixFunctions, NULL);
 }
