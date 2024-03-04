@@ -14,8 +14,8 @@ static unsigned int TableHash(const char *Key, int Len) {
    int Offset;
    int Count;
    for (Count = 0, Offset = 8; Count < Len; Count++, Offset += 7) {
-      if (Offset > sizeof(unsigned int)*8 - 7)
-         Offset -= sizeof(unsigned int)*8 - 6;
+      if (Offset > 8*sizeof(unsigned int) - 7)
+         Offset -= 8*sizeof(unsigned int) - 6;
       Hash ^= *Key++ << Offset;
    }
    return Hash;
@@ -26,7 +26,7 @@ void TableInitTable(Table Tbl, TableEntry *HashTable, int Size, bool OnHeap) {
    Tbl->Size = Size;
    Tbl->OnHeap = OnHeap;
    Tbl->HashTable = HashTable;
-   memset((void *)HashTable, '\0', sizeof(TableEntry)*Size);
+   memset((void *)HashTable, '\0', Size*sizeof *HashTable);
 }
 
 // Check a hash table entry for a key.
@@ -48,7 +48,7 @@ bool TableSet(State pc, Table Tbl, char *Key, Value Val, const char *DeclFileNam
    int AddAt;
    TableEntry FoundEntry = TableSearch(Tbl, Key, &AddAt);
    if (FoundEntry == NULL) { // Add it to the table.
-      TableEntry NewEntry = VariableAlloc(pc, NULL, sizeof(struct TableEntry), Tbl->OnHeap);
+      TableEntry NewEntry = VariableAlloc(pc, NULL, sizeof *NewEntry, Tbl->OnHeap);
       NewEntry->DeclFileName = DeclFileName;
       NewEntry->DeclLine = DeclLine;
       NewEntry->DeclColumn = DeclColumn;
@@ -114,7 +114,7 @@ static char *TableSetIdentifier(State pc, Table Tbl, const char *Ident, int Iden
    if (FoundEntry != NULL)
       return &FoundEntry->p.Key[0];
    else { // Add it to the table - we economize by not allocating the whole structure here.
-      TableEntry NewEntry = HeapAllocMem(pc, sizeof(struct TableEntry) - sizeof(union TableEntryPayload) + IdentLen + 1);
+      TableEntry NewEntry = HeapAllocMem(pc, sizeof *NewEntry - sizeof NewEntry->p + IdentLen + 1);
       if (NewEntry == NULL)
          ProgramFailNoParser(pc, "out of memory");
       strncpy((char *)&NewEntry->p.Key[0], (char *)Ident, IdentLen);

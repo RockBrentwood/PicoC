@@ -218,13 +218,13 @@ struct TableEntry {
    const char *DeclFileName; // Where the variable was declared.
    unsigned short DeclLine;
    unsigned short DeclColumn;
-   union TableEntryPayload {
-      struct ValueEntry {
+   union {
+      struct {
          char *Key; // Points to the shared string table.
          Value Val; // The value we're storing.
       } v; // Used for tables of values.
       char Key[1]; // Dummy size - used for the shared string table.
-      struct BreakpointEntry { // Defines a breakpoint.
+      struct { // A breakpoint.
          const char *FileName;
          short int Line;
          short int CharacterPos;

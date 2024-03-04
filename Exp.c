@@ -370,7 +370,7 @@ static double ExpressionAssignFP(ParseState Parser, Value DestValue, double From
 
 // Push a node on to the expression stack.
 static void ExpressionStackPushValueNode(ParseState Parser, ExpressionStack *StackTop, Value ValueLoc) {
-   ExpressionStack StackNode = VariableAlloc(Parser->pc, Parser, sizeof(struct ExpressionStack), false);
+   ExpressionStack StackNode = VariableAlloc(Parser->pc, Parser, sizeof *StackNode, false);
    StackNode->Next = *StackTop;
    StackNode->Val = ValueLoc;
    *StackTop = StackNode;
@@ -1047,8 +1047,8 @@ static void ExpressionStackCollapse(ParseState Parser, ExpressionStack *StackTop
                debugf("prefix evaluation\n");
                TopValue = TopStackNode->Val;
             // Pop the value and then the prefix operator - assume they'll still be there until we're done.
-               HeapPopStack(Parser->pc, NULL, sizeof(struct ExpressionStack) + sizeof(struct Value) + TypeStackSizeValue(TopValue));
-               HeapPopStack(Parser->pc, TopOperatorNode, sizeof(struct ExpressionStack));
+               HeapPopStack(Parser->pc, NULL, sizeof *TopStackNode + sizeof *TopValue + TypeStackSizeValue(TopValue));
+               HeapPopStack(Parser->pc, TopOperatorNode, sizeof *TopStackNode);
                *StackTop = TopOperatorNode->Next;
             // Do the prefix operation.
                if (Parser->Mode == RunModeRun/* && FoundPrecedence < *IgnorePrecedence*/) {
@@ -1064,8 +1064,8 @@ static void ExpressionStackCollapse(ParseState Parser, ExpressionStack *StackTop
                debugf("postfix evaluation\n");
                TopValue = TopStackNode->Next->Val;
             // Pop the postfix operator and then the value - assume they'll still be there until we're done.
-               HeapPopStack(Parser->pc, NULL, sizeof(struct ExpressionStack));
-               HeapPopStack(Parser->pc, TopValue, sizeof(struct ExpressionStack) + sizeof(struct Value) + TypeStackSizeValue(TopValue));
+               HeapPopStack(Parser->pc, NULL, sizeof *TopStackNode);
+               HeapPopStack(Parser->pc, TopValue, sizeof *TopStackNode + sizeof *TopValue + TypeStackSizeValue(TopValue));
                *StackTop = TopStackNode->Next->Next;
             // Do the postfix operation.
                if (Parser->Mode == RunModeRun/* && FoundPrecedence < *IgnorePrecedence*/) {
@@ -1083,9 +1083,9 @@ static void ExpressionStackCollapse(ParseState Parser, ExpressionStack *StackTop
                if (TopValue != NULL) {
                   BottomValue = TopOperatorNode->Next->Val;
                // Pop a value, the operator and another value - assume they'll still be there until we're done.
-                  HeapPopStack(Parser->pc, NULL, sizeof(struct ExpressionStack) + sizeof(struct Value) + TypeStackSizeValue(TopValue));
-                  HeapPopStack(Parser->pc, NULL, sizeof(struct ExpressionStack));
-                  HeapPopStack(Parser->pc, BottomValue, sizeof(struct ExpressionStack) + sizeof(struct Value) + TypeStackSizeValue(BottomValue));
+                  HeapPopStack(Parser->pc, NULL, sizeof *TopOperatorNode + sizeof *TopValue + TypeStackSizeValue(TopValue));
+                  HeapPopStack(Parser->pc, NULL, sizeof *TopOperatorNode);
+                  HeapPopStack(Parser->pc, BottomValue, sizeof *TopOperatorNode + sizeof *BottomValue + TypeStackSizeValue(BottomValue));
                   *StackTop = TopOperatorNode->Next->Next;
                // Do the infix operation.
                   if (Parser->Mode == RunModeRun/* && FoundPrecedence <= *IgnorePrecedence*/) {
@@ -1120,7 +1120,7 @@ static void ExpressionStackCollapse(ParseState Parser, ExpressionStack *StackTop
 
 // Push an operator on to the expression stack.
 static void ExpressionStackPushOperator(ParseState Parser, ExpressionStack *StackTop, OperatorOrder Order, LexToken Token, int Precedence) {
-   ExpressionStack StackNode = VariableAlloc(Parser->pc, Parser, sizeof(struct ExpressionStack), false);
+   ExpressionStack StackNode = VariableAlloc(Parser->pc, Parser, sizeof **StackTop, false);
    StackNode->Next = *StackTop;
    StackNode->Order = Order;
    StackNode->Op = Token;
@@ -1158,7 +1158,7 @@ static void ExpressionGetStructElement(ParseState Parser, ExpressionStack *Stack
       if (!TableGet(StructType->Members, Ident->Val->Identifier, &MemberValue, NULL, NULL, NULL))
          ProgramFail(Parser, "doesn't have a member called '%s'", Ident->Val->Identifier);
    // Pop the value - assume it'll still be there until we're done.
-      HeapPopStack(Parser->pc, ParamVal, sizeof(struct ExpressionStack) + sizeof(struct Value) + TypeStackSizeValue(StructVal));
+      HeapPopStack(Parser->pc, ParamVal, sizeof **StackTop + sizeof *StructVal + TypeStackSizeValue(StructVal));
       *StackTop = (*StackTop)->Next;
    // Make the result value for this member only.
       Result = VariableAllocValueFromExistingData(Parser, MemberValue->Typ, (void *)(DerefDataLoc + MemberValue->Val->Integer), true, (StructVal != NULL)? StructVal->LValueFrom: NULL);
@@ -1363,9 +1363,9 @@ bool ExpressionParse(ParseState Parser, Value *Result) {
          if (StackTop->Order != OrderNone || StackTop->Next != NULL)
             ProgramFail(Parser, "invalid expression");
          *Result = StackTop->Val;
-         HeapPopStack(Parser->pc, StackTop, sizeof(struct ExpressionStack));
+         HeapPopStack(Parser->pc, StackTop, sizeof *StackTop);
       } else
-         HeapPopStack(Parser->pc, StackTop->Val, sizeof(struct ExpressionStack) + sizeof(struct Value) + TypeStackSizeValue(StackTop->Val));
+         HeapPopStack(Parser->pc, StackTop->Val, sizeof *StackTop + sizeof *StackTop->Val + TypeStackSizeValue(StackTop->Val));
    }
    debugf("ExpressionParse() done\n\n");
 #ifdef DEBUG_EXPRESSIONS
@@ -1390,7 +1390,7 @@ static void ExpressionParseMacroCall(ParseState Parser, ExpressionStack *StackTo
 #endif
       ReturnValue = (*StackTop)->Val;
       HeapPushStackFrame(Parser->pc);
-      ParamArray = HeapAllocStack(Parser->pc, sizeof(Value)*MDef->NumParams);
+      ParamArray = HeapAllocStack(Parser->pc, MDef->NumParams*sizeof *ParamArray);
       if (ParamArray == NULL)
          ProgramFail(Parser, "out of memory");
    } else
@@ -1461,7 +1461,7 @@ static void ExpressionParseFunctionCall(ParseState Parser, ExpressionStack *Stac
       ExpressionStackPushValueByType(Parser, StackTop, FuncValue->Val->FuncDef.ReturnType);
       ReturnValue = (*StackTop)->Val;
       HeapPushStackFrame(Parser->pc);
-      ParamArray = HeapAllocStack(Parser->pc, sizeof(Value)*FuncValue->Val->FuncDef.NumParams);
+      ParamArray = HeapAllocStack(Parser->pc, FuncValue->Val->FuncDef.NumParams*sizeof *ParamArray);
       if (ParamArray == NULL)
          ProgramFail(Parser, "out of memory");
    } else {

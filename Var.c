@@ -68,8 +68,8 @@ void *VariableAlloc(State pc, ParseState Parser, int Size, bool OnHeap) {
 
 // Allocate a value either on the heap or the stack using space dependent on what type we want.
 Value VariableAllocValueAndData(State pc, ParseState Parser, int DataSize, bool IsLValue, Value LValueFrom, bool OnHeap) {
-   Value NewValue = VariableAlloc(pc, Parser, MEM_ALIGN(sizeof(struct Value)) + DataSize, OnHeap);
-   NewValue->Val = (AnyValue)((char *)NewValue + MEM_ALIGN(sizeof(struct Value)));
+   Value NewValue = VariableAlloc(pc, Parser, MEM_ALIGN(sizeof *NewValue) + DataSize, OnHeap);
+   NewValue->Val = (AnyValue)((char *)NewValue + MEM_ALIGN(sizeof *NewValue));
    NewValue->ValOnHeap = OnHeap;
    NewValue->AnyValOnHeap = false;
    NewValue->ValOnStack = !OnHeap;
@@ -107,7 +107,7 @@ Value VariableAllocValueAndCopy(State pc, ParseState Parser, Value FromValue, bo
 
 // Allocate a value either on the heap or the stack from an existing AnyValue and type.
 Value VariableAllocValueFromExistingData(ParseState Parser, ValueType Typ, AnyValue FromValue, bool IsLValue, Value LValueFrom) {
-   Value NewValue = VariableAlloc(Parser->pc, Parser, sizeof(struct Value), false);
+   Value NewValue = VariableAlloc(Parser->pc, Parser, sizeof *NewValue, false);
    NewValue->Typ = Typ;
    NewValue->Val = FromValue;
    NewValue->ValOnHeap = false;
@@ -248,7 +248,7 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
       char *MNEnd = &MangledName[LINEBUFFER_MAX - 1];
       const char *RegisteredMangledName;
    // Make the mangled static name (avoiding using sprintf() to minimize library impact).
-      memset((void *)&MangledName, '\0', sizeof(MangledName));
+      memset((void *)&MangledName, '\0', sizeof MangledName);
       *MNPos++ = '/';
       strncpy(MNPos, (char *)Parser->FileName, MNEnd - MNPos);
       MNPos += strlen(MNPos);
@@ -320,16 +320,16 @@ void VariableStackPop(ParseState Parser, Value Var) {
    bool Success;
 #ifdef DEBUG_HEAP
    if (Var->ValOnStack)
-      printf("popping %ld at 0x%lx\n", (unsigned long)(sizeof(struct Value) + TypeSizeValue(Var, false)), (unsigned long)Var);
+      printf("popping %ld at 0x%lx\n", (unsigned long)(sizeof *Var + TypeSizeValue(Var, false)), (unsigned long)Var);
 #endif
    if (Var->ValOnHeap) {
       if (Var->Val != NULL)
          HeapFreeMem(Parser->pc, Var->Val);
-      Success = HeapPopStack(Parser->pc, Var, sizeof(struct Value)); // Free from heap.
+      Success = HeapPopStack(Parser->pc, Var, sizeof *Var); // Free from heap.
    } else if (Var->ValOnStack)
-      Success = HeapPopStack(Parser->pc, Var, sizeof(struct Value) + TypeSizeValue(Var, false)); // Free from stack.
+      Success = HeapPopStack(Parser->pc, Var, sizeof *Var + TypeSizeValue(Var, false)); // Free from stack.
    else
-      Success = HeapPopStack(Parser->pc, Var, sizeof(struct Value)); // Value isn't our problem.
+      Success = HeapPopStack(Parser->pc, Var, sizeof *Var); // Value isn't our problem.
    if (!Success)
       ProgramFail(Parser, "stack underrun");
 }
@@ -338,12 +338,12 @@ void VariableStackPop(ParseState Parser, Value Var) {
 void VariableStackFrameAdd(ParseState Parser, const char *FuncName, int NumParams) {
    StackFrame NewFrame;
    HeapPushStackFrame(Parser->pc);
-   NewFrame = HeapAllocStack(Parser->pc, sizeof(struct StackFrame) + sizeof(Value)*NumParams);
+   NewFrame = HeapAllocStack(Parser->pc, sizeof *NewFrame + NumParams*sizeof *NewFrame->Parameter);
    if (NewFrame == NULL)
       ProgramFail(Parser, "out of memory");
    ParserCopy(&NewFrame->ReturnParser, Parser);
    NewFrame->FuncName = FuncName;
-   NewFrame->Parameter = (NumParams > 0)? ((void *)((char *)NewFrame + sizeof(struct StackFrame))): NULL;
+   NewFrame->Parameter = (NumParams > 0)? ((void *)((char *)NewFrame + sizeof *NewFrame)): NULL;
    TableInitTable(&NewFrame->LocalTable, &NewFrame->LocalHashTable[0], LOCAL_TABLE_SIZE, false);
    NewFrame->PreviousStackFrame = Parser->pc->TopStackFrame;
    Parser->pc->TopStackFrame = NewFrame;

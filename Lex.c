@@ -73,12 +73,13 @@ static struct ReservedWord ReservedWords[] = {
    { "void", TokenVoidType },
    { "while", TokenWhile }
 };
+const size_t ReservedWordN = sizeof ReservedWords/sizeof ReservedWords[0];
 
 // Initialize the lexer.
 void LexInit(State pc) {
    int Count;
-   TableInitTable(&pc->ReservedWordTable, &pc->ReservedWordHashTable[0], sizeof(ReservedWords)/sizeof(struct ReservedWord)*2, true);
-   for (Count = 0; Count < sizeof(ReservedWords)/sizeof(struct ReservedWord); Count++) {
+   TableInitTable(&pc->ReservedWordTable, &pc->ReservedWordHashTable[0], 2*ReservedWordN, true);
+   for (Count = 0; Count < ReservedWordN; Count++) {
       TableSet(pc, &pc->ReservedWordTable, TableStrRegister(pc, ReservedWords[Count].Word), (Value)&ReservedWords[Count], NULL, 0, 0);
    }
    pc->LexValue.Typ = NULL;
@@ -94,7 +95,7 @@ void LexInit(State pc) {
 void LexCleanup(State pc) {
    int Count;
    LexInteractiveClear(pc, NULL);
-   for (Count = 0; Count < sizeof(ReservedWords)/sizeof(struct ReservedWord); Count++)
+   for (Count = 0; Count < ReservedWordN; Count++)
       TableDelete(pc, &pc->ReservedWordTable, TableStrRegister(pc, ReservedWords[Count].Word));
 }
 
@@ -622,7 +623,7 @@ static LexToken LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
                return TokenEOF;
          // Put the new line at the end of the linked list of interactive lines.
             LineTokens = LexAnalyse(pc, pc->StrEmpty, &LineBuffer[0], strlen(LineBuffer), &LineBytes);
-            LineNode = VariableAlloc(pc, Parser, sizeof(struct TokenLine), true);
+            LineNode = VariableAlloc(pc, Parser, sizeof *LineNode, true);
             LineNode->Tokens = LineTokens;
             LineNode->NumBytes = LineBytes;
             if (pc->InteractiveHead == NULL) {

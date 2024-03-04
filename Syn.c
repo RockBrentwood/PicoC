@@ -61,13 +61,13 @@ Value ParseFunctionDefinition(ParseState Parser, ValueType ReturnType, char *Ide
    ParamCount = ParseCountParams(Parser);
    if (ParamCount > PARAMETER_MAX)
       ProgramFail(Parser, "too many parameters (%d allowed)", PARAMETER_MAX);
-   FuncValue = VariableAllocValueAndData(pc, Parser, sizeof(struct FuncDef) + sizeof(ValueType)*ParamCount + sizeof(const char *)*ParamCount, false, NULL, true);
+   FuncValue = VariableAllocValueAndData(pc, Parser, sizeof FuncValue->Val->FuncDef + ParamCount*(sizeof(ValueType) + sizeof(const char *)), false, NULL, true);
    FuncValue->Typ = &pc->FunctionType;
    FuncValue->Val->FuncDef.ReturnType = ReturnType;
    FuncValue->Val->FuncDef.NumParams = ParamCount;
    FuncValue->Val->FuncDef.VarArgs = false;
-   FuncValue->Val->FuncDef.ParamType = (ValueType *)((char *)FuncValue->Val + sizeof(struct FuncDef));
-   FuncValue->Val->FuncDef.ParamName = (char **)((char *)FuncValue->Val->FuncDef.ParamType + sizeof(ValueType)*ParamCount);
+   FuncValue->Val->FuncDef.ParamType = (ValueType *)((char *)FuncValue->Val + sizeof FuncValue->Val->FuncDef);
+   FuncValue->Val->FuncDef.ParamName = (char **)((char *)FuncValue->Val->FuncDef.ParamType + ParamCount*sizeof(ValueType));
    for (ParamCount = 0; ParamCount < FuncValue->Val->FuncDef.NumParams; ParamCount++) {
    // Harvest the parameters into the function definition.
       if (ParamCount == FuncValue->Val->FuncDef.NumParams - 1 && LexGetToken(&ParamParser, NULL, false) == TokenEllipsis) {
@@ -290,9 +290,9 @@ static void ParseMacroDefinition(ParseState Parser) {
       int ParamCount = 0;
       ParserCopy(&ParamParser, Parser);
       NumParams = ParseCountParams(&ParamParser);
-      MacroValue = VariableAllocValueAndData(Parser->pc, Parser, sizeof(struct MacroDef) + sizeof(const char *)*NumParams, false, NULL, true);
+      MacroValue = VariableAllocValueAndData(Parser->pc, Parser, sizeof MacroValue->Val->MacroDef + NumParams*sizeof(const char *), false, NULL, true);
       MacroValue->Val->MacroDef.NumParams = NumParams;
-      MacroValue->Val->MacroDef.ParamName = (char **)((char *)MacroValue->Val + sizeof(struct MacroDef));
+      MacroValue->Val->MacroDef.ParamName = (char **)((char *)MacroValue->Val + sizeof MacroValue->Val->MacroDef);
       Token = LexGetToken(Parser, &ParamName, true);
       while (Token == TokenIdentifier) {
       // Store a parameter name.
@@ -308,7 +308,7 @@ static void ParseMacroDefinition(ParseState Parser) {
          ProgramFail(Parser, "close bracket expected");
    } else {
    // Allocate a simple unparameterized macro.
-      MacroValue = VariableAllocValueAndData(Parser->pc, Parser, sizeof(struct MacroDef), false, NULL, true);
+      MacroValue = VariableAllocValueAndData(Parser->pc, Parser, sizeof MacroValue->Val->MacroDef, false, NULL, true);
       MacroValue->Val->MacroDef.NumParams = 0;
    }
 // Copy the body of the macro to execute later.
@@ -322,7 +322,7 @@ static void ParseMacroDefinition(ParseState Parser) {
 
 // Copy the entire parser state.
 void ParserCopy(ParseState To, ParseState From) {
-   memcpy((void *)To, (void *)From, sizeof(*To));
+   memcpy((void *)To, (void *)From, sizeof *To);
 }
 
 // Copy where we're at in the parsing.
@@ -708,7 +708,7 @@ void PicocParse(State pc, const char *FileName, const char *Source, int SourceLe
    void *Tokens = LexAnalyse(pc, RegFileName, Source, SourceLen, NULL);
 // Allocate a cleanup node so we can clean up the tokens later.
    if (!CleanupNow) {
-      NewCleanupNode = HeapAllocMem(pc, sizeof(struct CleanupTokenNode));
+      NewCleanupNode = HeapAllocMem(pc, sizeof *NewCleanupNode);
       if (NewCleanupNode == NULL)
          ProgramFailNoParser(pc, "out of memory");
       NewCleanupNode->Tokens = Tokens;

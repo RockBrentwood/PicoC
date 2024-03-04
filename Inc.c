@@ -38,7 +38,7 @@ void IncludeCleanup(State pc) {
 
 // Register a new build-in include file.
 void IncludeRegister(State pc, const char *IncludeName, void (*SetupFunction)(State pc), LibraryFunction FuncList, const char *SetupCSource) {
-   IncludeLibrary NewLib = HeapAllocMem(pc, sizeof(struct IncludeLibrary));
+   IncludeLibrary NewLib = HeapAllocMem(pc, sizeof *NewLib);
    NewLib->IncludeName = TableStrRegister(pc, IncludeName);
    NewLib->SetupFunction = SetupFunction;
    NewLib->FuncList = FuncList;

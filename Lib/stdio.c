@@ -236,7 +236,7 @@ int StdioBasePrintf(ParseState Parser, FILE *Stream, char *StrOut, int StrOutLen
                      StdioOutPutc(*FPos, &SOStream);
                   break;
                   case 'n':
-                     ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(ThisArg)));
+                     ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof *ThisArg + TypeStackSizeValue(ThisArg)));
                      if (ThisArg->Typ->Base == TypeArray && ThisArg->Typ->FromType->Base == TypeInt)
                         *(int *)ThisArg->Val->Pointer = SOStream.CharCount;
                   break;
@@ -251,7 +251,7 @@ int StdioBasePrintf(ParseState Parser, FILE *Stream, char *StrOut, int StrOutLen
             // Null-terminate the buffer.
                OneFormatBuf[OneFormatCount] = '\0';
             // Print this argument.
-               ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(ThisArg)));
+               ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof *ThisArg + TypeStackSizeValue(ThisArg)));
                if (ShowType == &pc->IntType) {
                // Show a signed integer.
                   if (IS_NUMERIC_COERCIBLE(ThisArg))
@@ -306,7 +306,7 @@ int StdioBaseScanf(ParseState Parser, FILE *Stream, char *StrIn, char *Format, S
    if (Args->NumArgs > MAX_SCANF_ARGS)
       ProgramFail(Parser, "too many arguments to scanf() - %d max", MAX_SCANF_ARGS);
    for (ArgCount = 0; ArgCount < Args->NumArgs; ArgCount++) {
-      ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(ThisArg)));
+      ThisArg = (Value)((char *)ThisArg + MEM_ALIGN(sizeof *ThisArg + TypeStackSizeValue(ThisArg)));
       if (ThisArg->Typ->Base == TypePointer)
          ScanfArg[ArgCount] = ThisArg->Val->Pointer;
       else if (ThisArg->Typ->Base == TypeArray)

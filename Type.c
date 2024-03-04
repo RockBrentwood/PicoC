@@ -8,7 +8,7 @@ static int IntAlignBytes;
 
 // Add a new type to the set of types we know about.
 static ValueType TypeAdd(State pc, ParseState Parser, ValueType ParentType, BaseType Base, int ArraySize, const char *Identifier, int Sizeof, int AlignBytes) {
-   ValueType NewType = VariableAlloc(pc, Parser, sizeof(struct ValueType), true);
+   ValueType NewType = VariableAlloc(pc, Parser, sizeof *NewType, true);
    NewType->Base = Base;
    NewType->ArraySize = ArraySize;
    NewType->Sizeof = Sizeof;
@@ -132,28 +132,28 @@ void TypeInit(State pc) {
    IntAlignBytes = (char *)&ia.y - &ia.x;
    PointerAlignBytes = (char *)&pa.y - &pa.x;
    pc->UberType.DerivedTypeList = NULL;
-   TypeAddBaseType(pc, &pc->IntType, TypeInt, sizeof(int), IntAlignBytes);
-   TypeAddBaseType(pc, &pc->ShortType, TypeShort, sizeof(short), (char *)&sa.y - &sa.x);
-   TypeAddBaseType(pc, &pc->CharType, TypeChar, sizeof(char), (char *)&ca.y - &ca.x);
-   TypeAddBaseType(pc, &pc->LongType, TypeLong, sizeof(long), (char *)&la.y - &la.x);
+   TypeAddBaseType(pc, &pc->IntType, TypeInt, sizeof ia.y, IntAlignBytes);
+   TypeAddBaseType(pc, &pc->ShortType, TypeShort, sizeof sa.y, (char *)&sa.y - &sa.x);
+   TypeAddBaseType(pc, &pc->CharType, TypeChar, sizeof ca.y, (char *)&ca.y - &ca.x);
+   TypeAddBaseType(pc, &pc->LongType, TypeLong, sizeof la.y, (char *)&la.y - &la.x);
    TypeAddBaseType(pc, &pc->UnsignedIntType, TypeUnsignedInt, sizeof(unsigned int), IntAlignBytes);
    TypeAddBaseType(pc, &pc->UnsignedShortType, TypeUnsignedShort, sizeof(unsigned short), (char *)&sa.y - &sa.x);
    TypeAddBaseType(pc, &pc->UnsignedLongType, TypeUnsignedLong, sizeof(unsigned long), (char *)&la.y - &la.x);
    TypeAddBaseType(pc, &pc->UnsignedCharType, TypeUnsignedChar, sizeof(unsigned char), (char *)&ca.y - &ca.x);
    TypeAddBaseType(pc, &pc->VoidType, TypeVoid, 0, 1);
-   TypeAddBaseType(pc, &pc->FunctionType, TypeFunction, sizeof(int), IntAlignBytes);
-   TypeAddBaseType(pc, &pc->MacroType, TypeMacro, sizeof(int), IntAlignBytes);
+   TypeAddBaseType(pc, &pc->FunctionType, TypeFunction, sizeof ia.y, IntAlignBytes);
+   TypeAddBaseType(pc, &pc->MacroType, TypeMacro, sizeof ia.y, IntAlignBytes);
    TypeAddBaseType(pc, &pc->GotoLabelType, TypeGotoLabel, 0, 1);
 #ifndef NO_FP
-   TypeAddBaseType(pc, &pc->FPType, TypeFP, sizeof(double), (char *)&da.y - &da.x);
-   TypeAddBaseType(pc, &pc->TypeType, Type_Type, sizeof(double), (char *)&da.y - &da.x); // Must be large enough to cast to a double.
+   TypeAddBaseType(pc, &pc->FPType, TypeFP, sizeof da.y, (char *)&da.y - &da.x);
+   TypeAddBaseType(pc, &pc->TypeType, Type_Type, sizeof da.y, (char *)&da.y - &da.x); // Must be large enough to cast to a double.
 #else
    TypeAddBaseType(pc, &pc->TypeType, Type_Type, sizeof(ValueType), PointerAlignBytes);
 #endif
-   pc->CharArrayType = TypeAdd(pc, NULL, &pc->CharType, TypeArray, 0, pc->StrEmpty, sizeof(char), (char *)&ca.y - &ca.x);
-   pc->CharPtrType = TypeAdd(pc, NULL, &pc->CharType, TypePointer, 0, pc->StrEmpty, sizeof(void *), PointerAlignBytes);
-   pc->CharPtrPtrType = TypeAdd(pc, NULL, pc->CharPtrType, TypePointer, 0, pc->StrEmpty, sizeof(void *), PointerAlignBytes);
-   pc->VoidPtrType = TypeAdd(pc, NULL, &pc->VoidType, TypePointer, 0, pc->StrEmpty, sizeof(void *), PointerAlignBytes);
+   pc->CharArrayType = TypeAdd(pc, NULL, &pc->CharType, TypeArray, 0, pc->StrEmpty, sizeof ca.y, (char *)&ca.y - &ca.x);
+   pc->CharPtrType = TypeAdd(pc, NULL, &pc->CharType, TypePointer, 0, pc->StrEmpty, sizeof pa.y, PointerAlignBytes);
+   pc->CharPtrPtrType = TypeAdd(pc, NULL, pc->CharPtrType, TypePointer, 0, pc->StrEmpty, sizeof pa.y, PointerAlignBytes);
+   pc->VoidPtrType = TypeAdd(pc, NULL, &pc->VoidType, TypePointer, 0, pc->StrEmpty, sizeof pa.y, PointerAlignBytes);
 }
 
 // Deallocate heap-allocated types.
@@ -214,9 +214,9 @@ static void TypeParseStruct(ParseState Parser, ValueType *Typ, bool IsStruct) {
    if (pc->TopStackFrame != NULL)
       ProgramFail(Parser, "struct/union definitions can only be globals");
    LexGetToken(Parser, NULL, true);
-   (*Typ)->Members = VariableAlloc(pc, Parser, sizeof(struct Table) + STRUCT_TABLE_SIZE*sizeof(struct TableEntry), true);
-   (*Typ)->Members->HashTable = (TableEntry *)((char *)(*Typ)->Members + sizeof(struct Table));
-   TableInitTable((*Typ)->Members, (TableEntry *)((char *)(*Typ)->Members + sizeof(struct Table)), STRUCT_TABLE_SIZE, true);
+   (*Typ)->Members = VariableAlloc(pc, Parser, sizeof *(*Typ)->Members + STRUCT_TABLE_SIZE*sizeof(struct TableEntry), true);
+   (*Typ)->Members->HashTable = (TableEntry *)((char *)(*Typ)->Members + sizeof *(*Typ)->Members);
+   TableInitTable((*Typ)->Members, (TableEntry *)((char *)(*Typ)->Members + sizeof *(*Typ)->Members), STRUCT_TABLE_SIZE, true);
    do {
       TypeParse(Parser, &MemberType, &MemberIdentifier, NULL);
       if (MemberType == NULL || MemberIdentifier == NULL)
@@ -256,9 +256,9 @@ static void TypeParseStruct(ParseState Parser, ValueType *Typ, bool IsStruct) {
 ValueType TypeCreateOpaqueStruct(State pc, ParseState Parser, const char *StructName, int Size) {
    ValueType Typ = TypeGetMatching(pc, Parser, &pc->UberType, TypeStruct, 0, StructName, false);
 // Create the (empty) table.
-   Typ->Members = VariableAlloc(pc, Parser, sizeof(struct Table) + STRUCT_TABLE_SIZE*sizeof(struct TableEntry), true);
-   Typ->Members->HashTable = (TableEntry *)((char *)Typ->Members + sizeof(struct Table));
-   TableInitTable(Typ->Members, (TableEntry *)((char *)Typ->Members + sizeof(struct Table)), STRUCT_TABLE_SIZE, true);
+   Typ->Members = VariableAlloc(pc, Parser, sizeof *Typ->Members + STRUCT_TABLE_SIZE*sizeof(struct TableEntry), true);
+   Typ->Members->HashTable = (TableEntry *)((char *)Typ->Members + sizeof *Typ->Members);
+   TableInitTable(Typ->Members, (TableEntry *)((char *)Typ->Members + sizeof *Typ->Members), STRUCT_TABLE_SIZE, true);
    Typ->Sizeof = Size;
    return Typ;
 }
@@ -292,7 +292,7 @@ static void TypeParseEnum(ParseState Parser, ValueType *Typ) {
       ProgramFail(Parser, "enum definitions can only be globals");
    LexGetToken(Parser, NULL, true);
    (*Typ)->Members = &pc->GlobalTable;
-   memset((void *)&InitValue, '\0', sizeof(struct Value));
+   memset((void *)&InitValue, '\0', sizeof InitValue);
    InitValue.Typ = &pc->IntType;
    InitValue.Val = (AnyValue)&EnumValue;
    do {

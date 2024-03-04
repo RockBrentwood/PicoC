@@ -124,15 +124,15 @@ void *HeapAllocMem(State pc, int Size) {
 #else
    AllocNode NewMem = NULL;
    AllocNode *FreeNode;
-   int AllocSize = MEM_ALIGN(Size) + MEM_ALIGN(sizeof(NewMem->Size));
+   int AllocSize = MEM_ALIGN(Size) + MEM_ALIGN(sizeof NewMem->Size);
    int Bucket;
    void *ReturnMem;
    if (Size == 0)
       return NULL;
    assert(Size > 0);
 // Make sure we have enough space for an AllocNode.
-   if (AllocSize < sizeof(struct AllocNode))
-      AllocSize = sizeof(struct AllocNode);
+   if (AllocSize < sizeof *NewMem)
+      AllocSize = sizeof *NewMem;
    Bucket = AllocSize >> 2;
    if (Bucket < FREELIST_BUCKETS && pc->FreeListBucket[Bucket] != NULL) {
    // Try to allocate from a freelist bucket first.
@@ -182,8 +182,8 @@ void *HeapAllocMem(State pc, int Size) {
       NewMem = pc->HeapBottom;
       NewMem->Size = AllocSize;
    }
-   ReturnMem = (void *)((char *)NewMem + MEM_ALIGN(sizeof(NewMem->Size)));
-   memset(ReturnMem, '\0', AllocSize - MEM_ALIGN(sizeof(NewMem->Size)));
+   ReturnMem = (void *)((char *)NewMem + MEM_ALIGN(sizeof NewMem->Size));
+   memset(ReturnMem, '\0', AllocSize - MEM_ALIGN(sizeof NewMem->Size));
 #   ifdef DEBUG_HEAP
    printf(" = %lx\n", (unsigned long)ReturnMem);
 #   endif
@@ -196,7 +196,7 @@ void HeapFreeMem(State pc, void *Mem) {
 #ifdef USE_MALLOC_HEAP
    free(Mem);
 #else
-   AllocNode MemNode = (AllocNode)((char *)Mem - MEM_ALIGN(sizeof(MemNode->Size)));
+   AllocNode MemNode = (AllocNode)((char *)Mem - MEM_ALIGN(sizeof MemNode->Size));
    int Bucket = MemNode->Size >> 2;
 #   ifdef DEBUG_HEAP
    printf("HeapFreeMem(0x%lx)\n", (unsigned long)Mem);

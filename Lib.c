@@ -158,7 +158,7 @@ static void PrintRepeatedChar(State pc, char ShowChar, int Length, OutputStream 
 // Print an unsigned integer to a stream without using printf/sprintf.
 static void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputStream Stream) {
    char Result[33];
-   int ResPos = sizeof(Result);
+   int ResPos = sizeof Result;
    Result[--ResPos] = '\0';
    if (Num == 0)
       Result[--ResPos] = '0';
@@ -172,10 +172,10 @@ static void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, 
       Num = NextNum;
    }
    if (FieldWidth > 0 && !LeftJustify)
-      PrintRepeatedChar(ZeroPad? '0': ' ', FieldWidth - (sizeof(Result) - 1 - ResPos), Stream);
+      PrintRepeatedChar(ZeroPad? '0': ' ', FieldWidth - (sizeof Result - 1 - ResPos), Stream);
    PrintStr(&Result[ResPos], Stream);
    if (FieldWidth > 0 && LeftJustify)
-      PrintRepeatedChar(' ', FieldWidth - (sizeof(Result) - 1 - ResPos), Stream);
+      PrintRepeatedChar(' ', FieldWidth - (sizeof Result - 1 - ResPos), Stream);
 }
 
 // Print an integer to a stream without using printf/sprintf.
@@ -285,7 +285,7 @@ static void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, in
             if (ArgCount >= NumArgs)
                PrintStr("XXX", Stream); // Not enough parameters for format.
             else {
-               NextArg = (Value)((char *)NextArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(NextArg)));
+               NextArg = (Value)((char *)NextArg + MEM_ALIGN(sizeof *NextArg + TypeStackSizeValue(NextArg)));
                if (NextArg->Typ != FormatType && !((FormatType == &IntType || *FPos == 'f') && IS_NUMERIC_COERCIBLE(NextArg)) && !(FormatType == CharPtrType && (NextArg->Typ->Base == TypePointer || (NextArg->Typ->Base == TypeArray && NextArg->Typ->FromType->Base == TypeChar))))
                   PrintStr("XXX", Stream); // Bad type for format.
                else {
