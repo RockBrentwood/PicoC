@@ -84,10 +84,7 @@ void PrintSourceTextErrorLine(OutFile Stream, const char *FileName, const char *
       PrintCh('\n', Stream);
    // Display the error position.
       for (CPos = LinePos, CCount = 0; *CPos != '\n' && *CPos != '\0' && (CCount < CharacterPos || *CPos == ' '); CPos++, CCount++) {
-         if (*CPos == '\t')
-            PrintCh('\t', Stream);
-         else
-            PrintCh(' ', Stream);
+         PrintCh(*CPos == '\t'? '\t': ' ', Stream);
       }
    } else {
    // Assume we're in interactive mode - try to make the arrow match up with the input text.
@@ -143,7 +140,7 @@ void ProgramFailNoParser(State pc, const char *Message, ...) {
 void AssignFail(ParseState Parser, const char *Format, ValueType Type1, ValueType Type2, int Num1, int Num2, const char *FuncName, int ParamNo) {
    OutFile Stream = Parser->pc->CStdOut;
    PrintSourceTextErrorLine(Parser->pc->CStdOut, Parser->FileName, Parser->SourceText, Parser->Line, Parser->CharacterPos);
-   PlatformPrintf(Stream, "can't %s ", (FuncName == NULL)? "assign": "set");
+   PlatformPrintf(Stream, "can't %s ", FuncName == NULL? "assign": "set");
    if (Type1 != NULL)
       PlatformPrintf(Stream, Format, Type1, Type2);
    else

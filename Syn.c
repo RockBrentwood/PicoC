@@ -17,15 +17,13 @@ void ParseCleanup(State pc) {
 
 // Parse a statement, but only run it if Condition is true.
 static ParseResult ParseStatementMaybeRun(ParseState Parser, bool Condition, bool CheckTrailingSemicolon) {
-   if (Parser->Mode != SkipM && !Condition) {
-      RunMode OldMode = Parser->Mode;
-      int Result;
-      Parser->Mode = SkipM;
-      Result = ParseStatement(Parser, CheckTrailingSemicolon);
-      Parser->Mode = OldMode;
-      return Result;
-   } else
-      return ParseStatement(Parser, CheckTrailingSemicolon);
+   RunMode OldMode = Parser->Mode;
+   bool DoSkip = OldMode != SkipM && !Condition;
+   int Result;
+   if (DoSkip) Parser->Mode = SkipM;
+   Result = ParseStatement(Parser, CheckTrailingSemicolon);
+   if (DoSkip) Parser->Mode = OldMode;
+   return Result;
 }
 
 // Count the number of parameters to a function or macro.
@@ -247,7 +245,7 @@ static bool ParseDeclaration(ParseState Parser, Lexical Token) {
    TypeParseFront(Parser, &BasicType, &IsStatic);
    do {
       TypeParseIdentPart(Parser, BasicType, &Typ, &Identifier);
-      if ((Token != VoidL && Token != StructL && Token != UnionL && Token != EnumL) && Identifier == pc->StrEmpty)
+      if (Token != VoidL && Token != StructL && Token != UnionL && Token != EnumL && Identifier == pc->StrEmpty)
          ProgramFail(Parser, "identifier expected");
       if (Identifier != pc->StrEmpty) {
       // Handle function definitions.
@@ -348,10 +346,7 @@ static void ParseFor(ParseState Parser) {
    if (ParseStatement(Parser, true) != OkSyn)
       ProgramFail(Parser, "statement expected");
    ParserCopyPos(&PreConditional, Parser);
-   if (LexGetToken(Parser, NULL, false) == SemiL)
-      Condition = true;
-   else
-      Condition = ExpressionParseInt(Parser) != 0;
+   Condition = LexGetToken(Parser, NULL, false) == SemiL || ExpressionParseInt(Parser) != 0;
    if (LexGetToken(Parser, NULL, true) != SemiL)
       ProgramFail(Parser, "';' expected");
    ParserCopyPos(&PreIncrement, Parser);
@@ -368,10 +363,7 @@ static void ParseFor(ParseState Parser) {
       ParserCopyPos(Parser, &PreIncrement);
       ParseStatement(Parser, false);
       ParserCopyPos(Parser, &PreConditional);
-      if (LexGetToken(Parser, NULL, false) == SemiL)
-         Condition = true;
-      else
-         Condition = ExpressionParseInt(Parser) != 0;
+      Condition = LexGetToken(Parser, NULL, false) == SemiL || ExpressionParseInt(Parser) != 0;
       if (Condition) {
          ParserCopyPos(Parser, &PreStatement);
          ParseStatement(Parser, true);
@@ -578,25 +570,24 @@ ParseResult ParseStatement(ParseState Parser, bool CheckTrailingSemicolon) {
          int OldSearchLabel = Parser->SearchLabel;
          Parser->Mode = CaseM;
          Parser->SearchLabel = Label;
-         ParseBlock(Parser, true, (OldMode != SkipM) && (OldMode != ReturnM));
+         ParseBlock(Parser, true, OldMode != SkipM && OldMode != ReturnM);
          if (Parser->Mode != ReturnM)
             Parser->Mode = OldMode;
          Parser->SearchLabel = OldSearchLabel;
       }
          CheckTrailingSemicolon = false;
       break;
-      case CaseL:
-         if (Parser->Mode == CaseM) {
-            Parser->Mode = RunM;
-            Label = ExpressionParseInt(Parser);
-            Parser->Mode = CaseM;
-         } else
-            Label = ExpressionParseInt(Parser);
+      case CaseL: {
+         bool DoRun = Parser->Mode == CaseM;
+         if (DoRun) Parser->Mode = RunM;
+         Label = ExpressionParseInt(Parser);
+         if (DoRun) Parser->Mode = CaseM;
          if (LexGetToken(Parser, NULL, true) != ColonL)
             ProgramFail(Parser, "':' expected");
          if (Parser->Mode == CaseM && Label == Parser->SearchLabel)
             Parser->Mode = RunM;
          CheckTrailingSemicolon = false;
+      }
       break;
       case DefaultL:
          if (LexGetToken(Parser, NULL, true) != ColonL)
@@ -676,10 +667,7 @@ void PicocParse(State pc, const char *FileName, const char *Source, int SourceLe
       if (NewCleanupNode == NULL)
          ProgramFailNoParser(pc, "out of memory");
       NewCleanupNode->Tokens = Tokens;
-      if (CleanupSource)
-         NewCleanupNode->SourceText = Source;
-      else
-         NewCleanupNode->SourceText = NULL;
+      NewCleanupNode->SourceText = CleanupSource? Source: NULL;
       NewCleanupNode->Next = pc->CleanupTokenList;
       pc->CleanupTokenList = NewCleanupNode;
    }

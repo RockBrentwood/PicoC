@@ -98,10 +98,7 @@ void LexCleanup(State pc) {
 // Check if a word is a reserved word - used while scanning.
 static Lexical LexCheckReservedWord(State pc, const char *Word) {
    Value val;
-   if (TableGet(&pc->ReservedWordTable, Word, &val, NULL, NULL, NULL))
-      return ((ReservedWord)val)->Token;
-   else
-      return NoneL;
+   return TableGet(&pc->ReservedWordTable, Word, &val, NULL, NULL, NULL)? ((ReservedWord)val)->Token: NoneL;
 }
 
 // Lexer state.
@@ -300,9 +297,8 @@ static Lexical LexGetStringConstant(State pc, LexState Lexer, Value Val, char En
             Lexer->CharacterPos = 0;
             Lexer->EmitExtraNewlines++;
          }
-         Escape = false;
-      } else if (*Lexer->Pos == '\\')
-         Escape = true;
+      }
+      Escape = !Escape && *Lexer->Pos == '\\';
       IncLex(Lexer);
    }
    EndPos = Lexer->Pos;
@@ -556,11 +552,7 @@ static Lexical LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
          TokenLine LineNode;
          if (pc->InteractiveHead == NULL || (unsigned char *)Parser->Pos == &pc->InteractiveTail->Tokens[pc->InteractiveTail->NumBytes - TokenDataOffset]) {
          // Get interactive input.
-            if (pc->LexUseStatementPrompt) {
-               Prompt = PromptStatement;
-               pc->LexUseStatementPrompt = false;
-            } else
-               Prompt = PromptLine;
+            Prompt = pc->LexUseStatementPrompt? (pc->LexUseStatementPrompt = false, PromptStatement): PromptLine;
             if (PlatformGetLine(LineBuffer, LineBufMax, Prompt) == NULL)
                return EofL;
          // Put the new line at the end of the linked list of interactive lines.
@@ -646,7 +638,7 @@ static void LexHashIfdef(ParseState Parser, bool IfNot) {
       ProgramFail(Parser, "identifier expected");
 // Is the identifier defined?
    IsDefined = TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, &SavedValue, NULL, NULL, NULL);
-   if (Parser->HashIfEvaluateToLevel == Parser->HashIfLevel && ((IsDefined && !IfNot) || (!IsDefined && IfNot))) {
+   if (Parser->HashIfEvaluateToLevel == Parser->HashIfLevel && IsDefined != IfNot) {
    // #if is active, evaluate to this new level.
       Parser->HashIfEvaluateToLevel++;
    }

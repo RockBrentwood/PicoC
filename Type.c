@@ -49,30 +49,23 @@ ValueType TypeGetMatching(State pc, ParseState Parser, ValueType ParentType, Bas
 
 // Stack space used by a value.
 int TypeStackSizeValue(Value Val) {
-   if (Val != NULL && Val->ValOnStack)
-      return TypeSizeValue(Val, false);
-   else
-      return 0;
+   return Val != NULL && Val->ValOnStack? TypeSizeValue(Val, false): 0;
 }
 
 // Memory used by a value.
 int TypeSizeValue(Value Val, bool Compact) {
-   if (IsIntVal(Val) && !Compact)
-      return AlignSize; // Allow some extra room for type extension.
-   else if (Val->Typ->Base != ArrayT)
-      return Val->Typ->Sizeof;
-   else
-      return Val->Typ->FromType->Sizeof*Val->Typ->ArraySize;
+   return
+      IsIntVal(Val) && !Compact? AlignSize: // Allow some extra room for type extension.
+      Val->Typ->Base != ArrayT? Val->Typ->Sizeof:
+      Val->Typ->FromType->Sizeof*Val->Typ->ArraySize;
 }
 
 // Memory used by a variable given its type and array size.
 int TypeSize(ValueType Typ, int ArraySize, bool Compact) {
-   if (IsIntType(Typ) && !Compact)
-      return AlignSize; // Allow some extra room for type extension.
-   else if (Typ->Base != ArrayT)
-      return Typ->Sizeof;
-   else
-      return Typ->FromType->Sizeof*ArraySize;
+   return
+      IsIntType(Typ) && !Compact? AlignSize: // Allow some extra room for type extension.
+      Typ->Base != ArrayT? Typ->Sizeof:
+      Typ->FromType->Sizeof*ArraySize;
 }
 
 // Add a base type.
@@ -323,12 +316,9 @@ bool TypeParseFront(ParseState Parser, ValueType *Typ, bool *IsStatic) {
 // Handle signed/unsigned with no trailing type.
    if (Token == SignedL || Token == UnsignedL) {
       Lexical FollowToken = LexGetToken(Parser, &LexerValue, false);
-      Unsigned = (Token == UnsignedL);
+      Unsigned = Token == UnsignedL;
       if (FollowToken != IntL && FollowToken != LongL && FollowToken != ShortL && FollowToken != CharL) {
-         if (Token == UnsignedL)
-            *Typ = &pc->UnsignedIntType;
-         else
-            *Typ = &pc->IntType;
+         *Typ = Token == UnsignedL? &pc->UnsignedIntType: &pc->IntType;
          return true;
       }
       Token = LexGetToken(Parser, &LexerValue, true);
@@ -439,9 +429,7 @@ void TypeParse(ParseState Parser, ValueType *Typ, char **Identifier, bool *IsSta
 
 // Check if a type has been fully defined - otherwise it's just a forward declaration.
 bool TypeIsForwardDeclared(ParseState Parser, ValueType Typ) {
-   if (Typ->Base == ArrayT)
-      return TypeIsForwardDeclared(Parser, Typ->FromType);
-   if ((Typ->Base == StructT || Typ->Base == UnionT) && Typ->Members == NULL)
-      return true;
-   return false;
+   return Typ->Base == ArrayT?
+      TypeIsForwardDeclared(Parser, Typ->FromType):
+      (Typ->Base == StructT || Typ->Base == UnionT) && Typ->Members == NULL;
 }

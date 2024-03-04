@@ -70,7 +70,7 @@ void Cread_int(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
          sign = -1;
          continue;
       }
-      if ((ch < '0') || (ch > '9')) { // If not '-' or 0-9, we're done.
+      if (ch < '0' || ch > '9') { // If not '-' or 0-9, we're done.
          ReturnValue->Val->Integer = ix*sign;
          return;
       }
@@ -87,7 +87,7 @@ void Cread_str(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
    while (1) {
       ch = getch();
       cp[ix++] = ch;
-      if ((ch == 0) || (ch == 0x01)) { // Null or ctrl-A.
+      if (ch == 0 || ch == 0x01) { // Null or ctrl-A.
          ix--;
          cp[ix] = 0;
          break;
@@ -125,7 +125,7 @@ void Coutput1(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 void Cdelay(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int del;
    del = Param[0]->Val->Integer;
-   if ((del < 0) || (del > 1000000))
+   if (del < 0 || del > 1000000)
       return;
    delayMS(del);
 }
@@ -200,17 +200,17 @@ void Cencoders(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
 void Cencoderx(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = (unsigned char)Param[0]->Val->Integer;
-   if ((ix < 0) || (ix > 7))
+   if (ix < 0 || ix > 7)
       ProgramFail(NULL, "encoderx():  invalid channel");
    ReturnValue->Val->Integer = encoder_4wd(ix);
 }
 
 void Cmotors(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    lspeed = Param[0]->Val->Integer;
-   if ((lspeed < -100) || (lspeed > 100))
+   if (lspeed < -100 || lspeed > 100)
       ProgramFail(NULL, "motors():  left motor value out of range");
    rspeed = Param[1]->Val->Integer;
-   if ((rspeed < -100) || (rspeed > 100))
+   if (rspeed < -100 || rspeed > 100)
       ProgramFail(NULL, "motors():  right motor value out of range");
    if (!pwm1_init) {
       initPWM();
@@ -223,10 +223,10 @@ void Cmotors(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 void Cmotors2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    lspeed2 = Param[0]->Val->Integer;
-   if ((lspeed2 < -100) || (lspeed2 > 100))
+   if (lspeed2 < -100 || lspeed2 > 100)
       ProgramFail(NULL, "motors2():  left motor value out of range");
    rspeed2 = Param[1]->Val->Integer;
-   if ((rspeed2 < -100) || (rspeed2 > 100))
+   if (rspeed2 < -100 || rspeed2 > 100)
       ProgramFail(NULL, "motors2():  right motor value out of range");
    if (!pwm2_init) {
       initPWM2();
@@ -242,11 +242,11 @@ void Cmotorx(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char ch;
    int ls, rs;
    ls = Param[0]->Val->Integer;
-   if ((ls < -100) || (ls > 100))
+   if (ls < -100 || ls > 100)
       ProgramFail(NULL, "motors():  left motor value out of range");
    ls = (ls*127)/100; // Scale to full +/-127 range.
    rs = Param[1]->Val->Integer;
-   if ((rs < -100) || (rs > 100))
+   if (rs < -100 || rs > 100)
       ProgramFail(NULL, "motors():  right motor value out of range");
    rs = (rs*127)/100; // Scale to full +/-127 range.
    if (xwd_init == 0) {
@@ -264,10 +264,10 @@ void Cmotorx(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 void Cservos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int lspeed, rspeed;
    lspeed = Param[0]->Val->Integer;
-   if ((lspeed < 0) || (lspeed > 100))
+   if (lspeed < 0 || lspeed > 100)
       ProgramFail(NULL, "servos():  TMR2 value out of range");
    rspeed = Param[1]->Val->Integer;
-   if ((rspeed < 0) || (rspeed > 100))
+   if (rspeed < 0 || rspeed > 100)
       ProgramFail(NULL, "servos()():  TMR3 value out of range");
    if (!pwm1_init) {
       initPPM1();
@@ -280,10 +280,10 @@ void Cservos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 void Cservos2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int lspeed, rspeed;
    lspeed = Param[0]->Val->Integer;
-   if ((lspeed < 0) || (lspeed > 100))
+   if (lspeed < 0 || lspeed > 100)
       ProgramFail(NULL, "servos2():  TMR6 value out of range");
    rspeed = Param[1]->Val->Integer;
-   if ((rspeed < 0) || (rspeed > 100))
+   if (rspeed < 0 || rspeed > 100)
       ProgramFail(NULL, "servos2():  TMR7 value out of range");
    if (!pwm2_init) {
       initPPM2();
@@ -310,7 +310,7 @@ void Claser(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 void Csonar(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int i;
    i = Param[0]->Val->Integer;
-   if ((i < 1) || (i > 4)) {
+   if (i < 1 || i > 4) {
       ProgramFail(NULL, "sonar():  1, 2, 3, 4 are only valid selections");
    }
    sonar();
@@ -322,10 +322,8 @@ void Crange(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cbattery(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   if (*pPORTHIO&0x0004)
-      ReturnValue->Val->Integer = 0; // Low battery voltage detected.
-   else
-      ReturnValue->Val->Integer = 1; // Battery voltage okay.
+// 0: Low battery voltage detected, 1: Battery voltage okay.
+   ReturnValue->Val->Integer = *pPORTHIO&0x0004? 0: 1;
 }
 
 // Set color bin -
@@ -390,10 +388,10 @@ void Cvpix(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 void Cvscan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int col, thresh, ix;
    col = Param[0]->Val->Integer;
-   if ((col < 1) || (col > 9))
+   if (col < 1 || col > 9)
       ProgramFail(NULL, "vscan():  number of columns must be between 1 and 9");
    thresh = Param[1]->Val->Integer;
-   if ((thresh < 0) || (thresh > 9999))
+   if (thresh < 0 || thresh > 9999)
       ProgramFail(NULL, "vscan():  threshold must be between 0 and 9999");
    ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, thresh, (unsigned int)col, (unsigned int *)ScanVect);
    ReturnValue->Val->Integer = ix;
@@ -416,7 +414,7 @@ void Cvblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    if (iblob > MAX_BLOBS)
       ProgramFail(NULL, "blob():  invalid blob index");
    numblob = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ix);
-   if ((blobcnt[iblob] == 0) || (numblob == -1)) {
+   if (blobcnt[iblob] == 0 || numblob == -1) {
       Blobcnt = 0;
    } else {
       Blobcnt = blobcnt[iblob];
@@ -432,7 +430,7 @@ void Cvjpeg(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int image_size, qual;
    unsigned char *output_start, *output_end;
    qual = Param[0]->Val->Integer;
-   if ((qual < 1) || (qual > 8))
+   if (qual < 1 || qual > 8)
       ProgramFail(NULL, "vjpeg():  quality parameter out of range");
    output_start = (unsigned char *)JPEG_BUF;
    output_end = encode_image((unsigned char *)FRAME_BUF, output_start, qual, FOUR_TWO_TWO, imgWidth, imgHeight);
@@ -444,7 +442,7 @@ void Cvsend(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int ix, image_size;
    unsigned char *cp;
    image_size = Param[0]->Val->Integer;
-   if ((image_size < 0) || (image_size > 200000))
+   if (image_size < 0 || image_size > 200000)
       ProgramFail(NULL, "vsend():  image size out of range");
    led1_on();
    cp = (unsigned char *)JPEG_BUF;
@@ -492,7 +490,7 @@ void Ccompassxcal(ParseState Parser, Value ReturnValue, Value *Param, int NumArg
 void Ctilt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int ix;
    ix = (unsigned int)Param[0]->Val->Integer;
-   if ((ix < 1) || (ix > 3))
+   if (ix < 1 || ix > 3)
       ProgramFail(NULL, "tilt():  invalid channel");
    ReturnValue->Val->Integer = tilt(ix);
 }
@@ -501,10 +499,10 @@ void Ctilt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 void Canalog(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned int ix, channel;
    ix = (unsigned char)Param[0]->Val->Integer;
-   if ((ix < 1) || (ix > 28))
+   if (ix < 1 || ix > 28)
       ProgramFail(NULL, "analog():  invalid channel");
    channel = ix%10;
-   if ((channel < 1) || (channel > 8))
+   if (channel < 1 || channel > 8)
       ProgramFail(NULL, "analog():  invalid channel");
    ReturnValue->Val->Integer = analog(ix);
 }
@@ -522,7 +520,7 @@ void Canalog(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 void Canalogx(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ix;
    ix = (unsigned char)Param[0]->Val->Integer;
-   if ((ix < 0) || (ix > 7))
+   if (ix < 0 || ix > 7)
       ProgramFail(NULL, "analogx():  invalid channel");
    ReturnValue->Val->Integer = analog_4wd(ix);
 }
@@ -689,10 +687,7 @@ void Cnntest(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    for (i1 = 0; i1 < 8; i1++) {
       ch = (unsigned char)Param[i1]->Val->Integer;
       for (i2 = 0; i2 < 8; i2++) {
-         if (ch&nmask[i2])
-            N_IN(ix++) = 1024;
-         else
-            N_IN(ix++) = 0;
+         N_IN(ix++) = ch&nmask[i2]? 1024: 0;
       }
    }
    nncalculate_network();
@@ -750,7 +745,7 @@ void Cautorun(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char ch;
    ix = Param[0]->Val->Integer;
    t0 = readRTC();
-   while (readRTC() < (t0 + ix*1000)) { // Watch for ESC in 'ix' seconds.
+   while (readRTC() < t0 + ix*1000) { // Watch for ESC in 'ix' seconds.
       if (getchar(&ch)) {
          if (ch == 0x1B) { // If ESC found, exit picoC.
             printf("found ESC\r\n");

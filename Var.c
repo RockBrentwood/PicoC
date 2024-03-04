@@ -50,10 +50,7 @@ void VariableCleanup(State pc) {
 // Allocate some memory, either on the heap or the stack and check if we've run out.
 void *VariableAlloc(State pc, ParseState Parser, int Size, bool OnHeap) {
    void *NewValue;
-   if (OnHeap)
-      NewValue = HeapAllocMem(pc, Size);
-   else
-      NewValue = HeapAllocStack(pc, Size);
+   NewValue = OnHeap? HeapAllocMem(pc, Size): HeapAllocStack(pc, Size);
    if (NewValue == NULL)
       ProgramFail(Parser, "out of memory");
 #ifdef DEBUG_HEAP
@@ -136,7 +133,7 @@ int VariableScopeBegin(ParseState Parser, int *OldScopeID) {
 #ifdef VAR_SCOPE_DEBUG
    bool FirstPrint = false;
 #endif
-   Table HashTable = (pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
+   Table HashTable = pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    if (Parser->ScopeID == -1) return -1;
 // XXX dumb hash, let's hope for no collisions...
    *OldScopeID = Parser->ScopeID;
@@ -172,7 +169,7 @@ void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID) {
 #ifdef VAR_SCOPE_DEBUG
    bool FirstPrint = false;
 #endif
-   Table HashTable = (pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
+   Table HashTable = pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    if (ScopeID == -1) return;
    for (Count = 0; Count < HashTable->Size; Count++) {
       for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = NextEntry) {
@@ -196,7 +193,7 @@ void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID) {
 bool VariableDefinedAndOutOfScope(State pc, const char *Ident) {
    TableEntry Entry;
    int Count;
-   Table HashTable = (pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
+   Table HashTable = pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    for (Count = 0; Count < HashTable->Size; Count++) {
       for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = Entry->Next) {
          if (Entry->p.v.Val->OutOfScope && (char *)((intptr_t)Entry->p.v.Key&~1) == Ident)
@@ -210,19 +207,18 @@ bool VariableDefinedAndOutOfScope(State pc, const char *Ident) {
 // Ident must be registered.
 Value VariableDefine(State pc, ParseState Parser, char *Ident, Value InitValue, ValueType Typ, bool MakeWritable) {
    Value AssignValue;
-   Table currentTable = (pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
+   Table currentTable = pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    int ScopeID = Parser? Parser->ScopeID: -1;
 #ifdef VAR_SCOPE_DEBUG
    if (Parser) fprintf(stderr, "def %s %x (%s:%d:%d)\n", Ident, ScopeID, Parser->FileName, Parser->Line, Parser->CharacterPos);
 #endif
-   if (InitValue != NULL)
-      AssignValue = VariableAllocValueAndCopy(pc, Parser, InitValue, pc->TopStackFrame == NULL);
-   else
-      AssignValue = VariableAllocValueFromType(pc, Parser, Typ, MakeWritable, NULL, pc->TopStackFrame == NULL);
+   AssignValue = InitValue != NULL?
+      VariableAllocValueAndCopy(pc, Parser, InitValue, pc->TopStackFrame == NULL):
+      VariableAllocValueFromType(pc, Parser, Typ, MakeWritable, NULL, pc->TopStackFrame == NULL);
    AssignValue->IsLValue = MakeWritable;
    AssignValue->ScopeID = ScopeID;
    AssignValue->OutOfScope = false;
-   if (!TableSet(pc, currentTable, Ident, AssignValue, Parser? ((char *)Parser->FileName): NULL, Parser? Parser->Line: 0, Parser? Parser->CharacterPos: 0))
+   if (!TableSet(pc, currentTable, Ident, AssignValue, Parser? (char *)Parser->FileName: NULL, Parser? Parser->Line: 0, Parser? Parser->CharacterPos: 0))
       ProgramFail(Parser, "'%s' is already defined", Ident);
    return AssignValue;
 }
@@ -268,11 +264,13 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
    // Static variable exists in the global scope - now make a mirroring variable in our own scope with the short name.
       VariableDefinePlatformVar(Parser->pc, Parser, Ident, ExistingValue->Typ, ExistingValue->Val, true);
       return ExistingValue;
-   } else {
-      if (Parser->Line != 0 && TableGet((pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable, Ident, &ExistingValue, &DeclFileName, &DeclLine, &DeclColumn) && DeclFileName == Parser->FileName && DeclLine == Parser->Line && DeclColumn == Parser->CharacterPos)
-         return ExistingValue;
-      else
-         return VariableDefine(Parser->pc, Parser, Ident, NULL, Typ, true);
+   } else if (Parser->Line == 0) return false;
+   else {
+      return
+         TableGet(pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable, Ident, &ExistingValue, &DeclFileName, &DeclLine, &DeclColumn) &&
+         DeclFileName == Parser->FileName && DeclLine == Parser->Line && DeclColumn == Parser->CharacterPos?
+         ExistingValue:
+         VariableDefine(Parser->pc, Parser, Ident, NULL, Typ, true);
    }
 }
 
@@ -280,11 +278,9 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
 // Ident must be registered.
 bool VariableDefined(State pc, const char *Ident) {
    Value FoundValue;
-   if (pc->TopStackFrame == NULL || !TableGet(&pc->TopStackFrame->LocalTable, Ident, &FoundValue, NULL, NULL, NULL)) {
-      if (!TableGet(&pc->GlobalTable, Ident, &FoundValue, NULL, NULL, NULL))
-         return false;
-   }
-   return true;
+   return
+      (pc->TopStackFrame != NULL && TableGet(&pc->TopStackFrame->LocalTable, Ident, &FoundValue, NULL, NULL, NULL)) ||
+      TableGet(&pc->GlobalTable, Ident, &FoundValue, NULL, NULL, NULL);
 }
 
 // Get the value of a variable.
@@ -293,10 +289,7 @@ bool VariableDefined(State pc, const char *Ident) {
 void VariableGet(State pc, ParseState Parser, const char *Ident, Value *LVal) {
    if (pc->TopStackFrame == NULL || !TableGet(&pc->TopStackFrame->LocalTable, Ident, LVal, NULL, NULL, NULL)) {
       if (!TableGet(&pc->GlobalTable, Ident, LVal, NULL, NULL, NULL)) {
-         if (VariableDefinedAndOutOfScope(pc, Ident))
-            ProgramFail(Parser, "'%s' is out of scope", Ident);
-         else
-            ProgramFail(Parser, "'%s' is undefined", Ident);
+         ProgramFail(Parser, "'%s' %s", Ident, VariableDefinedAndOutOfScope(pc, Ident)? "is out of scope": "is undefined");
       }
    }
 }
@@ -307,7 +300,7 @@ void VariableDefinePlatformVar(State pc, ParseState Parser, char *Ident, ValueTy
    Value SomeValue = VariableAllocValueAndData(pc, NULL, 0, IsWritable, NULL, true);
    SomeValue->Typ = Typ;
    SomeValue->Val = FromValue;
-   if (!TableSet(pc, (pc->TopStackFrame == NULL)? &pc->GlobalTable: &pc->TopStackFrame->LocalTable, TableStrRegister(pc, Ident), SomeValue, Parser? Parser->FileName: NULL, Parser? Parser->Line: 0, Parser? Parser->CharacterPos: 0))
+   if (!TableSet(pc, pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable, TableStrRegister(pc, Ident), SomeValue, Parser? Parser->FileName: NULL, Parser? Parser->Line: 0, Parser? Parser->CharacterPos: 0))
       ProgramFail(Parser, "'%s' is already defined", Ident);
 }
 
@@ -319,14 +312,15 @@ void VariableStackPop(ParseState Parser, Value Var) {
    if (Var->ValOnStack)
       printf("popping %ld at 0x%lx\n", (unsigned long)(sizeof *Var + TypeSizeValue(Var, false)), (unsigned long)Var);
 #endif
-   if (Var->ValOnHeap) {
+   bool OnHeap = Var->ValOnHeap;
+   if (OnHeap) {
       if (Var->Val != NULL)
          HeapFreeMem(Parser->pc, Var->Val);
-      Success = HeapPopStack(Parser->pc, Var, sizeof *Var); // Free from heap.
-   } else if (Var->ValOnStack)
-      Success = HeapPopStack(Parser->pc, Var, sizeof *Var + TypeSizeValue(Var, false)); // Free from stack.
-   else
-      Success = HeapPopStack(Parser->pc, Var, sizeof *Var); // Value isn't our problem.
+   }
+// Free from the heap, if on heap, else free from the stack, if on the stack, otherwise the value isn't our problem.
+   Success = HeapPopStack(Parser->pc, Var,
+      !OnHeap && Var->ValOnStack? sizeof *Var + TypeSizeValue(Var, false): sizeof *Var
+   );
    if (!Success)
       ProgramFail(Parser, "stack underrun");
 }
@@ -340,7 +334,7 @@ void VariableStackFrameAdd(ParseState Parser, const char *FuncName, int NumParam
       ProgramFail(Parser, "out of memory");
    ParserCopy(&NewFrame->ReturnParser, Parser);
    NewFrame->FuncName = FuncName;
-   NewFrame->Parameter = (NumParams > 0)? ((void *)((char *)NewFrame + sizeof *NewFrame)): NULL;
+   NewFrame->Parameter = NumParams > 0? (void *)((char *)NewFrame + sizeof *NewFrame): NULL;
    TableInitTable(&NewFrame->LocalTable, NewFrame->LocalHashTable, LocTabMax, false);
    NewFrame->PreviousStackFrame = Parser->pc->TopStackFrame;
    Parser->pc->TopStackFrame = NewFrame;
@@ -360,10 +354,7 @@ void VariableStackFramePop(ParseState Parser) {
 // NULL if not found.
 Value VariableStringLiteralGet(State pc, char *Ident) {
    Value LVal = NULL;
-   if (TableGet(&pc->StringLiteralTable, Ident, &LVal, NULL, NULL, NULL))
-      return LVal;
-   else
-      return NULL;
+   return TableGet(&pc->StringLiteralTable, Ident, &LVal, NULL, NULL, NULL)? LVal: NULL;
 }
 
 // Define a string literal.

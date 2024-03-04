@@ -92,10 +92,7 @@ static void ExpressionStackShow(State pc, ExpressionStack StackTop) {
    while (StackTop != NULL) {
       if (StackTop->Order == NoFix) {
       // It's a value.
-         if (StackTop->Val->IsLValue)
-            printf("lvalue=");
-         else
-            printf("value=");
+         printf("%s=", StackTop->Val->IsLValue? "lvalue": "value");
          switch (StackTop->Val->Typ->Base) {
             case VoidT: printf("void"); break;
             case IntT: printf("%d:int", StackTop->Val->Val->Integer); break;
@@ -126,7 +123,7 @@ static void ExpressionStackShow(State pc, ExpressionStack StackTop) {
          printf("[0x%lx,0x%lx]", (long)StackTop, (long)StackTop->Val);
       } else {
       // It's an operator.
-         printf("op='%s' %s %d", OperatorPrecedence[(int)StackTop->Op].Name, (StackTop->Order == PreFix)? "prefix": ((StackTop->Order == PostFix)? "postfix": "infix"), StackTop->Precedence);
+         printf("op='%s' %s %d", OperatorPrecedence[(int)StackTop->Op].Name, StackTop->Order == PreFix? "prefix": StackTop->Order == PostFix? "postfix": "infix", StackTop->Precedence);
          printf("[0x%lx]", (long)StackTop);
       }
       StackTop = StackTop->Next;
@@ -227,10 +224,7 @@ static long ExpressionAssignInt(ParseState Parser, Value DestValue, long FromInt
    long Result;
    if (!DestValue->IsLValue)
       ProgramFail(Parser, "can't assign to this");
-   if (After)
-      Result = ExpressionCoerceInteger(DestValue);
-   else
-      Result = FromInt;
+   Result = After? ExpressionCoerceInteger(DestValue): FromInt;
    switch (DestValue->Typ->Base) {
       case IntT: DestValue->Val->Integer = FromInt; break;
       case ShortIntT: DestValue->Val->ShortInteger = (short)FromInt; break;
@@ -431,13 +425,8 @@ static void ExpressionQuestionMarkOperator(ParseState Parser, ExpressionStack *S
 
 // Evaluate the second half of a ternary operator x ? y : z.
 static void ExpressionColonOperator(ParseState Parser, ExpressionStack *StackTop, Value BottomValue, Value TopValue) {
-   if (TopValue->Typ->Base == VoidT) {
-   // Invoke the "else" part - return the BottomValue.
-      ExpressionStackPushValue(Parser, StackTop, BottomValue);
-   } else {
-   // It was a "then" - return the TopValue.
-      ExpressionStackPushValue(Parser, StackTop, TopValue);
-   }
+// void: Invoke the "else" part - return the BottomValue, else: It was a "then" - return the TopValue.
+   ExpressionStackPushValue(Parser, StackTop, TopValue->Typ->Base == VoidT? BottomValue: TopValue);
 }
 
 // Evaluate a prefix operator.
@@ -593,8 +582,8 @@ static void ExpressionInfixOperator(ParseState Parser, ExpressionStack *StackTop
    // Floating point infix arithmetic.
       bool ResultIsInt = false;
       double ResultFP = 0.0;
-      double TopFP = (TopValue->Typ == &Parser->pc->FPType)? TopValue->Val->FP: (double)ExpressionCoerceInteger(TopValue);
-      double BottomFP = (BottomValue->Typ == &Parser->pc->FPType)? BottomValue->Val->FP: (double)ExpressionCoerceInteger(BottomValue);
+      double TopFP = TopValue->Typ == &Parser->pc->FPType? TopValue->Val->FP: (double)ExpressionCoerceInteger(TopValue);
+      double BottomFP = BottomValue->Typ == &Parser->pc->FPType? BottomValue->Val->FP: (double)ExpressionCoerceInteger(BottomValue);
       switch (Op) {
          case EquL: SetRatOrInt(Parser, ResultFP, ResultInt, BottomValue, ResultIsInt, TopFP); break;
          case AddEquL: SetRatOrInt(Parser, ResultFP, ResultInt, BottomValue, ResultIsInt, BottomFP + TopFP); break;
@@ -667,20 +656,14 @@ static void ExpressionInfixOperator(ParseState Parser, ExpressionStack *StackTop
       // Comparison to a NULL pointer.
          if (TopInt != 0)
             ProgramFail(Parser, "invalid operation");
-         if (Op == RelEqL)
-            ExpressionPushInt(Parser, StackTop, BottomValue->Val->Pointer == NULL);
-         else
-            ExpressionPushInt(Parser, StackTop, BottomValue->Val->Pointer != NULL);
+         ExpressionPushInt(Parser, StackTop, (Op == RelEqL) == (BottomValue->Val->Pointer == NULL));
       } else if (Op == AddL || Op == SubL) {
       // Pointer arithmetic.
          int Size = TypeSize(BottomValue->Typ->FromType, 0, true);
          Pointer = BottomValue->Val->Pointer;
          if (Pointer == NULL)
             ProgramFail(Parser, "invalid use of a NULL pointer");
-         if (Op == AddL)
-            Pointer = (void *)((char *)Pointer + TopInt*Size);
-         else
-            Pointer = (void *)((char *)Pointer - TopInt*Size);
+         Pointer = (void *)(Op == AddL? (char *)Pointer + TopInt*Size: (char *)Pointer - TopInt*Size);
          StackValue = ExpressionStackPushValueByType(Parser, StackTop, BottomValue->Typ);
          StackValue->Val->Pointer = Pointer;
       } else if (Op == EquL && TopInt == 0) {
@@ -694,10 +677,7 @@ static void ExpressionInfixOperator(ParseState Parser, ExpressionStack *StackTop
          Pointer = BottomValue->Val->Pointer;
          if (Pointer == NULL)
             ProgramFail(Parser, "invalid use of a NULL pointer");
-         if (Op == AddEquL)
-            Pointer = (void *)((char *)Pointer + TopInt*Size);
-         else
-            Pointer = (void *)((char *)Pointer - TopInt*Size);
+         Pointer = (void *)(Op == AddEquL? (char *)Pointer + TopInt*Size: (char *)Pointer - TopInt*Size);
          HeapUnpopStack(Parser->pc, sizeof(struct Value));
          BottomValue->Val->Pointer = Pointer;
          ExpressionStackPushValueNode(Parser, StackTop, BottomValue);
@@ -740,10 +720,7 @@ static void ExpressionStackCollapse(ParseState Parser, ExpressionStack *StackTop
 #endif
    while (TopStackNode != NULL && TopStackNode->Next != NULL && FoundPrecedence >= Precedence) {
    // Find the top operator on the stack.
-      if (TopStackNode->Order == NoFix)
-         TopOperatorNode = TopStackNode->Next;
-      else
-         TopOperatorNode = TopStackNode;
+      TopOperatorNode = TopStackNode->Order == NoFix? TopStackNode->Next: TopStackNode;
       FoundPrecedence = TopOperatorNode->Precedence;
    // Does it have a high enough precedence?
       if (FoundPrecedence >= Precedence && TopOperatorNode != NULL) {
@@ -846,7 +823,7 @@ static void ExpressionGetStructElement(ParseState Parser, ExpressionStack *Stack
    Value Ident;
 // Get the identifier following the '.' or '->'.
    if (LexGetToken(Parser, &Ident, true) != IdL)
-      ProgramFail(Parser, "need an structure or union member after '%s'", (Token == DotL)? ".": "->");
+      ProgramFail(Parser, "need an structure or union member after '%s'", Token == DotL? ".": "->");
    if (Parser->Mode == RunM) {
    // Look up the struct element.
       Value ParamVal = (*StackTop)->Val;
@@ -859,14 +836,14 @@ static void ExpressionGetStructElement(ParseState Parser, ExpressionStack *Stack
       if (Token == ArrowL)
          DerefDataLoc = VariableDereferencePointer(Parser, ParamVal, &StructVal, NULL, &StructType, NULL);
       if (StructType->Base != StructT && StructType->Base != UnionT)
-         ProgramFail(Parser, "can't use '%s' on something that's not a struct or union %s: it's a %t", (Token == DotL)? ".": "->", (Token == ArrowL)? "pointer": "", ParamVal->Typ);
+         ProgramFail(Parser, "can't use '%s' on something that's not a struct or union %s: it's a %t", Token == DotL? ".": "->", Token == ArrowL? "pointer": "", ParamVal->Typ);
       if (!TableGet(StructType->Members, Ident->Val->Identifier, &MemberValue, NULL, NULL, NULL))
          ProgramFail(Parser, "doesn't have a member called '%s'", Ident->Val->Identifier);
    // Pop the value - assume it'll still be there until we're done.
       HeapPopStack(Parser->pc, ParamVal, sizeof **StackTop + sizeof *StructVal + TypeStackSizeValue(StructVal));
       *StackTop = (*StackTop)->Next;
    // Make the result value for this member only.
-      Result = VariableAllocValueFromExistingData(Parser, MemberValue->Typ, (void *)(DerefDataLoc + MemberValue->Val->Integer), true, (StructVal != NULL)? StructVal->LValueFrom: NULL);
+      Result = VariableAllocValueFromExistingData(Parser, MemberValue->Typ, (void *)(DerefDataLoc + MemberValue->Val->Integer), true, StructVal != NULL? StructVal->LValueFrom: NULL);
       ExpressionStackPushValueNode(Parser, StackTop, Result);
    }
 }
@@ -961,17 +938,14 @@ bool ExpressionParse(ParseState Parser, Value *Result) {
                Precedence = BracketPrecedence + OperatorPrecedence[(int)Token].InfixPrecedence;
             // For right to left order, only go down to the next higher precedence so we evaluate it in reverse order.
             // For left to right order, collapse down to this precedence so we evaluate it in forward order.
-               if (RightWard(OperatorPrecedence[(int)Token].InfixPrecedence))
-                  ExpressionStackCollapse(Parser, &StackTop, Precedence, &IgnorePrecedence);
-               else
-                  ExpressionStackCollapse(Parser, &StackTop, Precedence + 1, &IgnorePrecedence);
+               ExpressionStackCollapse(Parser, &StackTop, RightWard(OperatorPrecedence[(int)Token].InfixPrecedence)? Precedence: Precedence + 1, &IgnorePrecedence);
                if (Token == DotL || Token == ArrowL) {
                   ExpressionGetStructElement(Parser, &StackTop, Token); // This operator is followed by a struct element so handle it as a special case.
                } else {
                // If it's a && or || operator we may not need to evaluate the right hand side of the expression.
                   if ((Token == OrOrL || Token == AndAndL) && IsNumVal(StackTop->Val)) {
                      long LHSInt = ExpressionCoerceInteger(StackTop->Val);
-                     if (((Token == OrOrL && LHSInt) || (Token == AndAndL && !LHSInt)) && (IgnorePrecedence > Precedence))
+                     if (((Token == OrOrL && LHSInt) || (Token == AndAndL && !LHSInt)) && IgnorePrecedence > Precedence)
                         IgnorePrecedence = Precedence;
                   }
                // Push the operator on the stack.

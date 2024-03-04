@@ -52,8 +52,8 @@ char *PlatformReadFile(State pc, const char *FileName) {
       ProgramFailNoParser(pc, "can't read file %s\n", FileName);
    ReadText[BytesRead] = '\0';
    fclose(InFile);
-   if ((ReadText[0] == '#') && (ReadText[1] == '!')) {
-      for (p = ReadText; (*p != '\r') && (*p != '\n'); ++p) {
+   if (ReadText[0] == '#' && ReadText[1] == '!') {
+      for (p = ReadText; *p != '\r' && *p != '\n'; ++p) {
          *p = ' ';
       }
    }

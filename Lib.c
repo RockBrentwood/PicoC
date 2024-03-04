@@ -128,10 +128,7 @@ static void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, 
    while (Num > 0) {
       unsigned long NextNum = Num/Base;
       unsigned long Digit = Num - NextNum*Base;
-      if (Digit < 10)
-         Result[--ResPos] = '0' + Digit;
-      else
-         Result[--ResPos] = 'a' + Digit - 10;
+      Result[--ResPos] = Digit < 10? '0' + Digit: 'a' + Digit - 10;
       Num = NextNum;
    }
    if (FieldWidth > 0 && !LeftJustify)
@@ -160,16 +157,13 @@ void PrintSimpleInt(long Num, OutputStream Stream) {
 #ifndef NO_FP
 // Print a double to a stream without using printf/sprintf.
 void PrintFP(double Num, OutputStream Stream) {
-   int Exponent = 0;
+   int Exponent;
    int MaxDecimal;
    if (Num < 0) {
       PrintCh('-', Stream);
       Num = -Num;
    }
-   if (Num >= 1e7)
-      Exponent = log10(Num);
-   else if (Num <= 1e-7 && Num != 0.0)
-      Exponent = log10(Num) - 0.999999999;
+   Exponent = Num >= 1e7? log10(Num): Num <= 1e-7 && Num != 0.0? log10(Num) - 0.999999999: 0;
    Num /= pow(10.0, Exponent);
    PrintInt((long)Num, 0, false, false, Stream);
    PrintCh('.', Stream);
@@ -413,11 +407,9 @@ static void LibStrcmp(ParseState Parser, Value ReturnValue, Value *Param, int Nu
    char *Str2 = (char *)Param[1]->Val->Pointer;
    bool StrEnded;
    for (StrEnded = false; !StrEnded; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++) {
-      if (*Str1 < *Str2) {
-         ReturnValue->Val->Integer = -1;
-         return;
-      } else if (*Str1 > *Str2) {
-         ReturnValue->Val->Integer = 1;
+      int Diff = *Str1 - *Str2;
+      if (Diff != 0) {
+         ReturnValue->Val->Integer = Diff > 0? +1: -1;
          return;
       }
    }
@@ -430,11 +422,9 @@ static void LibStrncmp(ParseState Parser, Value ReturnValue, Value *Param, int N
    int Len = Param[2]->Val->Integer;
    bool StrEnded;
    for (StrEnded = false; !StrEnded && Len > 0; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++, Len--) {
-      if (*Str1 < *Str2) {
-         ReturnValue->Val->Integer = -1;
-         return;
-      } else if (*Str1 > *Str2) {
-         ReturnValue->Val->Integer = 1;
+      int Diff = *Str1 - *Str2;
+      if (Diff != 0) {
+         ReturnValue->Val->Integer = Diff > 0? +1: -1;
          return;
       }
    }
@@ -456,10 +446,7 @@ static void LibIndex(ParseState Parser, Value ReturnValue, Value *Param, int Num
    int SearchChar = Param[1]->Val->Integer;
    while (*Pos != '\0' && *Pos != SearchChar)
       Pos++;
-   if (*Pos != SearchChar)
-      ReturnValue->Val->Pointer = NULL;
-   else
-      ReturnValue->Val->Pointer = Pos;
+   ReturnValue->Val->Pointer = *Pos != SearchChar? NULL: Pos;
 }
 
 static void LibRindex(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
@@ -495,11 +482,9 @@ static void LibMemcmp(ParseState Parser, Value ReturnValue, Value *Param, int Nu
    unsigned char *Mem2 = (unsigned char *)Param[1]->Val->Pointer;
    int Len = Param[2]->Val->Integer;
    for (; Len > 0; Mem1++, Mem2++, Len--) {
-      if (*Mem1 < *Mem2) {
-         ReturnValue->Val->Integer = -1;
-         return;
-      } else if (*Mem1 > *Mem2) {
-         ReturnValue->Val->Integer = 1;
+      int Diff = *Mem1 - *Mem2;
+      if (Diff != 0) {
+         ReturnValue->Val->Integer = Diff > 0? +1: -1;
          return;
       }
    }

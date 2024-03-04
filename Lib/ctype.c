@@ -15,7 +15,7 @@ void StdIsalpha(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs)
 
 void StdIsblank(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int ch = Param[0]->Val->Integer;
-   ReturnValue->Val->Integer = (ch == ' ') | (ch == '\t');
+   ReturnValue->Val->Integer = ch == ' ' || ch == '\t';
 }
 
 void StdIscntrl(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
