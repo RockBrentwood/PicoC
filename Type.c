@@ -117,7 +117,7 @@ void TypeInit(State pc) {
    TypeAddBaseType(pc, &pc->ShortType, ShortIntT, sizeof sa.y, (char *)&sa.y - &sa.x);
    TypeAddBaseType(pc, &pc->CharType, CharT, sizeof ca.y, (char *)&ca.y - &ca.x);
    TypeAddBaseType(pc, &pc->LongType, LongIntT, sizeof la.y, (char *)&la.y - &la.x);
-   TypeAddBaseType(pc, &pc->UnsignedIntType, NatT, sizeof(unsigned int), IntAlignBytes);
+   TypeAddBaseType(pc, &pc->UnsignedIntType, NatT, sizeof(unsigned), IntAlignBytes);
    TypeAddBaseType(pc, &pc->UnsignedShortType, ShortNatT, sizeof(unsigned short), (char *)&sa.y - &sa.x);
    TypeAddBaseType(pc, &pc->UnsignedLongType, LongNatT, sizeof(unsigned long), (char *)&la.y - &la.x);
    TypeAddBaseType(pc, &pc->UnsignedCharType, ByteT, sizeof(unsigned char), (char *)&ca.y - &ca.x);

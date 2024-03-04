@@ -49,7 +49,7 @@ void Cdelay(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Crand(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   ReturnValue->Val->Integer = (int)rand()%(unsigned int)(Param[0]->Val->Integer + 1);
+   ReturnValue->Val->Integer = (int)rand()%(unsigned)(Param[0]->Val->Integer + 1);
 }
 
 void Ctime(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
@@ -58,16 +58,16 @@ void Ctime(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 void Ciodir(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int dir = Param[0]->Val->Integer;
-   *pPORTHIO_DIR = ((dir << 10)&0xFC00) + (*pPORTHIO_DIR&0x03FF); // H15/14/13/12/11/10 - 1=output, 0=input.
-   *pPORTHIO_INEN = (((~dir) << 10)&0xFC00) + (*pPORTHIO_INEN&0x03FF); // Invert dir bits to enable inputs.
+   *pPORTHIO_DIR = ((dir << 10)&~0x03ff) + (*pPORTHIO_DIR&0x03ff); // H15/14/13/12/11/10 - 1=output, 0=input.
+   *pPORTHIO_INEN = (((~dir) << 10)&~0x03ff) + (*pPORTHIO_INEN&0x03ff); // Invert dir bits to enable inputs.
 }
 
 void Cioread(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   ReturnValue->Val->Integer = (*pPORTHIO >> 10)&0x003F;
+   ReturnValue->Val->Integer = (*pPORTHIO >> 10)&0x3f;
 }
 
 void Ciowrite(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   *pPORTHIO = ((Param[0]->Val->Integer << 10)&0xFC00) + (*pPORTHIO&0x03FF);
+   *pPORTHIO = ((Param[0]->Val->Integer << 10)&~0x03ff) + (*pPORTHIO&0x03ff);
 }
 
 void Cpeek(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
@@ -77,11 +77,11 @@ void Cpeek(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int size = Param[1]->Val->Integer;
    switch (size) {
    // char *:
-      case 1: ReturnValue->Val->Integer = (int)(unsigned int)*(unsigned char *)ptr; break;
+      case 1: ReturnValue->Val->Integer = (int)(unsigned)*(unsigned char *)ptr; break;
    // short *: Align with even boundary.
       case 2: ReturnValue->Val->Integer = (int)(unsigned short)*(unsigned short *)(ptr&~1); break;
    // int *: Align with quad boundary.
-      case 4: ReturnValue->Val->Integer = (int)*(unsigned int *)(ptr&~3); break;
+      case 4: ReturnValue->Val->Integer = (int)*(unsigned *)(ptr&~3); break;
       default: ReturnValue->Val->Integer = 0; break;
    }
 }
@@ -98,16 +98,16 @@ void Cpoke(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    // short *:
       case 2: *(unsigned short *)(ptr&~1) = (unsigned short)(val&0xffff); break;
    // int *:
-      case 4: *(unsigned int *)(ptr&~3) = val; break;
+      case 4: *(unsigned *)(ptr&~3) = val; break;
    // Don't bother with bad value.
       default: break;
    }
 }
 
 void Cencoders(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned int ix = encoders(); // Read left and right encoders; save data to C globals lcount, rcount.
-   Elcount = (ix >> 16)&0x0000FFFF;
-   Ercount = ix&0x0000FFFF;
+   unsigned ix = encoders(); // Read left and right encoders; save data to C globals lcount, rcount.
+   Elcount = (ix >> 16)&0xffff;
+   Ercount = ix&0xffff;
 }
 
 void Cmotors(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
@@ -187,7 +187,7 @@ void Claser(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 // Read sonar module.
 void Csonar(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned int i = Param[0]->Val->Integer;
+   unsigned i = Param[0]->Val->Integer;
    if (i < 1 || i > 4) {
       ProgramFail(NULL, "sonar():  1, 2, 3, 4 are only valid selections");
    }
@@ -201,7 +201,7 @@ void Crange(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 void Cbattery(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 // 0: Low battery voltage detected, 1: Battery voltage okay.
-   ReturnValue->Val->Integer = *pPORTHIO&0x0004? 0: 1;
+   ReturnValue->Val->Integer = *pPORTHIO&4? 0: 1;
 }
 
 // Set color bin -
@@ -220,10 +220,10 @@ void Cvcolor(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 //	enable/disable AGC(4) / AWB(2) / AEC(1) camera controls,
 //	vcam(7) = AGC+AWB+AEC on vcam(0) = AGC+AWB+AEC off.
 void Cvcam(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned char cx = (unsigned char)Param[0]->Val->Integer&0x07;
+   unsigned char cx = (unsigned char)Param[0]->Val->Integer&7;
    unsigned char i2c_data[2];
    i2c_data[0] = 0x13;
-   i2c_data[1] = 0xC0 + cx;
+   i2c_data[1] = 0xc0 + cx;
    i2cwrite(0x30, (unsigned char *)i2c_data, 1, SCCB_ON); // OV9655.
    i2cwrite(0x21, (unsigned char *)i2c_data, 1, SCCB_ON); // OV7725.
 }
@@ -255,9 +255,9 @@ void Cvpix(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int x = Param[0]->Val->Integer;
    int y = Param[1]->Val->Integer;
    int ix = vpix((unsigned char *)FRAME_BUF, x, y);
-   Iy1 = ((ix >> 16)&0x000000FF); // Y1.
-   Iu1 = ((ix >> 24)&0x000000FF); // U.
-   Iv1 = ((ix >> 8)&0x000000FF); // V.
+   Iy1 = ((ix >> 16)&0xff); // Y1.
+   Iu1 = ((ix >> 24)&0xff); // U.
+   Iv1 = ((ix >> 8)&0xff); // V.
 }
 
 void Cvscan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
@@ -267,7 +267,7 @@ void Cvscan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    int thresh = Param[1]->Val->Integer;
    if (thresh < 0 || thresh > 9999)
       ProgramFail(NULL, "vscan():  threshold must be between 0 and 9999");
-   int ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, thresh, (unsigned int)col, (unsigned int *)ScanVect);
+   int ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, thresh, (unsigned)col, (unsigned *)ScanVect);
    ReturnValue->Val->Integer = ix;
 }
 
@@ -300,21 +300,21 @@ void Cvblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cvjpeg(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned int qual = Param[0]->Val->Integer;
+   unsigned qual = Param[0]->Val->Integer;
    if (qual < 1 || qual > 8)
       ProgramFail(NULL, "vjpeg():  quality parameter out of range");
    unsigned char *output_start = (unsigned char *)JPEG_BUF;
    unsigned char *output_end = encode_image((unsigned char *)FRAME_BUF, output_start, qual, FOUR_TWO_TWO, imgWidth, imgHeight);
-   ReturnValue->Val->Integer = (unsigned int)(output_end - output_start);
+   ReturnValue->Val->Integer = (unsigned)(output_end - output_start);
 }
 
 void Cvsend(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned int image_size = Param[0]->Val->Integer;
+   unsigned image_size = Param[0]->Val->Integer;
    if (image_size < 0 || image_size > 200000)
       ProgramFail(NULL, "vsend():  image size out of range");
    led1_on();
    unsigned char *cp = (unsigned char *)JPEG_BUF;
-   for (unsigned int ix = 0; ix < image_size; ix++)
+   for (unsigned ix = 0; ix < image_size; ix++)
       putchar(*cp++);
    led0_on();
 }
@@ -327,12 +327,12 @@ void Ccompass(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    delayMS(20);
    i2c_data[0] = 0x41;
    i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
-   ReturnValue->Val->Integer = ((unsigned int)(i2c_data[0] << 8) + i2c_data[1])/10;
+   ReturnValue->Val->Integer = ((unsigned)(i2c_data[0] << 8) + i2c_data[1])/10;
 }
 
 // Return reading from HMC6352 I2C compass.
 void Ctilt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned ix = (unsigned int)Param[0]->Val->Integer;
+   unsigned ix = (unsigned)Param[0]->Val->Integer;
    if (ix < 1 || ix > 3)
       ProgramFail(NULL, "tilt():  invalid channel");
    ReturnValue->Val->Integer = tilt(ix);
@@ -373,7 +373,7 @@ void Canalog(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 // Read data.
    i2c_data[0] = 0x00;
    i2cread(device_id, (unsigned char *)i2c_data, 2, SCCB_ON);
-   ix = (((i2c_data[0]&0x0F) << 8) + i2c_data[1]);
+   ix = (((i2c_data[0]&0xf) << 8) + i2c_data[1]);
    ReturnValue->Val->Integer = ix;
 }
 
@@ -393,7 +393,7 @@ void Creadi2c(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char i2c_data[2];
    i2c_data[0] = (unsigned char)Param[1]->Val->Integer;
    i2cread(i2c_device, (unsigned char *)i2c_data, 1, SCCB_OFF);
-   ReturnValue->Val->Integer = ((int)i2c_data[0]&0x000000FF);
+   ReturnValue->Val->Integer = ((int)i2c_data[0]&0xff);
 }
 
 // Syntax: two_byte_val = readi2c(device, register);
@@ -402,7 +402,7 @@ void Creadi2c2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
    unsigned char i2c_data[2];
    i2c_data[0] = (unsigned char)Param[1]->Val->Integer;
    i2cread(i2c_device, (unsigned char *)i2c_data, 2, SCCB_OFF);
-   ReturnValue->Val->Integer = (((unsigned int)i2c_data[0] << 8) + i2c_data[1]);
+   ReturnValue->Val->Integer = (((unsigned)i2c_data[0] << 8) + i2c_data[1]);
 }
 
 // Syntax: writei2c(device, register, value);
@@ -516,7 +516,7 @@ void Cnntest(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    for (int i1 = 0; i1 < 8; i1++) {
       unsigned char ch = (unsigned char)Param[i1]->Val->Integer;
       for (int i2 = 0; i2 < 8; i2++) {
-         N_IN(ix++) = ch&nmask[i2]? 1024: 0;
+         N_IN(ix++) = ch&nmask[i2]? 0x400: 0;
       }
    }
    nncalculate_network();
@@ -540,7 +540,7 @@ void Cnnmatchblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArg
       ProgramFail(NULL, "nnmatchblob():  not a valid blob");
 // Use data still in blob_buf[] (FRAME_BUF3).
 // Square the aspect ratio of x1, x2, y1, y2,
-// then subsample blob pixels to populate N_IN(0:63) with 0:1024 values,
+// then subsample blob pixels to populate N_IN(0:0x3f) with 0:0x400 values,
 // then nncalculate_network() and display the N_OUT() results.
    nnscale8x8((unsigned char *)FRAME_BUF3, blobix[ix], blobx1[ix], blobx2[ix], bloby1[ix], bloby2[ix], imgWidth, imgHeight);
    nncalculate_network();
@@ -573,7 +573,7 @@ void Cautorun(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    while (readRTC() < t0 + ix*1000) { // Watch for ESC in 'ix' seconds.
       unsigned char ch;
       if (getchar(&ch)) {
-         if (ch == 0x1B) { // If ESC found, exit picoC.
+         if (ch == 0x1b) { // If ESC found, exit picoC.
             printf("found ESC\r\n");
             ExitBuf[40] = 1;
             longjmp(ExitBuf, 1);

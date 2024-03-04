@@ -9,11 +9,11 @@ void TableInit(State pc) {
 }
 
 // Hash function for strings.
-static unsigned int TableHash(const char *Key, int Len) {
-   unsigned int Hash = Len;
+static unsigned TableHash(const char *Key, int Len) {
+   unsigned Hash = Len;
    for (int Count = 0, Offset = 8; Count < Len; Count++, Offset += 7) {
-      if (Offset > 8*sizeof(unsigned int) - 7)
-         Offset -= 8*sizeof(unsigned int) - 6;
+      if (Offset > 8*sizeof(unsigned) - 7)
+         Offset -= 8*sizeof(unsigned) - 6;
       Hash ^= *Key++ << Offset;
    }
    return Hash;

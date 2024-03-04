@@ -68,7 +68,7 @@ typedef enum Lexical {
 // Used in dynamic memory allocation.
 typedef struct AllocNode *AllocNode;
 struct AllocNode {
-   unsigned int Size;
+   unsigned Size;
    AllocNode NextFree;
 };
 
@@ -88,14 +88,14 @@ typedef struct ParseState {
    State pc; // The PicoC instance this parser is a part of.
    const unsigned char *Pos; // The character position in the source text.
    char *FileName; // What file we're executing (registered string).
-   short int Line; // Line number we're executing.
-   short int CharacterPos; // Character/column in the line we're executing.
+   short Line; // Line number we're executing.
+   short CharacterPos; // Character/column in the line we're executing.
    RunMode Mode; // Whether to skip or run code.
    int SearchLabel; // What case label we're searching for.
    const char *SearchGotoLabel; // What goto label we're searching for.
    const char *SourceText; // The entire source text.
-   short int HashIfLevel; // How many "if"s we're nested down.
-   short int HashIfEvaluateToLevel; // If we're not evaluating an if branch, what the last evaluated level was.
+   short HashIfLevel; // How many "if"s we're nested down.
+   short HashIfEvaluateToLevel; // If we're not evaluating an if branch, what the last evaluated level was.
    bool DebugMode; // Debugging mode.
    int ScopeID; // For keeping track of local variables (free them after they go out of scope).
 } *ParseState;
@@ -166,7 +166,7 @@ typedef union AnyValue {
    int Integer;
    long LongInteger;
    unsigned short UnsignedShortInteger;
-   unsigned int UnsignedInteger;
+   unsigned UnsignedInteger;
    unsigned long UnsignedLongInteger;
    unsigned char UnsignedCharacter;
    char *Identifier;
@@ -208,8 +208,8 @@ struct TableEntry {
       char Key[1]; // Dummy size - used for the shared string table.
       struct { // A breakpoint.
          const char *FileName;
-         short int Line;
-         short int CharacterPos;
+         short Line;
+         short CharacterPos;
       } b;
    } p;
 };

@@ -19,7 +19,7 @@ static int _IOFBFValue = _IOFBF;
 static int _IOLBFValue = _IOLBF;
 static int _IONBFValue = _IONBF;
 static int L_tmpnamValue = L_tmpnam;
-static int GETS_MAXValue = 255; // Arbitrary maximum size of a gets() file.
+static int GETS_MAXValue = 0xff; // Arbitrary maximum size of a gets() file.
 static FILE *stdinValue;
 static FILE *stdoutValue;
 static FILE *stderrValue;

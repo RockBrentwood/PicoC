@@ -22,15 +22,15 @@ struct ExpressionStack {
    ExpressionStack Next; // The next lower item on the stack.
    Value Val; // The value for this stack node.
    Lexical Op; // The operator.
-   short unsigned int Precedence; // The operator precedence of this node.
+   unsigned short Precedence; // The operator precedence of this node.
    unsigned char Order; // The evaluation order of this operator.
 };
 
 // Operator precedence definitions.
 struct OpPrecedence {
-   unsigned int PrefixPrecedence:4;
-   unsigned int PostfixPrecedence:4;
-   unsigned int InfixPrecedence:4;
+   unsigned PrefixPrecedence:4;
+   unsigned PostfixPrecedence:4;
+   unsigned InfixPrecedence:4;
    char *Name;
 };
 
@@ -100,7 +100,7 @@ static void ExpressionStackShow(State pc, ExpressionStack StackTop) {
             case CharT: printf("%d:char", StackTop->Val->Val->Character); break;
             case LongIntT: printf("%ld:long", StackTop->Val->Val->LongInteger); break;
             case ShortNatT: printf("%d:unsigned short", StackTop->Val->Val->UnsignedShortInteger); break;
-            case NatT: printf("%d:unsigned int", StackTop->Val->Val->UnsignedInteger); break;
+            case NatT: printf("%d:unsigned", StackTop->Val->Val->UnsignedInteger); break;
             case LongNatT: printf("%ld:unsigned long", StackTop->Val->Val->UnsignedLongInteger); break;
             case RatT: printf("%f:fp", StackTop->Val->Val->FP); break;
             case FunctionT: printf("%s:function", StackTop->Val->Val->Identifier); break;
@@ -229,7 +229,7 @@ static long ExpressionAssignInt(ParseState Parser, Value DestValue, long FromInt
       case ShortIntT: DestValue->Val->ShortInteger = (short)FromInt; break;
       case CharT: DestValue->Val->Character = (char)FromInt; break;
       case LongIntT: DestValue->Val->LongInteger = (long)FromInt; break;
-      case NatT: DestValue->Val->UnsignedInteger = (unsigned int)FromInt; break;
+      case NatT: DestValue->Val->UnsignedInteger = (unsigned)FromInt; break;
       case ShortNatT: DestValue->Val->UnsignedShortInteger = (unsigned short)FromInt; break;
       case LongNatT: DestValue->Val->UnsignedLongInteger = (unsigned long)FromInt; break;
       case ByteT: DestValue->Val->UnsignedCharacter = (unsigned char)FromInt; break;

@@ -44,7 +44,7 @@ void PrintType(ValueType Typ, OutFile Stream) {
       case ShortIntT: PrintStr("short", Stream); break;
       case CharT: PrintStr("char", Stream); break;
       case LongIntT: PrintStr("long", Stream); break;
-      case NatT: PrintStr("unsigned int", Stream); break;
+      case NatT: PrintStr("unsigned", Stream); break;
       case ShortNatT: PrintStr("unsigned short", Stream); break;
       case LongNatT: PrintStr("unsigned long", Stream); break;
       case ByteT: PrintStr("unsigned char", Stream); break;
@@ -115,7 +115,7 @@ static void PrintRepeatedChar(State pc, char ShowChar, int Length, OutputStream 
 }
 
 // Print an unsigned integer to a stream without using printf/sprintf.
-static void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputStream Stream) {
+static void PrintUnsigned(unsigned long Num, unsigned Base, int FieldWidth, bool ZeroPad, bool LeftJustify, OutputStream Stream) {
    char Result[33];
    int ResPos = sizeof Result;
    Result[--ResPos] = '\0';

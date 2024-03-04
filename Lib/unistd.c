@@ -326,7 +326,7 @@ const char UnistdDefs[] =
 // All unistd.h functions.
 struct LibraryFunction UnistdFunctions[] = {
    { UnistdAccess, "int access(char *, int);" },
-   { UnistdAlarm, "unsigned int alarm(unsigned int);" },
+   { UnistdAlarm, "unsigned alarm(unsigned);" },
 #if 0
    { UnistdBrk, "int brk(void *);" },
 #endif
@@ -410,7 +410,7 @@ struct LibraryFunction UnistdFunctions[] = {
    { UnistdSetreuid, "int setreuid(uid_t, uid_t);" },
    { UnistdSetsid, "pid_t setsid(void);" },
    { UnistdSetuid, "int setuid(uid_t);" },
-   { UnistdSleep, "unsigned int sleep(unsigned int);" },
+   { UnistdSleep, "unsigned sleep(unsigned);" },
 #if 0
    { UnistdSwab, "void swab(void *, void *, ssize_t);" },
 #endif

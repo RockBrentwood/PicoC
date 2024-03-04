@@ -124,13 +124,13 @@ static Lexical LexGetNumber(State pc, LexState Lexer, Value Val) {
       IncLex(Lexer);
       if (Lexer->Pos != Lexer->End) {
          if (*Lexer->Pos == 'x' || *Lexer->Pos == 'X') {
-            Base = 16;
+            Base = 0x10;
             IncLex(Lexer);
          } else if (*Lexer->Pos == 'b' || *Lexer->Pos == 'B') {
             Base = 2;
             IncLex(Lexer);
          } else if (*Lexer->Pos != '.')
-            Base = 8;
+            Base = 010;
       }
    }
 // Get the value.
@@ -240,8 +240,8 @@ static unsigned char LexUnEscapeCharacter(const char **From, const char *End) {
          case 'r': return '\r';
          case 't': return '\t';
          case 'v': return '\v';
-         case '0': case '1': case '2': case '3': return LexUnEscapeCharacterConstant(From, End, ThisChar, 8);
-         case 'x': return LexUnEscapeCharacterConstant(From, End, '0', 16);
+         case '0': case '1': case '2': case '3': return LexUnEscapeCharacterConstant(From, End, ThisChar, 010);
+         case 'x': return LexUnEscapeCharacterConstant(From, End, '0', 0x10);
          case '\\': case '\'': case '"': default: return ThisChar;
       }
    } else

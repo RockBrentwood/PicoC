@@ -23,7 +23,7 @@ char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt) {
       ch = getch();
    }
    while (ix++ < MaxLen) {
-      if (ch == 0x1B || ch == 0x03) { // ESC character or ctrl-c (to avoid problem with TeraTerm) - exit.
+      if (ch == 0x1b || ch == 0x03) { // ESC character or ctrl-c (to avoid problem with TeraTerm) - exit.
          printf("Leaving PicoC\n");
          return NULL;
       }
