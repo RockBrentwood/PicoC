@@ -13,13 +13,11 @@ void PlatformCleanup(State pc) {
 
 // Get a line of interactive input.
 char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt) {
-   int ix;
-   char ch, *cp;
    printf(Prompt);
-   ix = 0;
-   cp = 0;
+   int ix = 0;
+   char *cp = NULL;
 // If the first character is \n or \r, eat it.
-   ch = getch();
+   char ch = getch();
    if (ch == '\n' || ch == '\r') {
    // And get the next character.
       ch = getch();

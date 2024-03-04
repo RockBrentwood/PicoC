@@ -11,9 +11,7 @@ void TableInit(State pc) {
 // Hash function for strings.
 static unsigned int TableHash(const char *Key, int Len) {
    unsigned int Hash = Len;
-   int Offset;
-   int Count;
-   for (Count = 0, Offset = 8; Count < Len; Count++, Offset += 7) {
+   for (int Count = 0, Offset = 8; Count < Len; Count++, Offset += 7) {
       if (Offset > 8*sizeof(unsigned int) - 7)
          Offset -= 8*sizeof(unsigned int) - 6;
       Hash ^= *Key++ << Offset;
@@ -31,9 +29,8 @@ void TableInitTable(Table Tbl, TableEntry *HashTable, int Size, bool OnHeap) {
 
 // Check a hash table entry for a key.
 static TableEntry TableSearch(Table Tbl, const char *Key, int *AddAt) {
-   TableEntry Entry;
    int HashValue = ((unsigned long)Key)%Tbl->Size; // Shared strings have unique addresses so we don't need to hash them.
-   for (Entry = Tbl->HashTable[HashValue]; Entry != NULL; Entry = Entry->Next) {
+   for (TableEntry Entry = Tbl->HashTable[HashValue]; Entry != NULL; Entry = Entry->Next) {
       if (Entry->p.v.Key == Key)
          return Entry; // Found.
    }
@@ -80,9 +77,8 @@ bool TableGet(Table Tbl, const char *Key, Value *Val, const char **DeclFileName,
 
 // Remove an entry from the table.
 Value TableDelete(State pc, Table Tbl, const char *Key) {
-   TableEntry *EntryPtr;
    int HashValue = ((unsigned long)Key)%Tbl->Size; // Shared strings have unique addresses so we don't need to hash them.
-   for (EntryPtr = &Tbl->HashTable[HashValue]; *EntryPtr != NULL; EntryPtr = &(*EntryPtr)->Next) {
+   for (TableEntry *EntryPtr = &Tbl->HashTable[HashValue]; *EntryPtr != NULL; EntryPtr = &(*EntryPtr)->Next) {
       if ((*EntryPtr)->p.v.Key == Key) {
          TableEntry DeleteEntry = *EntryPtr;
          Value Val = DeleteEntry->p.v.Val;
@@ -96,9 +92,8 @@ Value TableDelete(State pc, Table Tbl, const char *Key) {
 
 // Check a hash table entry for an identifier.
 static TableEntry TableSearchIdentifier(Table Tbl, const char *Key, int Len, int *AddAt) {
-   TableEntry Entry;
    int HashValue = TableHash(Key, Len)%Tbl->Size;
-   for (Entry = Tbl->HashTable[HashValue]; Entry != NULL; Entry = Entry->Next) {
+   for (TableEntry Entry = Tbl->HashTable[HashValue]; Entry != NULL; Entry = Entry->Next) {
       if (strncmp(Entry->p.Key, (char *)Key, Len) == 0 && Entry->p.Key[Len] == '\0')
          return Entry; // Found.
    }
@@ -136,11 +131,8 @@ char *TableStrRegister(State pc, const char *Str) {
 
 // Free all the strings.
 void TableStrFree(State pc) {
-   TableEntry Entry;
-   TableEntry NextEntry;
-   int Count;
-   for (Count = 0; Count < pc->StringTable.Size; Count++) {
-      for (Entry = pc->StringTable.HashTable[Count]; Entry != NULL; Entry = NextEntry) {
+   for (int Count = 0; Count < pc->StringTable.Size; Count++) {
+      for (TableEntry Entry = pc->StringTable.HashTable[Count], NextEntry; Entry != NULL; Entry = NextEntry) {
          NextEntry = Entry->Next;
          HeapFreeMem(pc, Entry);
       }

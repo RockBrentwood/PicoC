@@ -43,14 +43,10 @@ void PicocCleanup(State pc) {
 // Platform-dependent code for running programs.
 #if defined UNIX_HOST || defined WIN32
 void PicocCallMain(State pc, int AC, char **AV) {
-   const char *VoidMainVoid = "main();";
-   const char *VoidMainArgs = "main(__argc, __argv);";
-   const char *IntMainVoid = "__exit_value = main();";
-   const char *IntMainArgs = "__exit_value = main(__argc, __argv);";
 // Check if the program wants arguments.
-   Value FuncValue = NULL;
    if (!VariableDefined(pc, TableStrRegister(pc, "main")))
       ProgramFailNoParser(pc, "main() is not defined");
+   Value FuncValue = NULL;
    VariableGet(pc, NULL, TableStrRegister(pc, "main"), &FuncValue);
    if (FuncValue->Typ->Base != FunctionT)
       ProgramFailNoParser(pc, "main is not a function - can't call it");
@@ -62,41 +58,40 @@ void PicocCallMain(State pc, int AC, char **AV) {
    bool IntMain = FuncValue->Val->FuncDef.ReturnType != &pc->VoidType;
    bool MainVoid = FuncValue->Val->FuncDef.NumParams == 0;
    if (IntMain) VariableDefinePlatformVar(pc, NULL, "__exit_value", &pc->IntType, (AnyValue)&pc->PicocExitValue, true);
-   const char *MainProto = IntMain? (MainVoid? IntMainVoid: IntMainArgs): (MainVoid? VoidMainVoid: VoidMainArgs);
+   const char *MainProto = IntMain?
+      (MainVoid? "__exit_value = main();": "__exit_value = main(__argc, __argv);"):
+      (MainVoid? "main();": "main(__argc, __argv);");
    PicocParse(pc, "startup", MainProto, strlen(MainProto), true, true, false, true);
 }
 #endif
 
 void PrintSourceTextErrorLine(OutFile Stream, const char *FileName, const char *SourceText, int Line, int CharacterPos) {
-   int LineCount;
-   const char *LinePos;
-   const char *CPos;
-   int CCount;
    if (SourceText != NULL) {
    // Find the source line.
-      for (LinePos = SourceText, LineCount = 1; *LinePos != '\0' && LineCount < Line; LinePos++) {
+      const char *LinePos = SourceText;
+      for (int LineCount = 1; *LinePos != '\0' && LineCount < Line; LinePos++) {
          if (*LinePos == '\n')
             LineCount++;
       }
    // Display the line.
-      for (CPos = LinePos; *CPos != '\n' && *CPos != '\0'; CPos++)
+      for (const char *CPos = LinePos; *CPos != '\n' && *CPos != '\0'; CPos++)
          PrintCh(*CPos, Stream);
       PrintCh('\n', Stream);
    // Display the error position.
-      for (CPos = LinePos, CCount = 0; *CPos != '\n' && *CPos != '\0' && (CCount < CharacterPos || *CPos == ' '); CPos++, CCount++) {
+      const char *CPos = LinePos;
+      for (int CCount = 0; *CPos != '\n' && *CPos != '\0' && (CCount < CharacterPos || *CPos == ' '); CPos++, CCount++) {
          PrintCh(*CPos == '\t'? '\t': ' ', Stream);
       }
    } else {
    // Assume we're in interactive mode - try to make the arrow match up with the input text.
-      for (CCount = 0; CCount < CharacterPos + (int)strlen(PromptStatement); CCount++)
+      for (int CCount = 0; CCount < CharacterPos + (int)strlen(PromptStatement); CCount++)
          PrintCh(' ', Stream);
    }
    PlatformPrintf(Stream, "^\n%s:%d:%d ", FileName, Line, CharacterPos);
 }
 
 void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args) {
-   const char *FPos;
-   for (FPos = Format; *FPos != '\0'; FPos++) {
+   for (const char *FPos = Format; *FPos != '\0'; FPos++) {
       if (*FPos == '%') {
          FPos++;
          switch (*FPos) {
@@ -117,8 +112,8 @@ void PlatformVPrintf(OutFile Stream, const char *Format, va_list Args) {
 
 // Exit with a message.
 void ProgramFail(ParseState Parser, const char *Message, ...) {
-   va_list Args;
    PrintSourceTextErrorLine(Parser->pc->CStdOut, Parser->FileName, Parser->SourceText, Parser->Line, Parser->CharacterPos);
+   va_list Args;
    va_start(Args, Message);
    PlatformVPrintf(Parser->pc->CStdOut, Message, Args);
    va_end(Args);
@@ -139,7 +134,7 @@ void ProgramFailNoParser(State pc, const char *Message, ...) {
 // Like ProgramFail() but gives descriptive error messages for assignment.
 void AssignFail(ParseState Parser, const char *Format, ValueType Type1, ValueType Type2, int Num1, int Num2, const char *FuncName, int ParamNo) {
    OutFile Stream = Parser->pc->CStdOut;
-   PrintSourceTextErrorLine(Parser->pc->CStdOut, Parser->FileName, Parser->SourceText, Parser->Line, Parser->CharacterPos);
+   PrintSourceTextErrorLine(Stream, Parser->FileName, Parser->SourceText, Parser->Line, Parser->CharacterPos);
    PlatformPrintf(Stream, "can't %s ", FuncName == NULL? "assign": "set");
    if (Type1 != NULL)
       PlatformPrintf(Stream, Format, Type1, Type2);
@@ -163,14 +158,12 @@ void PlatformPrintf(OutFile Stream, const char *Format, ...) {
 // Takes a static buffer of char [7] as a parameter.
 // Should be initialized to "XX0000" where XX can be any characters.
 char *PlatformMakeTempName(State pc, char *TempNameBuffer) {
-   int CPos = 5;
-   while (CPos > 1) {
+   for (int CPos = 5; CPos > 1; CPos--) {
       if (TempNameBuffer[CPos] < '9') {
          TempNameBuffer[CPos]++;
          return TableStrRegister(pc, TempNameBuffer);
       } else {
          TempNameBuffer[CPos] = '0';
-         CPos--;
       }
    }
    return TableStrRegister(pc, TempNameBuffer);

@@ -146,27 +146,24 @@ void StdioFprintfPointer(StdOutStream Stream, const char *Format, void *Value) {
 // Internal do-anything v[s][n]printf() formatting system with output to strings or FILE *.
 int StdioBasePrintf(ParseState Parser, FILE *Stream, char *StrOut, int StrOutLen, char *Format, StdVararg Args) {
    Value ThisArg = Args->Param[0];
-   int ArgCount = 0;
-   char *FPos;
-   char OneFormatBuf[FormatMax + 1];
-   int OneFormatCount;
-   ValueType Type;
-   struct StdOutStream SOStream;
    State pc = Parser->pc;
    if (Format == NULL)
       Format = "[null format]\n";
-   FPos = Format;
+   char *FPos = Format;
+   struct StdOutStream SOStream;
    SOStream.FilePtr = Stream;
    SOStream.StrOutPtr = StrOut;
    SOStream.StrOutLen = StrOutLen;
    SOStream.CharCount = 0;
+   int ArgCount = 0;
    while (*FPos != '\0') {
       if (*FPos == '%') {
       // Work out what type we're printing.
          FPos++;
-         Type = NULL;
+         ValueType Type = NULL;
+         char OneFormatBuf[FormatMax + 1];
          OneFormatBuf[0] = '%';
-         OneFormatCount = 1;
+         int OneFormatCount = 1;
          do {
             switch (*FPos) {
             // Integer decimal.
@@ -273,11 +270,10 @@ int StdioBasePrintf(ParseState Parser, FILE *Stream, char *StrOut, int StrOutLen
 // Internal do-anything v[s][n]scanf() formatting system with input from strings or FILE *.
 int StdioBaseScanf(ParseState Parser, FILE *Stream, char *StrIn, char *Format, StdVararg Args) {
    Value ThisArg = Args->Param[0];
-   int ArgCount = 0;
-   void *ScanfArg[ScanArgMax];
    if (Args->NumArgs > ScanArgMax)
       ProgramFail(Parser, "too many arguments to scanf() - %d max", ScanArgMax);
-   for (ArgCount = 0; ArgCount < Args->NumArgs; ArgCount++) {
+   void *ScanfArg[ScanArgMax];
+   for (int ArgCount = 0; ArgCount < Args->NumArgs; ArgCount++) {
       ThisArg = (Value)AddAlign(ThisArg, sizeof *ThisArg + TypeStackSizeValue(ThisArg));
       if (ThisArg->Typ->Base == PointerT)
          ScanfArg[ArgCount] = ThisArg->Val->Pointer;
@@ -561,12 +557,10 @@ struct LibraryFunction StdioFunctions[] = {
 
 // Creates various system-dependent definitions.
 void StdioSetupFunc(State pc) {
-   ValueType StructFileType;
-   ValueType FilePtrType;
 // Make a "struct __FILEStruct" which is the same size as a native FILE structure.
-   StructFileType = TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "__FILEStruct"), sizeof(FILE));
+   ValueType StructFileType = TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "__FILEStruct"), sizeof(FILE));
 // Get a FILE * type.
-   FilePtrType = TypeGetMatching(pc, NULL, StructFileType, PointerT, 0, pc->StrEmpty, true);
+   ValueType FilePtrType = TypeGetMatching(pc, NULL, StructFileType, PointerT, 0, pc->StrEmpty, true);
 // Make a "struct __va_listStruct" which is the same size as our struct StdVararg.
    TypeCreateOpaqueStruct(pc, NULL, TableStrRegister(pc, "__va_listStruct"), sizeof(FILE));
 // Define EOF equal to the system EOF.

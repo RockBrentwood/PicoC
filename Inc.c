@@ -26,10 +26,8 @@ void IncludeInit(State pc) {
 
 // Clean up space used by the include system.
 void IncludeCleanup(State pc) {
-   IncludeLibrary ThisInclude = pc->IncludeLibList;
-   IncludeLibrary NextInclude;
-   while (ThisInclude != NULL) {
-      NextInclude = ThisInclude->NextLib;
+   for (IncludeLibrary ThisInclude = pc->IncludeLibList; ThisInclude != NULL; ) {
+      IncludeLibrary NextInclude = ThisInclude->NextLib;
       HeapFreeMem(pc, ThisInclude);
       ThisInclude = NextInclude;
    }
@@ -49,16 +47,14 @@ void IncludeRegister(State pc, const char *IncludeName, void (*SetupFunction)(St
 
 // Include all of the system headers.
 void PicocIncludeAllSystemHeaders(State pc) {
-   IncludeLibrary ThisInclude = pc->IncludeLibList;
-   for (; ThisInclude != NULL; ThisInclude = ThisInclude->NextLib)
+   for (IncludeLibrary ThisInclude = pc->IncludeLibList; ThisInclude != NULL; ThisInclude = ThisInclude->NextLib)
       IncludeFile(pc, ThisInclude->IncludeName);
 }
 
 // Include one of a number of predefined libraries, or perhaps an actual file.
 void IncludeFile(State pc, char *FileName) {
-   IncludeLibrary LInclude;
 // Scan for the include file name to see if it's in our list of predefined includes.
-   for (LInclude = pc->IncludeLibList; LInclude != NULL; LInclude = LInclude->NextLib) {
+   for (IncludeLibrary LInclude = pc->IncludeLibList; LInclude != NULL; LInclude = LInclude->NextLib) {
       if (strcmp(LInclude->IncludeName, FileName) == 0) {
       // Found it - protect against multiple inclusion.
          if (!VariableDefined(pc, FileName)) {

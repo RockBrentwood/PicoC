@@ -13,10 +13,6 @@
 
 int main(int AC, char **AV) {
    char *App = AC < 1? NULL: AV[1]; if (App == NULL || *App == '\0') App = "PicoC";
-   int A = 1;
-   bool DontRunMain = false;
-   int StackSize = getenv("STACKSIZE")? atoi(getenv("STACKSIZE")): 0x20000;
-   struct State pc;
    if (AC < 2) {
       printf(
          "Format: %s <Source.c>... [- <Arg>...]    : run a program (calls main() to start it)\n"
@@ -26,9 +22,11 @@ int main(int AC, char **AV) {
       );
       exit(1);
    }
-   PicocInitialize(&pc, StackSize);
-   if (strcmp(AV[A], "-s") == 0 || strcmp(AV[A], "-m") == 0) {
-      DontRunMain = true;
+   struct State pc;
+   PicocInitialize(&pc, getenv("STACKSIZE")? atoi(getenv("STACKSIZE")): 0x20000);
+   int A = 1;
+   bool DontRunMain = strcmp(AV[A], "-s") == 0 || strcmp(AV[A], "-m") == 0;
+   if (DontRunMain) {
       PicocIncludeAllSystemHeaders(&pc);
       A++;
    }
@@ -58,10 +56,9 @@ int main(int AC, char **AV) {
 
 int PicoC(char *SourceStr) {
    struct State pc;
-   char *pos;
    PicocInitialize(&pc, HEAP_SIZE);
    if (SourceStr) {
-      for (pos = SourceStr; *pos != 0; pos++) {
+      for (char *pos = SourceStr; *pos != 0; pos++) {
          if (*pos == 0x1a) {
             *pos = 0x20;
          }

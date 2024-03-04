@@ -29,11 +29,8 @@ void VariableFree(State pc, Value Val) {
 
 // Deallocate the global table and the string literal table.
 void VariableTableCleanup(State pc, Table HashTable) {
-   TableEntry Entry;
-   TableEntry NextEntry;
-   int Count;
-   for (Count = 0; Count < HashTable->Size; Count++) {
-      for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = NextEntry) {
+   for (int Count = 0; Count < HashTable->Size; Count++) {
+      for (TableEntry Entry = HashTable->HashTable[Count], NextEntry; Entry != NULL; Entry = NextEntry) {
          NextEntry = Entry->Next;
          VariableFree(pc, Entry->p.v.Val);
       // Free the hash table entry.
@@ -49,8 +46,7 @@ void VariableCleanup(State pc) {
 
 // Allocate some memory, either on the heap or the stack and check if we've run out.
 void *VariableAlloc(State pc, ParseState Parser, int Size, bool OnHeap) {
-   void *NewValue;
-   NewValue = OnHeap? HeapAllocMem(pc, Size): HeapAllocStack(pc, Size);
+   void *NewValue = OnHeap? HeapAllocMem(pc, Size): HeapAllocStack(pc, Size);
    if (NewValue == NULL)
       ProgramFail(Parser, "out of memory");
 #ifdef DEBUG_HEAP
@@ -88,12 +84,11 @@ Value VariableAllocValueFromType(State pc, ParseState Parser, ValueType Typ, boo
 // Handles overlapping data.
 Value VariableAllocValueAndCopy(State pc, ParseState Parser, Value FromValue, bool OnHeap) {
    ValueType DType = FromValue->Typ;
-   Value NewValue;
    char TmpBuf[0x100]; const size_t TmpBufMax = sizeof TmpBuf/sizeof TmpBuf[0];
    int CopySize = TypeSizeValue(FromValue, true);
    assert(CopySize <= TmpBufMax);
    memcpy((void *)TmpBuf, (void *)FromValue->Val, CopySize);
-   NewValue = VariableAllocValueAndData(pc, Parser, CopySize, FromValue->IsLValue, FromValue->LValueFrom, OnHeap);
+   Value NewValue = VariableAllocValueAndData(pc, Parser, CopySize, FromValue->IsLValue, FromValue->LValueFrom, OnHeap);
    NewValue->Typ = DType;
    memcpy((void *)NewValue->Val, (void *)TmpBuf, CopySize);
    return NewValue;
@@ -126,10 +121,7 @@ void VariableRealloc(ParseState Parser, Value FromValue, int NewSize) {
 }
 
 int VariableScopeBegin(ParseState Parser, int *OldScopeID) {
-   TableEntry Entry;
-   TableEntry NextEntry;
    State pc = Parser->pc;
-   int Count;
 #ifdef VAR_SCOPE_DEBUG
    bool FirstPrint = false;
 #endif
@@ -142,8 +134,8 @@ int VariableScopeBegin(ParseState Parser, int *OldScopeID) {
 // Or maybe a more human-readable hash for debugging?
    Parser->ScopeID = Parser->Line*0x10000 + Parser->CharacterPos;
 #endif
-   for (Count = 0; Count < HashTable->Size; Count++) {
-      for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = NextEntry) {
+   for (int Count = 0; Count < HashTable->Size; Count++) {
+      for (TableEntry Entry = HashTable->HashTable[Count], NextEntry; Entry != NULL; Entry = NextEntry) {
          NextEntry = Entry->Next;
          if (Entry->p.v.Val->ScopeID == Parser->ScopeID && Entry->p.v.Val->OutOfScope) {
             Entry->p.v.Val->OutOfScope = false;
@@ -162,17 +154,14 @@ int VariableScopeBegin(ParseState Parser, int *OldScopeID) {
 }
 
 void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID) {
-   TableEntry Entry;
-   TableEntry NextEntry;
    State pc = Parser->pc;
-   int Count;
 #ifdef VAR_SCOPE_DEBUG
    bool FirstPrint = false;
 #endif
    Table HashTable = pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    if (ScopeID == -1) return;
-   for (Count = 0; Count < HashTable->Size; Count++) {
-      for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = NextEntry) {
+   for (int Count = 0; Count < HashTable->Size; Count++) {
+      for (TableEntry Entry = HashTable->HashTable[Count], NextEntry; Entry != NULL; Entry = NextEntry) {
          NextEntry = Entry->Next;
          if (Entry->p.v.Val->ScopeID == ScopeID && !Entry->p.v.Val->OutOfScope) {
 #ifdef VAR_SCOPE_DEBUG
@@ -191,11 +180,9 @@ void VariableScopeEnd(ParseState Parser, int ScopeID, int PrevScopeID) {
 }
 
 bool VariableDefinedAndOutOfScope(State pc, const char *Ident) {
-   TableEntry Entry;
-   int Count;
    Table HashTable = pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
-   for (Count = 0; Count < HashTable->Size; Count++) {
-      for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = Entry->Next) {
+   for (int Count = 0; Count < HashTable->Size; Count++) {
+      for (TableEntry Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = Entry->Next) {
          if (Entry->p.v.Val->OutOfScope && (char *)((intptr_t)Entry->p.v.Key&~1) == Ident)
             return true;
       }
@@ -206,13 +193,12 @@ bool VariableDefinedAndOutOfScope(State pc, const char *Ident) {
 // Define a variable.
 // Ident must be registered.
 Value VariableDefine(State pc, ParseState Parser, char *Ident, Value InitValue, ValueType Typ, bool MakeWritable) {
-   Value AssignValue;
    Table currentTable = pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable;
    int ScopeID = Parser? Parser->ScopeID: -1;
 #ifdef VAR_SCOPE_DEBUG
    if (Parser) fprintf(stderr, "def %s %x (%s:%d:%d)\n", Ident, ScopeID, Parser->FileName, Parser->Line, Parser->CharacterPos);
 #endif
-   AssignValue = InitValue != NULL?
+   Value AssignValue = InitValue != NULL?
       VariableAllocValueAndCopy(pc, Parser, InitValue, pc->TopStackFrame == NULL):
       VariableAllocValueFromType(pc, Parser, Typ, MakeWritable, NULL, pc->TopStackFrame == NULL);
    AssignValue->IsLValue = MakeWritable;
@@ -228,19 +214,14 @@ Value VariableDefine(State pc, ParseState Parser, char *Ident, Value InitValue, 
 // If it's a redefinition from the same declaration don't throw an error.
 Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType Typ, bool IsStatic, bool *FirstVisit) {
    State pc = Parser->pc;
-   Value ExistingValue;
-   const char *DeclFileName;
-   int DeclLine;
-   int DeclColumn;
 // Is the type a forward declaration?
    if (TypeIsForwardDeclared(Parser, Typ))
       ProgramFail(Parser, "type '%t' isn't defined", Typ);
    if (IsStatic) {
+   // Make the mangled static name (avoiding using sprintf() to minimize library impact).
       char MangledName[LineBufMax];
       char *MNPos = MangledName;
       char *MNEnd = &MangledName[LineBufMax - 1];
-      const char *RegisteredMangledName;
-   // Make the mangled static name (avoiding using sprintf() to minimize library impact).
       memset((void *)&MangledName, '\0', sizeof MangledName);
       *MNPos++ = '/';
       strncpy(MNPos, (char *)Parser->FileName, MNEnd - MNPos);
@@ -253,8 +234,9 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
       }
       if (MNEnd - MNPos > 0) *MNPos++ = '/';
       strncpy(MNPos, Ident, MNEnd - MNPos);
-      RegisteredMangledName = TableStrRegister(pc, MangledName);
+      const char *RegisteredMangledName = TableStrRegister(pc, MangledName);
    // Is this static already defined?
+      Value ExistingValue; const char *DeclFileName; int DeclLine, DeclColumn;
       if (!TableGet(&pc->GlobalTable, RegisteredMangledName, &ExistingValue, &DeclFileName, &DeclLine, &DeclColumn)) {
       // Define the mangled-named static variable store in the global scope.
          ExistingValue = VariableAllocValueFromType(Parser->pc, Parser, Typ, true, NULL, true);
@@ -266,6 +248,7 @@ Value VariableDefineButIgnoreIdentical(ParseState Parser, char *Ident, ValueType
       return ExistingValue;
    } else if (Parser->Line == 0) return false;
    else {
+      Value ExistingValue; const char *DeclFileName; int DeclLine, DeclColumn;
       return
          TableGet(pc->TopStackFrame == NULL? &pc->GlobalTable: &pc->TopStackFrame->LocalTable, Ident, &ExistingValue, &DeclFileName, &DeclLine, &DeclColumn) &&
          DeclFileName == Parser->FileName && DeclLine == Parser->Line && DeclColumn == Parser->CharacterPos?
@@ -307,7 +290,6 @@ void VariableDefinePlatformVar(State pc, ParseState Parser, char *Ident, ValueTy
 // Free and/or pop the top value off the stack.
 // Var must be the top value on the stack!
 void VariableStackPop(ParseState Parser, Value Var) {
-   bool Success;
 #ifdef DEBUG_HEAP
    if (Var->ValOnStack)
       printf("popping %ld at 0x%lx\n", (unsigned long)(sizeof *Var + TypeSizeValue(Var, false)), (unsigned long)Var);
@@ -318,7 +300,7 @@ void VariableStackPop(ParseState Parser, Value Var) {
          HeapFreeMem(Parser->pc, Var->Val);
    }
 // Free from the heap, if on heap, else free from the stack, if on the stack, otherwise the value isn't our problem.
-   Success = HeapPopStack(Parser->pc, Var,
+   bool Success = HeapPopStack(Parser->pc, Var,
       !OnHeap && Var->ValOnStack? sizeof *Var + TypeSizeValue(Var, false): sizeof *Var
    );
    if (!Success)
@@ -327,9 +309,8 @@ void VariableStackPop(ParseState Parser, Value Var) {
 
 // Add a stack frame when doing a function call.
 void VariableStackFrameAdd(ParseState Parser, const char *FuncName, int NumParams) {
-   StackFrame NewFrame;
    HeapPushStackFrame(Parser->pc);
-   NewFrame = HeapAllocStack(Parser->pc, sizeof *NewFrame + NumParams*sizeof *NewFrame->Parameter);
+   StackFrame NewFrame = HeapAllocStack(Parser->pc, sizeof *NewFrame + NumParams*sizeof *NewFrame->Parameter);
    if (NewFrame == NULL)
       ProgramFail(Parser, "out of memory");
    ParserCopy(&NewFrame->ReturnParser, Parser);

@@ -42,8 +42,7 @@ void Cinput(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cdelay(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int del;
-   del = Param[0]->Val->Integer;
+   int del = Param[0]->Val->Integer;
    if (del < 0 || del > 1000000)
       return;
    delayMS(del);
@@ -58,8 +57,7 @@ void Ctime(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Ciodir(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int dir;
-   dir = Param[0]->Val->Integer;
+   int dir = Param[0]->Val->Integer;
    *pPORTHIO_DIR = ((dir << 10)&0xFC00) + (*pPORTHIO_DIR&0x03FF); // H15/14/13/12/11/10 - 1=output, 0=input.
    *pPORTHIO_INEN = (((~dir) << 10)&0xFC00) + (*pPORTHIO_INEN&0x03FF); // Invert dir bits to enable inputs.
 }
@@ -73,11 +71,10 @@ void Ciowrite(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cpeek(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int size, ptr;
 // x = peek(addr, size);
 // Mask ptr to align with word size.
-   ptr = Param[0]->Val->Integer;
-   size = Param[1]->Val->Integer;
+   int ptr = Param[0]->Val->Integer;
+   int size = Param[1]->Val->Integer;
    switch (size) {
    // char *:
       case 1: ReturnValue->Val->Integer = (int)(unsigned int)*(unsigned char *)ptr; break;
@@ -90,12 +87,11 @@ void Cpeek(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cpoke(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int size, ptr, val;
 // x = poke(addr, size, val);
 // Mask ptr to align with word size.
-   ptr = Param[0]->Val->Integer;
-   size = Param[1]->Val->Integer;
-   val = Param[2]->Val->Integer;
+   int ptr = Param[0]->Val->Integer;
+   int size = Param[1]->Val->Integer;
+   int val = Param[2]->Val->Integer;
    switch (size) {
    // char *:
       case 1: *(unsigned char *)ptr = (unsigned char)(val&0xff); break;
@@ -109,17 +105,16 @@ void Cpoke(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cencoders(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned int ix;
-   ix = encoders(); // Read left and right encoders; save data to C globals lcount, rcount.
+   unsigned int ix = encoders(); // Read left and right encoders; save data to C globals lcount, rcount.
    Elcount = (ix >> 16)&0x0000FFFF;
    Ercount = ix&0x0000FFFF;
 }
 
 void Cmotors(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   lspeed = Param[0]->Val->Integer;
+   int lspeed = Param[0]->Val->Integer;
    if (lspeed < -100 || lspeed > 100)
       ProgramFail(NULL, "motors():  left motor value out of range");
-   rspeed = Param[1]->Val->Integer;
+   int rspeed = Param[1]->Val->Integer;
    if (rspeed < -100 || rspeed > 100)
       ProgramFail(NULL, "motors():  right motor value out of range");
    if (!pwm1_init) {
@@ -132,10 +127,10 @@ void Cmotors(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cmotors2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   lspeed2 = Param[0]->Val->Integer;
+   int lspeed2 = Param[0]->Val->Integer;
    if (lspeed2 < -100 || lspeed2 > 100)
       ProgramFail(NULL, "motors2():  left motor value out of range");
-   rspeed2 = Param[1]->Val->Integer;
+   int rspeed2 = Param[1]->Val->Integer;
    if (rspeed2 < -100 || rspeed2 > 100)
       ProgramFail(NULL, "motors2():  right motor value out of range");
    if (!pwm2_init) {
@@ -148,11 +143,10 @@ void Cmotors2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cservos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int lspeed, rspeed;
-   lspeed = Param[0]->Val->Integer;
+   int lspeed = Param[0]->Val->Integer;
    if (lspeed < 0 || lspeed > 100)
       ProgramFail(NULL, "servos():  TMR2 value out of range");
-   rspeed = Param[1]->Val->Integer;
+   int rspeed = Param[1]->Val->Integer;
    if (rspeed < 0 || rspeed > 100)
       ProgramFail(NULL, "servos()():  TMR3 value out of range");
    if (!pwm1_init) {
@@ -164,11 +158,10 @@ void Cservos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cservos2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int lspeed, rspeed;
-   lspeed = Param[0]->Val->Integer;
+   int lspeed = Param[0]->Val->Integer;
    if (lspeed < 0 || lspeed > 100)
       ProgramFail(NULL, "servos2():  TMR6 value out of range");
-   rspeed = Param[1]->Val->Integer;
+   int rspeed = Param[1]->Val->Integer;
    if (rspeed < 0 || rspeed > 100)
       ProgramFail(NULL, "servos2():  TMR7 value out of range");
    if (!pwm2_init) {
@@ -194,8 +187,7 @@ void Claser(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 // Read sonar module.
 void Csonar(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned int i;
-   i = Param[0]->Val->Integer;
+   unsigned int i = Param[0]->Val->Integer;
    if (i < 1 || i > 4) {
       ProgramFail(NULL, "sonar():  1, 2, 3, 4 are only valid selections");
    }
@@ -215,8 +207,7 @@ void Cbattery(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 // Set color bin -
 //	vcolor(color, ymin, ymax, umin, umax, vmin, vmax);
 void Cvcolor(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix;
-   ix = Param[0]->Val->Integer;
+   int ix = Param[0]->Val->Integer;
    ymin[ix] = Param[1]->Val->Integer;
    ymax[ix] = Param[2]->Val->Integer;
    umin[ix] = Param[3]->Val->Integer;
@@ -229,8 +220,8 @@ void Cvcolor(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 //	enable/disable AGC(4) / AWB(2) / AEC(1) camera controls,
 //	vcam(7) = AGC+AWB+AEC on vcam(0) = AGC+AWB+AEC off.
 void Cvcam(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned char cx, i2c_data[2];
-   cx = (unsigned char)Param[0]->Val->Integer&0x07;
+   unsigned char cx = (unsigned char)Param[0]->Val->Integer&0x07;
+   unsigned char i2c_data[2];
    i2c_data[0] = 0x13;
    i2c_data[1] = 0xC0 + cx;
    i2cwrite(0x30, (unsigned char *)i2c_data, 1, SCCB_ON); // OV9655.
@@ -240,12 +231,11 @@ void Cvcam(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 // Set color bin -
 //	vfind(color, x1, x2, y1, y2);
 void Cvfind(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix, x1, x2, y1, y2;
-   ix = Param[0]->Val->Integer;
-   x1 = Param[1]->Val->Integer;
-   x2 = Param[2]->Val->Integer;
-   y1 = Param[3]->Val->Integer;
-   y2 = Param[4]->Val->Integer;
+   int ix = Param[0]->Val->Integer;
+   int x1 = Param[1]->Val->Integer;
+   int x2 = Param[2]->Val->Integer;
+   int y1 = Param[3]->Val->Integer;
+   int y2 = Param[4]->Val->Integer;
    ReturnValue->Val->Integer = vfind((unsigned char *)FRAME_BUF, ix, x1, x2, y1, y2);
 }
 
@@ -262,24 +252,22 @@ void Cvdiff(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cvpix(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int x, y, ix;
-   x = Param[0]->Val->Integer;
-   y = Param[1]->Val->Integer;
-   ix = vpix((unsigned char *)FRAME_BUF, x, y);
+   int x = Param[0]->Val->Integer;
+   int y = Param[1]->Val->Integer;
+   int ix = vpix((unsigned char *)FRAME_BUF, x, y);
    Iy1 = ((ix >> 16)&0x000000FF); // Y1.
    Iu1 = ((ix >> 24)&0x000000FF); // U.
    Iv1 = ((ix >> 8)&0x000000FF); // V.
 }
 
 void Cvscan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int col, thresh, ix;
-   col = Param[0]->Val->Integer;
+   int col = Param[0]->Val->Integer;
    if (col < 1 || col > 9)
       ProgramFail(NULL, "vscan():  number of columns must be between 1 and 9");
-   thresh = Param[1]->Val->Integer;
+   int thresh = Param[1]->Val->Integer;
    if (thresh < 0 || thresh > 9999)
       ProgramFail(NULL, "vscan():  threshold must be between 0 and 9999");
-   ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, thresh, (unsigned int)col, (unsigned int *)ScanVect);
+   int ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, thresh, (unsigned int)col, (unsigned int *)ScanVect);
    ReturnValue->Val->Integer = ix;
 }
 
@@ -292,14 +280,13 @@ void Cvmean(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 // Search for blob by color, index; return center point X, Y and width Z.
 void Cvblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix, iblob, numblob;
-   ix = Param[0]->Val->Integer;
+   int ix = Param[0]->Val->Integer;
    if (ix > MAX_COLORS)
       ProgramFail(NULL, "blob():  invalid color index");
-   iblob = Param[1]->Val->Integer;
+   int iblob = Param[1]->Val->Integer;
    if (iblob > MAX_BLOBS)
       ProgramFail(NULL, "blob():  invalid blob index");
-   numblob = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ix);
+   int numblob = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ix);
    if (blobcnt[iblob] == 0 || numblob == -1) {
       Blobcnt = 0;
    } else {
@@ -313,26 +300,21 @@ void Cvblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cvjpeg(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned int image_size, qual;
-   unsigned char *output_start, *output_end;
-   qual = Param[0]->Val->Integer;
+   unsigned int qual = Param[0]->Val->Integer;
    if (qual < 1 || qual > 8)
       ProgramFail(NULL, "vjpeg():  quality parameter out of range");
-   output_start = (unsigned char *)JPEG_BUF;
-   output_end = encode_image((unsigned char *)FRAME_BUF, output_start, qual, FOUR_TWO_TWO, imgWidth, imgHeight);
-   image_size = (unsigned int)(output_end - output_start);
-   ReturnValue->Val->Integer = image_size;
+   unsigned char *output_start = (unsigned char *)JPEG_BUF;
+   unsigned char *output_end = encode_image((unsigned char *)FRAME_BUF, output_start, qual, FOUR_TWO_TWO, imgWidth, imgHeight);
+   ReturnValue->Val->Integer = (unsigned int)(output_end - output_start);
 }
 
 void Cvsend(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned int ix, image_size;
-   unsigned char *cp;
-   image_size = Param[0]->Val->Integer;
+   unsigned int image_size = Param[0]->Val->Integer;
    if (image_size < 0 || image_size > 200000)
       ProgramFail(NULL, "vsend():  image size out of range");
    led1_on();
-   cp = (unsigned char *)JPEG_BUF;
-   for (ix = 0; ix < image_size; ix++)
+   unsigned char *cp = (unsigned char *)JPEG_BUF;
+   for (unsigned int ix = 0; ix < image_size; ix++)
       putchar(*cp++);
    led0_on();
 }
@@ -340,20 +322,17 @@ void Cvsend(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 // Return reading from HMC6352 I2C compass.
 void Ccompass(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char i2c_data[2];
-   unsigned int ix;
    i2c_data[0] = 0x41; // Read compass twice to clear last reading.
    i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
    delayMS(20);
    i2c_data[0] = 0x41;
    i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
-   ix = ((unsigned int)(i2c_data[0] << 8) + i2c_data[1])/10;
-   ReturnValue->Val->Integer = ix;
+   ReturnValue->Val->Integer = ((unsigned int)(i2c_data[0] << 8) + i2c_data[1])/10;
 }
 
 // Return reading from HMC6352 I2C compass.
 void Ctilt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned int ix;
-   ix = (unsigned int)Param[0]->Val->Integer;
+   unsigned ix = (unsigned int)Param[0]->Val->Integer;
    if (ix < 1 || ix > 3)
       ProgramFail(NULL, "tilt():  invalid channel");
    ReturnValue->Val->Integer = tilt(ix);
@@ -361,15 +340,13 @@ void Ctilt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 // Return reading from HMC6352 I2C compass.
 void Canalog(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned char i2c_data[3], device_id;
-   unsigned int ix, channel;
    unsigned char mask1[] = { 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x04, 0x08 };
    unsigned char mask2[] = { 0x10, 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00 };
 // Decide which i2c device based on channel range.
-   ix = (unsigned char)Param[0]->Val->Integer;
+   unsigned ix = (unsigned char)Param[0]->Val->Integer;
    if (ix < 1 || ix > 28)
       ProgramFail(NULL, "analog():  invalid channel");
-   device_id = 0;
+   unsigned char device_id = 0;
    switch (ix/10) {
    // Channels 1-8.
       case 0: device_id = 0x20; break;
@@ -378,10 +355,11 @@ void Canalog(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    // Channels 21-28.
       case 2: device_id = 0x24; break;
    }
-   channel = ix%10;
+   unsigned channel = ix%10;
    if (channel < 1 || channel > 8)
       ProgramFail(NULL, "analog():  invalid channel");
 // Set timer register 3.
+   unsigned char i2c_data[3];
    i2c_data[0] = 0x03;
    i2c_data[1] = 0x01;
    i2cwrite(device_id, (unsigned char *)i2c_data, 1, SCCB_ON);
@@ -411,8 +389,8 @@ void Cgps(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 // Syntax: val = readi2c(device, register);
 void Creadi2c(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned char i2c_device, i2c_data[2];
-   i2c_device = (unsigned char)Param[0]->Val->Integer;
+   unsigned char i2c_device = (unsigned char)Param[0]->Val->Integer;
+   unsigned char i2c_data[2];
    i2c_data[0] = (unsigned char)Param[1]->Val->Integer;
    i2cread(i2c_device, (unsigned char *)i2c_data, 1, SCCB_OFF);
    ReturnValue->Val->Integer = ((int)i2c_data[0]&0x000000FF);
@@ -420,8 +398,8 @@ void Creadi2c(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 // Syntax: two_byte_val = readi2c(device, register);
 void Creadi2c2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned char i2c_device, i2c_data[2];
-   i2c_device = (unsigned char)Param[0]->Val->Integer;
+   unsigned char i2c_device = (unsigned char)Param[0]->Val->Integer;
+   unsigned char i2c_data[2];
    i2c_data[0] = (unsigned char)Param[1]->Val->Integer;
    i2cread(i2c_device, (unsigned char *)i2c_data, 2, SCCB_OFF);
    ReturnValue->Val->Integer = (((unsigned int)i2c_data[0] << 8) + i2c_data[1]);
@@ -429,8 +407,8 @@ void Creadi2c2(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
 
 // Syntax: writei2c(device, register, value);
 void Cwritei2c(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   unsigned char i2c_device, i2c_data[2];
-   i2c_device = (unsigned char)Param[0]->Val->Integer;
+   unsigned char i2c_device = (unsigned char)Param[0]->Val->Integer;
+   unsigned char i2c_data[2];
    i2c_data[0] = (unsigned char)Param[1]->Val->Integer;
    i2c_data[1] = (unsigned char)Param[2]->Val->Integer;
    i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_OFF);
@@ -438,30 +416,26 @@ void Cwritei2c(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) 
 
 // sin(angle).
 void Csin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix;
-   ix = Param[0]->Val->Integer; // Input to function is angle in degrees.
+   int ix = Param[0]->Val->Integer; // Input to function is angle in degrees.
    ReturnValue->Val->Integer = sin(ix);
 }
 
 // cos(angle).
 void Ccos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix;
-   ix = Param[0]->Val->Integer; // Input to function is angle in degrees.
+   int ix = Param[0]->Val->Integer; // Input to function is angle in degrees.
    ReturnValue->Val->Integer = cos(ix);
 }
 
 // tan(angle).
 void Ctan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix;
-   ix = Param[0]->Val->Integer; // Input to function is angle in degrees.
+   int ix = Param[0]->Val->Integer; // Input to function is angle in degrees.
    ReturnValue->Val->Integer = tan(ix);
 }
 
 // asin(y, hyp).
 void Casin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int y, hyp;
-   y = Param[0]->Val->Integer;
-   hyp = Param[1]->Val->Integer;
+   int y = Param[0]->Val->Integer;
+   int hyp = Param[1]->Val->Integer;
    if (y > hyp)
       ProgramFail(NULL, "asin():  opposite greater than hypotenuse");
    ReturnValue->Val->Integer = asin(y, hyp);
@@ -469,9 +443,8 @@ void Casin(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 // acos(x, hyp).
 void Cacos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int x, hyp;
-   x = Param[0]->Val->Integer;
-   hyp = Param[1]->Val->Integer;
+   int x = Param[0]->Val->Integer;
+   int hyp = Param[1]->Val->Integer;
    if (x > hyp)
       ProgramFail(NULL, "acos():  adjacent greater than hypotenuse");
    ReturnValue->Val->Integer = acos(x, hyp);
@@ -479,51 +452,45 @@ void Cacos(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 
 // atan(y, x).
 void Catan(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int x, y;
-   y = Param[0]->Val->Integer;
-   x = Param[1]->Val->Integer;
+   int y = Param[0]->Val->Integer;
+   int x = Param[1]->Val->Integer;
    ReturnValue->Val->Integer = atan(y, x);
 }
 
 // gps_head(lat1, lon1, lat2, lon2).
 void Cgps_head(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int lat1, lon1, lat2, lon2;
-   lat1 = Param[0]->Val->Integer;
-   lon1 = Param[1]->Val->Integer;
-   lat2 = Param[2]->Val->Integer;
-   lon2 = Param[3]->Val->Integer;
+   int lat1 = Param[0]->Val->Integer;
+   int lon1 = Param[1]->Val->Integer;
+   int lat2 = Param[2]->Val->Integer;
+   int lon2 = Param[3]->Val->Integer;
    ReturnValue->Val->Integer = gps_head(lat1, lon1, lat2, lon2);
 }
 
 // gps_dist(lat1, lon1, lat2, lon2).
 void Cgps_dist(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int lat1, lon1, lat2, lon2;
-   lat1 = Param[0]->Val->Integer;
-   lon1 = Param[1]->Val->Integer;
-   lat2 = Param[2]->Val->Integer;
-   lon2 = Param[3]->Val->Integer;
+   int lat1 = Param[0]->Val->Integer;
+   int lon1 = Param[1]->Val->Integer;
+   int lat2 = Param[2]->Val->Integer;
+   int lon2 = Param[3]->Val->Integer;
    ReturnValue->Val->Integer = gps_dist(lat1, lon1, lat2, lon2);
 }
 
 // sqrt(x).
 void Csqrt(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int x;
-   x = Param[0]->Val->Integer;
+   int x = Param[0]->Val->Integer;
    ReturnValue->Val->Integer = isqrt(x);
 }
 
 void Cnnset(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix, i1;
-   ix = Param[0]->Val->Integer;
+   int ix = Param[0]->Val->Integer;
    if (ix > NUM_NPATTERNS)
       ProgramFail(NULL, "nnset():  invalid index");
-   for (i1 = 0; i1 < 8; i1++)
+   for (int i1 = 0; i1 < 8; i1++)
       npattern[ix*8 + i1] = (unsigned char)Param[i1 + 1]->Val->Integer;
 }
 
 void Cnnshow(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix;
-   ix = Param[0]->Val->Integer;
+   int ix = Param[0]->Val->Integer;
    if (ix > NUM_NPATTERNS)
       ProgramFail(NULL, "nnshow():  invalid index");
    nndisplay(ix);
@@ -534,31 +501,28 @@ void Cnninit(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cnntrain(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix, i1;
    nntrain_network(10000);
-   for (ix = 0; ix < NUM_NPATTERNS; ix++) {
+   for (int ix = 0; ix < NUM_NPATTERNS; ix++) {
       nnset_pattern(ix);
       nncalculate_network();
-      for (i1 = 0; i1 < NUM_OUTPUT; i1++)
+      for (int i1 = 0; i1 < NUM_OUTPUT; i1++)
          printf(" %3d", N_OUT(i1)/10);
       printf("\r\n");
    }
 }
 
 void Cnntest(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix, i1, i2, max;
-   unsigned char ch;
-   ix = 0;
-   for (i1 = 0; i1 < 8; i1++) {
-      ch = (unsigned char)Param[i1]->Val->Integer;
-      for (i2 = 0; i2 < 8; i2++) {
+   int ix = 0;
+   for (int i1 = 0; i1 < 8; i1++) {
+      unsigned char ch = (unsigned char)Param[i1]->Val->Integer;
+      for (int i2 = 0; i2 < 8; i2++) {
          N_IN(ix++) = ch&nmask[i2]? 1024: 0;
       }
    }
    nncalculate_network();
    ix = 0;
-   max = 0;
-   for (i1 = 0; i1 < NUM_OUTPUT; i1++) {
+   int max = 0;
+   for (int i1 = 0; i1 < NUM_OUTPUT; i1++) {
       NNVect[i1] = N_OUT(i1)/10;
       if (max < NNVect[i1]) {
          ix = i1;
@@ -569,8 +533,7 @@ void Cnntest(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
 }
 
 void Cnnmatchblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix, i1, max;
-   ix = Param[0]->Val->Integer;
+   int ix = Param[0]->Val->Integer;
    if (ix > MAX_BLOBS)
       ProgramFail(NULL, "nnmatchblob():  invalid blob index");
    if (!blobcnt[ix])
@@ -582,8 +545,8 @@ void Cnnmatchblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArg
    nnscale8x8((unsigned char *)FRAME_BUF3, blobix[ix], blobx1[ix], blobx2[ix], bloby1[ix], bloby2[ix], imgWidth, imgHeight);
    nncalculate_network();
    ix = 0;
-   max = 0;
-   for (i1 = 0; i1 < NUM_OUTPUT; i1++) {
+   int max = 0;
+   for (int i1 = 0; i1 < NUM_OUTPUT; i1++) {
       NNVect[i1] = N_OUT(i1)/10;
       if (max < NNVect[i1]) {
          ix = i1;
@@ -594,8 +557,7 @@ void Cnnmatchblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArg
 }
 
 void Cnnlearnblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix;
-   ix = Param[0]->Val->Integer;
+   int ix = Param[0]->Val->Integer;
    if (ix > NUM_NPATTERNS)
       ProgramFail(NULL, "nnlearnblob():  invalid index");
    if (!blobcnt[0])
@@ -606,11 +568,10 @@ void Cnnlearnblob(ParseState Parser, Value ReturnValue, Value *Param, int NumArg
 }
 
 void Cautorun(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   int ix, t0;
-   unsigned char ch;
-   ix = Param[0]->Val->Integer;
-   t0 = readRTC();
+   int ix = Param[0]->Val->Integer;
+   int t0 = readRTC();
    while (readRTC() < t0 + ix*1000) { // Watch for ESC in 'ix' seconds.
+      unsigned char ch;
       if (getchar(&ch)) {
          if (ch == 0x1B) { // If ESC found, exit picoC.
             printf("found ESC\r\n");

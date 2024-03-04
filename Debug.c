@@ -13,11 +13,8 @@ void DebugInit(State pc) {
 
 // Free the contents of the breakpoint table.
 void DebugCleanup(State pc) {
-   TableEntry Entry;
-   TableEntry NextEntry;
-   int Count;
-   for (Count = 0; Count < pc->BreakpointTable.Size; Count++) {
-      for (Entry = pc->BreakpointHashTable[Count]; Entry != NULL; Entry = NextEntry) {
+   for (int Count = 0; Count < pc->BreakpointTable.Size; Count++) {
+      for (TableEntry Entry = pc->BreakpointHashTable[Count], NextEntry; Entry != NULL; Entry = NextEntry) {
          NextEntry = Entry->Next;
          HeapFreeMem(pc, Entry);
       }
@@ -26,10 +23,9 @@ void DebugCleanup(State pc) {
 
 // Search the table for a breakpoint.
 static TableEntry DebugTableSearchBreakpoint(ParseState Parser, int *AddAt) {
-   TableEntry Entry;
    State pc = Parser->pc;
    int HashValue = HashBP(Parser)%pc->BreakpointTable.Size;
-   for (Entry = pc->BreakpointHashTable[HashValue]; Entry != NULL; Entry = Entry->Next) {
+   for (TableEntry Entry = pc->BreakpointHashTable[HashValue]; Entry != NULL; Entry = Entry->Next) {
       if (Entry->p.b.FileName == Parser->FileName && Entry->p.b.Line == Parser->Line && Entry->p.b.CharacterPos == Parser->CharacterPos)
          return Entry; // Found.
    }
@@ -58,10 +54,9 @@ void DebugSetBreakpoint(ParseState Parser) {
 
 // Delete a breakpoint from the hash table.
 bool DebugClearBreakpoint(ParseState Parser) {
-   TableEntry *EntryPtr;
    State pc = Parser->pc;
    int HashValue = HashBP(Parser)%pc->BreakpointTable.Size;
-   for (EntryPtr = &pc->BreakpointHashTable[HashValue]; *EntryPtr != NULL; EntryPtr = &(*EntryPtr)->Next) {
+   for (TableEntry *EntryPtr = &pc->BreakpointHashTable[HashValue]; *EntryPtr != NULL; EntryPtr = &(*EntryPtr)->Next) {
       TableEntry DeleteEntry = *EntryPtr;
       if (DeleteEntry->p.b.FileName == Parser->FileName && DeleteEntry->p.b.Line == Parser->Line && DeleteEntry->p.b.CharacterPos == Parser->CharacterPos) {
          *EntryPtr = DeleteEntry->Next;
@@ -78,16 +73,15 @@ void DebugStep() {
 
 // Before we run a statement, check if there's anything we have to do with the debugger here.
 void DebugCheckStatement(ParseState Parser) {
-   bool DoBreak = false;
-   int AddAt;
    State pc = Parser->pc;
 // Has the user manually pressed break?
-   if (pc->DebugManualBreak) {
+   bool DoBreak = pc->DebugManualBreak;
+   if (DoBreak) {
       PlatformPrintf(pc->CStdOut, "break\n");
-      DoBreak = true;
       pc->DebugManualBreak = false;
    }
 // Is this a breakpoint location?
+   int AddAt;
    if (Parser->pc->BreakpointCount != 0 && DebugTableSearchBreakpoint(Parser, &AddAt) != NULL)
       DoBreak = true;
 // Handle a break.

@@ -22,19 +22,15 @@ void LibraryInit(State pc) {
 
 // Add a library.
 void LibraryAdd(State pc, Table GlobalTable, const char *LibraryName, LibraryFunction FuncList) {
-   struct ParseState Parser;
-   int Count;
-   char *Identifier;
-   ValueType ReturnType;
-   Value NewValue;
-   void *Tokens;
    char *IntrinsicName = TableStrRegister(pc, "c library");
 // Read all the library definitions.
-   for (Count = 0; FuncList[Count].Prototype != NULL; Count++) {
-      Tokens = LexAnalyse(pc, IntrinsicName, FuncList[Count].Prototype, strlen((char *)FuncList[Count].Prototype), NULL);
+   for (int Count = 0; FuncList[Count].Prototype != NULL; Count++) {
+      void *Tokens = LexAnalyse(pc, IntrinsicName, FuncList[Count].Prototype, strlen((char *)FuncList[Count].Prototype), NULL);
+      struct ParseState Parser;
       LexInitParser(&Parser, pc, FuncList[Count].Prototype, Tokens, IntrinsicName, true, false);
+      ValueType ReturnType; char *Identifier;
       TypeParse(&Parser, &ReturnType, &Identifier, NULL);
-      NewValue = ParseFunctionDefinition(&Parser, ReturnType, Identifier);
+      Value NewValue = ParseFunctionDefinition(&Parser, ReturnType, Identifier);
       NewValue->Val->FuncDef.Intrinsic = FuncList[Count].Func;
       HeapFreeMem(pc, Tokens);
    }
@@ -157,19 +153,17 @@ void PrintSimpleInt(long Num, OutputStream Stream) {
 #ifndef NO_FP
 // Print a double to a stream without using printf/sprintf.
 void PrintFP(double Num, OutputStream Stream) {
-   int Exponent;
-   int MaxDecimal;
    if (Num < 0) {
       PrintCh('-', Stream);
       Num = -Num;
    }
-   Exponent = Num >= 1e7? log10(Num): Num <= 1e-7 && Num != 0.0? log10(Num) - 0.999999999: 0;
+   int Exponent = Num >= 1e7? log10(Num): Num <= 1e-7 && Num != 0.0? log10(Num) - 0.999999999: 0;
    Num /= pow(10.0, Exponent);
    PrintInt((long)Num, 0, false, false, Stream);
    PrintCh('.', Stream);
    Num = (Num - (long)Num)*10;
    if (abs(Num) >= 1e-7) {
-      for (MaxDecimal = 6; MaxDecimal > 0 && abs(Num) >= 1e-7; Num = (Num - (long)(Num + 1e-7))*10, MaxDecimal--)
+      for (int MaxDecimal = 6; MaxDecimal > 0 && abs(Num) >= 1e-7; Num = (Num - (long)(Num + 1e-7))*10, MaxDecimal--)
          PrintCh('0' + (long)(Num + 1e-7), Stream);
    } else
       PrintCh('0', Stream);
@@ -182,18 +176,14 @@ void PrintFP(double Num, OutputStream Stream) {
 
 // Intrinsic functions made available to the language.
 static void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs, OutputStream Stream) {
-   char *FPos;
    Value NextArg = Param[0];
-   ValueType FormatType;
    int ArgCount = 1;
-   bool LeftJustify = false;
-   bool ZeroPad = false;
-   int FieldWidth = 0;
+   bool ZeroPad = false, LeftJustify = false;
    char *Format = Param[0]->Val->Pointer;
-   for (FPos = Format; *FPos != '\0'; FPos++) {
+   for (char *FPos = Format; *FPos != '\0'; FPos++) {
       if (*FPos == '%') {
          FPos++;
-         FieldWidth = 0;
+         int FieldWidth = 0;
          if (*FPos == '-') {
          // A leading '-' means left justify.
             LeftJustify = true;
@@ -208,6 +198,7 @@ static void GenericPrintf(ParseState Parser, Value ReturnValue, Value *Param, in
          while (isdigit((int)*FPos))
             FieldWidth = FieldWidth*10 + (*FPos++ - '0');
       // Now check the format type.
+         ValueType FormatType;
          switch (*FPos) {
             case 's': FormatType = CharPtrType; break;
             case 'd': case 'u': case 'x': case 'b': case 'c': FormatType = &IntType; break;
@@ -405,8 +396,7 @@ static void LibStrncpy(ParseState Parser, Value ReturnValue, Value *Param, int N
 static void LibStrcmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    char *Str1 = (char *)Param[0]->Val->Pointer;
    char *Str2 = (char *)Param[1]->Val->Pointer;
-   bool StrEnded;
-   for (StrEnded = false; !StrEnded; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++) {
+   for (bool StrEnded = false; !StrEnded; StrEnded = *Str1 == '\0' || *Str2 == '\0', Str1++, Str2++) {
       int Diff = *Str1 - *Str2;
       if (Diff != 0) {
          ReturnValue->Val->Integer = Diff > 0? +1: -1;
@@ -420,8 +410,7 @@ static void LibStrncmp(ParseState Parser, Value ReturnValue, Value *Param, int N
    char *Str1 = (char *)Param[0]->Val->Pointer;
    char *Str2 = (char *)Param[1]->Val->Pointer;
    int Len = Param[2]->Val->Integer;
-   bool StrEnded;
-   for (StrEnded = false; !StrEnded && Len > 0; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++, Len--) {
+   for (bool StrEnded = false; !StrEnded && Len > 0; StrEnded = *Str1 == '\0' || *Str2 == '\0', Str1++, Str2++, Len--) {
       int Diff = *Str1 - *Str2;
       if (Diff != 0) {
          ReturnValue->Val->Integer = Diff > 0? +1: -1;
@@ -450,19 +439,17 @@ static void LibIndex(ParseState Parser, Value ReturnValue, Value *Param, int Num
 }
 
 static void LibRindex(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   char *Pos = (char *)Param[0]->Val->Pointer;
    int SearchChar = Param[1]->Val->Integer;
    ReturnValue->Val->Pointer = NULL;
-   for (; *Pos != '\0'; Pos++) {
+   for (char *Pos = (char *)Param[0]->Val->Pointer; *Pos != '\0'; Pos++) {
       if (*Pos == SearchChar)
          ReturnValue->Val->Pointer = Pos;
    }
 }
 
 static void LibStrlen(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
-   char *Pos = (char *)Param[0]->Val->Pointer;
-   int Len;
-   for (Len = 0; *Pos != '\0'; Pos++)
+   int Len = 0;
+   for (char *Pos = (char *)Param[0]->Val->Pointer; *Pos != '\0'; Pos++)
       Len++;
    ReturnValue->Val->Integer = Len;
 }
@@ -480,8 +467,7 @@ static void LibMemcpy(ParseState Parser, Value ReturnValue, Value *Param, int Nu
 static void LibMemcmp(ParseState Parser, Value ReturnValue, Value *Param, int NumArgs) {
    unsigned char *Mem1 = (unsigned char *)Param[0]->Val->Pointer;
    unsigned char *Mem2 = (unsigned char *)Param[1]->Val->Pointer;
-   int Len = Param[2]->Val->Integer;
-   for (; Len > 0; Mem1++, Mem2++, Len--) {
+   for (int Len = Param[2]->Val->Integer; Len > 0; Mem1++, Mem2++, Len--) {
       int Diff = *Mem1 - *Mem2;
       if (Diff != 0) {
          ReturnValue->Val->Integer = Diff > 0? +1: -1;

@@ -73,9 +73,8 @@ const size_t ReservedWordN = sizeof ReservedWords/sizeof ReservedWords[0];
 
 // Initialize the lexer.
 void LexInit(State pc) {
-   int Count;
    TableInitTable(&pc->ReservedWordTable, pc->ReservedWordHashTable, 2*ReservedWordN, true);
-   for (Count = 0; Count < ReservedWordN; Count++) {
+   for (int Count = 0; Count < ReservedWordN; Count++) {
       TableSet(pc, &pc->ReservedWordTable, TableStrRegister(pc, ReservedWords[Count].Word), (Value)&ReservedWords[Count], NULL, 0, 0);
    }
    pc->LexValue.Typ = NULL;
@@ -89,9 +88,8 @@ void LexInit(State pc) {
 
 // Deallocate.
 void LexCleanup(State pc) {
-   int Count;
    LexInteractiveClear(pc, NULL);
-   for (Count = 0; Count < ReservedWordN; Count++)
+   for (int Count = 0; Count < ReservedWordN; Count++)
       TableDelete(pc, &pc->ReservedWordTable, TableStrRegister(pc, ReservedWords[Count].Word));
 }
 
@@ -120,18 +118,7 @@ typedef struct LexState {
 
 // Get a numeric literal - used while scanning.
 static Lexical LexGetNumber(State pc, LexState Lexer, Value Val) {
-   long Result = 0;
    long Base = 10;
-   Lexical ResultToken;
-#ifndef NO_FP
-   double FPResult;
-   double FPDiv;
-#endif
-// long/unsigned flags.
-#if 0 // Unused for now.
-   bool IsLong = false;
-   bool IsUnsigned = false;
-#endif
    if (*Lexer->Pos == '0') {
    // A binary, octal or hex literal.
       IncLex(Lexer);
@@ -147,23 +134,21 @@ static Lexical LexGetNumber(State pc, LexState Lexer, Value Val) {
       }
    }
 // Get the value.
+   long Result = 0;
    for (; Lexer->Pos != Lexer->End && IsBaseDigit(*Lexer->Pos, Base); IncLex(Lexer))
       Result = Result*Base + GetBaseDigit(*Lexer->Pos);
-   if (*Lexer->Pos == 'u' || *Lexer->Pos == 'U') {
+// long/unsigned flags.
+   bool IsUnsigned = *Lexer->Pos == 'u' || *Lexer->Pos == 'U';
+   if (IsUnsigned) {
       IncLex(Lexer);
-#if 0
-      IsUnsigned = true;
-#endif
    }
-   if (*Lexer->Pos == 'l' || *Lexer->Pos == 'L') {
+   bool IsLong = *Lexer->Pos == 'l' || *Lexer->Pos == 'L';
+   if (IsLong) {
       IncLex(Lexer);
-#if 0
-      IsLong = true;
-#endif
    }
    Val->Typ = &pc->LongType; // Ignored?
    Val->Val->LongInteger = Result;
-   ResultToken = IntLitL;
+   Lexical ResultToken = IntLitL;
    if (Lexer->Pos == Lexer->End)
       return ResultToken;
 #ifndef NO_FP
@@ -174,15 +159,15 @@ static Lexical LexGetNumber(State pc, LexState Lexer, Value Val) {
       return ResultToken;
    }
    Val->Typ = &pc->FPType;
-   FPResult = (double)Result;
+   double FPResult = (double)Result;
    if (*Lexer->Pos == '.') {
       IncLex(Lexer);
-      for (FPDiv = 1.0/Base; Lexer->Pos != Lexer->End && IsBaseDigit(*Lexer->Pos, Base); IncLex(Lexer), FPDiv /= (double)Base) {
+      for (double FPDiv = 1.0/Base; Lexer->Pos != Lexer->End && IsBaseDigit(*Lexer->Pos, Base); IncLex(Lexer), FPDiv /= (double)Base) {
          FPResult += GetBaseDigit(*Lexer->Pos)*FPDiv;
       }
    }
    if (Lexer->Pos != Lexer->End && (*Lexer->Pos == 'e' || *Lexer->Pos == 'E')) {
-      int ExponentSign = 1;
+      int ExponentSign = +1;
       IncLex(Lexer);
       if (Lexer->Pos != Lexer->End && *Lexer->Pos == '-') {
          ExponentSign = -1;
@@ -207,13 +192,12 @@ static Lexical LexGetNumber(State pc, LexState Lexer, Value Val) {
 // Get a reserved word or identifier - used while scanning.
 static Lexical LexGetWord(State pc, LexState Lexer, Value Val) {
    const char *StartPos = Lexer->Pos;
-   Lexical Token;
    do {
       IncLex(Lexer);
    } while (Lexer->Pos != Lexer->End && IsId((int)*Lexer->Pos));
    Val->Typ = NULL;
    Val->Val->Identifier = TableStrRegister2(pc, StartPos, Lexer->Pos - StartPos);
-   Token = LexCheckReservedWord(pc, Val->Val->Identifier);
+   Lexical Token = LexCheckReservedWord(pc, Val->Val->Identifier);
    switch (Token) {
       case IncludeP: Lexer->Mode = IncludeLx; break;
       case DefineP: Lexer->Mode = DefineLx; break;
@@ -229,15 +213,13 @@ static Lexical LexGetWord(State pc, LexState Lexer, Value Val) {
 // Unescape a character from an octal character constant.
 static unsigned char LexUnEscapeCharacterConstant(const char **From, const char *End, unsigned char FirstChar, int Base) {
    unsigned char Total = GetBaseDigit(FirstChar);
-   int CCount;
-   for (CCount = 0; IsBaseDigit(**From, Base) && CCount < 2; CCount++, (*From)++)
+   for (int CCount = 0; IsBaseDigit(**From, Base) && CCount < 2; CCount++, (*From)++)
       Total = Total*Base + GetBaseDigit(**From);
    return Total;
 }
 
 // Unescape a character from a string or character constant.
 static unsigned char LexUnEscapeCharacter(const char **From, const char *End) {
-   unsigned char ThisChar;
    while (*From != End && **From == '\\' && &(*From)[1] != End && (*From)[1] == '\n')
       (*From) += 2; // Skip escaped end of lines with LF line termination.
    while (*From != End && **From == '\\' && &(*From)[1] != End && &(*From)[2] != End && (*From)[1] == '\r' && (*From)[2] == '\n')
@@ -249,7 +231,7 @@ static unsigned char LexUnEscapeCharacter(const char **From, const char *End) {
       (*From)++;
       if (*From == End)
          return '\\';
-      ThisChar = *(*From)++;
+      unsigned char ThisChar = *(*From)++;
       switch (ThisChar) {
          case 'a': return '\a';
          case 'b': return '\b';
@@ -268,8 +250,8 @@ static unsigned char LexUnEscapeCharacter(const char **From, const char *End) {
 
 // Exit lexing with a message.
 static void LexError(State pc, LexState Lexer, const char *Message, ...) {
-   va_list Args;
    PrintSourceTextErrorLine(pc->CStdOut, Lexer->FileName, Lexer->SourceText, Lexer->Line, Lexer->CharacterPos);
+   va_list Args;
    va_start(Args, Message);
    PlatformVPrintf(pc->CStdOut, Message, Args);
    va_end(Args);
@@ -279,13 +261,8 @@ static void LexError(State pc, LexState Lexer, const char *Message, ...) {
 
 // Get a string constant - used while scanning.
 static Lexical LexGetStringConstant(State pc, LexState Lexer, Value Val, char EndChar) {
-   bool Escape = false;
    const char *StartPos = Lexer->Pos;
-   const char *EndPos;
-   char *EscBuf;
-   char *EscBufPos;
-   char *RegString;
-   Value ArrayValue;
+   bool Escape = false;
    while (Lexer->Pos != Lexer->End && (*Lexer->Pos != EndChar || Escape)) {
    // Find the end.
       if (Escape) {
@@ -301,16 +278,17 @@ static Lexical LexGetStringConstant(State pc, LexState Lexer, Value Val, char En
       Escape = !Escape && *Lexer->Pos == '\\';
       IncLex(Lexer);
    }
-   EndPos = Lexer->Pos;
-   EscBuf = HeapAllocStack(pc, EndPos - StartPos);
+   const char *EndPos = Lexer->Pos;
+   char *EscBuf = HeapAllocStack(pc, EndPos - StartPos);
    if (EscBuf == NULL)
       LexError(pc, Lexer, "out of memory");
+   char *EscBufPos;
    for (EscBufPos = EscBuf, Lexer->Pos = StartPos; Lexer->Pos != EndPos;)
       *EscBufPos++ = LexUnEscapeCharacter(&Lexer->Pos, EndPos);
 // Try to find an existing copy of this string literal.
-   RegString = TableStrRegister2(pc, EscBuf, EscBufPos - EscBuf);
+   char *RegString = TableStrRegister2(pc, EscBuf, EscBufPos - EscBuf);
    HeapPopStack(pc, EscBuf, EndPos - StartPos);
-   ArrayValue = VariableStringLiteralGet(pc, RegString);
+   Value ArrayValue = VariableStringLiteralGet(pc, RegString);
    if (ArrayValue == NULL) {
    // Create and store this string literal.
       ArrayValue = VariableAllocValueAndData(pc, NULL, 0, false, NULL, true);
@@ -357,15 +335,13 @@ void LexSkipComment(LexState Lexer, char NextChar, Lexical *ReturnToken) {
 
 // Get a single token from the source - used while scanning.
 static Lexical LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
-   char ThisChar;
-   char NextChar;
-   Lexical GotToken = NoneL;
 // Handle cases line multi-line comments or string constants which mess up the line count.
    if (Lexer->EmitExtraNewlines > 0) {
       Lexer->EmitExtraNewlines--;
       return EolL;
    }
 // Scan for a token.
+   Lexical GotToken = NoneL;
    do {
       *ValP = &pc->LexValue;
       while (Lexer->Pos != Lexer->End && isspace((int)*Lexer->Pos)) {
@@ -383,12 +359,12 @@ static Lexical LexScanGetToken(State pc, LexState Lexer, Value *ValP) {
       }
       if (Lexer->Pos == Lexer->End || *Lexer->Pos == '\0')
          return EofL;
-      ThisChar = *Lexer->Pos;
+      char ThisChar = *Lexer->Pos;
       if (IsBegId((int)ThisChar))
          return LexGetWord(pc, Lexer, *ValP);
       if (isdigit((int)ThisChar))
          return LexGetNumber(pc, Lexer, *ValP);
-      NextChar = (Lexer->Pos + 1 != Lexer->End)? *(Lexer->Pos + 1): 0;
+      char NextChar = (Lexer->Pos + 1 != Lexer->End)? *(Lexer->Pos + 1): 0;
       IncLex(Lexer);
       switch (ThisChar) {
          case '"': GotToken = LexGetStringConstant(pc, Lexer, *ValP, '"'); break;
@@ -446,19 +422,17 @@ static int LexTokenSize(Lexical Token) {
 
 // Produce tokens from the lexer and return a heap buffer with the result - used for scanning.
 static void *LexTokenize(State pc, LexState Lexer, int *TokenLen) {
-   Lexical Token;
-   void *HeapMem;
-   Value GotValue;
-   int MemUsed = 0;
-   int ValueSize;
    int ReserveSpace = (Lexer->End - Lexer->Pos)*4 + 16;
    void *TokenSpace = HeapAllocStack(pc, ReserveSpace);
-   char *TokenPos = (char *)TokenSpace;
-   int LastCharacterPos = 0;
    if (TokenSpace == NULL)
       LexError(pc, Lexer, "out of memory");
+   char *TokenPos = (char *)TokenSpace;
+   Lexical Token;
+   int MemUsed = 0;
+   int LastCharacterPos = 0;
    do {
    // Store the token at the end of the stack area.
+      Value GotValue;
       Token = LexScanGetToken(pc, Lexer, &GotValue);
 #ifdef DEBUG_LEXER
       printf("Token: %02x\n", Token);
@@ -469,7 +443,7 @@ static void *LexTokenize(State pc, LexState Lexer, int *TokenLen) {
       *(unsigned char *)TokenPos = (unsigned char)LastCharacterPos;
       TokenPos++;
       MemUsed++;
-      ValueSize = LexTokenSize(Token);
+      int ValueSize = LexTokenSize(Token);
       if (ValueSize > 0) {
       // Store a value as well.
          memcpy((void *)TokenPos, (void *)GotValue->Val, ValueSize);
@@ -478,20 +452,17 @@ static void *LexTokenize(State pc, LexState Lexer, int *TokenLen) {
       }
       LastCharacterPos = Lexer->CharacterPos;
    } while (Token != EofL);
-   HeapMem = HeapAllocMem(pc, MemUsed);
+   void *HeapMem = HeapAllocMem(pc, MemUsed);
    if (HeapMem == NULL)
       LexError(pc, Lexer, "out of memory");
    assert(ReserveSpace >= MemUsed);
    memcpy(HeapMem, TokenSpace, MemUsed);
    HeapPopStack(pc, TokenSpace, ReserveSpace);
 #ifdef DEBUG_LEXER
-{
-   int Count;
    printf("Tokens: ");
-   for (Count = 0; Count < MemUsed; Count++)
+   for (int Count = 0; Count < MemUsed; Count++)
       printf("%02x ", *((unsigned char *)HeapMem + Count));
    printf("\n");
-}
 #endif
    if (TokenLen)
       *TokenLen = MemUsed;
@@ -530,8 +501,6 @@ void LexInitParser(ParseState Parser, State pc, const char *SourceText, void *To
 // Get the next token, without pre-processing.
 static Lexical LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
    Lexical Token = NoneL;
-   int ValueSize;
-   char *Prompt = NULL;
    State pc = Parser->pc;
    do {
    // Get the next token.
@@ -546,18 +515,16 @@ static Lexical LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
       }
       if (Parser->FileName == pc->StrEmpty && (pc->InteractiveHead == NULL || Token == EofL)) {
       // We're at the end of an interactive input token list.
-         char LineBuffer[LineBufMax];
-         void *LineTokens;
-         int LineBytes;
-         TokenLine LineNode;
          if (pc->InteractiveHead == NULL || (unsigned char *)Parser->Pos == &pc->InteractiveTail->Tokens[pc->InteractiveTail->NumBytes - TokenDataOffset]) {
          // Get interactive input.
-            Prompt = pc->LexUseStatementPrompt? (pc->LexUseStatementPrompt = false, PromptStatement): PromptLine;
+            char *Prompt = pc->LexUseStatementPrompt? (pc->LexUseStatementPrompt = false, PromptStatement): PromptLine;
+            char LineBuffer[LineBufMax];
             if (PlatformGetLine(LineBuffer, LineBufMax, Prompt) == NULL)
                return EofL;
          // Put the new line at the end of the linked list of interactive lines.
-            LineTokens = LexAnalyse(pc, pc->StrEmpty, LineBuffer, strlen(LineBuffer), &LineBytes);
-            LineNode = VariableAlloc(pc, Parser, sizeof *LineNode, true);
+            int LineBytes;
+            void *LineTokens = LexAnalyse(pc, pc->StrEmpty, LineBuffer, strlen(LineBuffer), &LineBytes);
+            TokenLine LineNode = VariableAlloc(pc, Parser, sizeof *LineNode, true);
             LineNode->Tokens = LineTokens;
             LineNode->NumBytes = LineBytes;
             if (pc->InteractiveHead == NULL) {
@@ -587,7 +554,7 @@ static Lexical LexGetRawToken(ParseState Parser, Value *ValP, int IncPos) {
       }
    } while ((Parser->FileName == pc->StrEmpty && Token == EofL) || Token == EolL);
    Parser->CharacterPos = *((unsigned char *)Parser->Pos + 1);
-   ValueSize = LexTokenSize(Token);
+   int ValueSize = LexTokenSize(Token);
    if (ValueSize > 0) {
    // This token requires a value - unpack it.
       if (ValP != NULL) {
@@ -631,13 +598,12 @@ static void LexHashIncPos(ParseState Parser, int IncPos) {
 static void LexHashIfdef(ParseState Parser, bool IfNot) {
 // Get symbol to check.
    Value IdentValue;
-   Value SavedValue;
-   bool IsDefined;
    Lexical Token = LexGetRawToken(Parser, &IdentValue, true);
    if (Token != IdL)
       ProgramFail(Parser, "identifier expected");
 // Is the identifier defined?
-   IsDefined = TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, &SavedValue, NULL, NULL, NULL);
+   Value SavedValue;
+   bool IsDefined = TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, &SavedValue, NULL, NULL, NULL);
    if (Parser->HashIfEvaluateToLevel == Parser->HashIfLevel && IsDefined != IfNot) {
    // #if is active, evaluate to this new level.
       Parser->HashIfEvaluateToLevel++;
@@ -649,15 +615,15 @@ static void LexHashIfdef(ParseState Parser, bool IfNot) {
 static void LexHashIf(ParseState Parser) {
 // Get symbol to check.
    Value IdentValue;
-   Value SavedValue = NULL;
-   struct ParseState MacroParser;
    Lexical Token = LexGetRawToken(Parser, &IdentValue, true);
    if (Token == IdL) {
    // Look up a value from a macro definition.
+      Value SavedValue = NULL;
       if (!TableGet(&Parser->pc->GlobalTable, IdentValue->Val->Identifier, &SavedValue, NULL, NULL, NULL))
          ProgramFail(Parser, "'%s' is undefined", IdentValue->Val->Identifier);
       if (SavedValue->Typ->Base != MacroT)
          ProgramFail(Parser, "value expected");
+      struct ParseState MacroParser;
       ParserCopy(&MacroParser, &SavedValue->Val->MacroDef.Body);
       Token = LexGetRawToken(&MacroParser, &IdentValue, true);
    }
@@ -718,10 +684,9 @@ void LexPrintToken(Lexical Token) {
 
 // Get the next token given a parser state, pre-processing as we go.
 Lexical LexGetToken(ParseState Parser, Value *ValP, int IncPos) {
-   Lexical Token;
-   bool TryNextToken;
 // Implements the pre-processor #if commands.
-   do {
+   Lexical Token;
+   for (bool TryNextToken = true; TryNextToken; ) {
       int WasPreProcToken = true;
       Token = LexGetRawToken(Parser, ValP, IncPos);
       switch (Token) {
@@ -736,7 +701,7 @@ Lexical LexGetToken(ParseState Parser, Value *ValP, int IncPos) {
       TryNextToken = (Parser->HashIfEvaluateToLevel < Parser->HashIfLevel && Token != EofL) || WasPreProcToken;
       if (!IncPos && TryNextToken)
          LexGetRawToken(Parser, NULL, true);
-   } while (TryNextToken);
+   }
    return Token;
 }
 
@@ -759,11 +724,8 @@ void LexToEndOfLine(ParseState Parser) {
 // Copy the tokens from StartParser to EndParser into new memory, removing TokenEOFs and terminate with a EndFnL.
 void *LexCopyTokens(ParseState StartParser, ParseState EndParser) {
    int MemSize = 0;
-   int CopySize;
    unsigned char *Pos = (unsigned char *)StartParser->Pos;
    unsigned char *NewTokens;
-   unsigned char *NewTokenPos;
-   TokenLine ILine;
    State pc = StartParser->pc;
    if (pc->InteractiveHead == NULL) {
    // Non-interactive mode - copy the tokens.
@@ -782,14 +744,15 @@ void *LexCopyTokens(ParseState StartParser, ParseState EndParser) {
       } else {
       // It's spread across multiple lines.
          MemSize = &pc->InteractiveCurrentLine->Tokens[pc->InteractiveCurrentLine->NumBytes - TokenDataOffset] - Pos;
+         TokenLine ILine;
          for (ILine = pc->InteractiveCurrentLine->Next; ILine != NULL && (EndParser->Pos < ILine->Tokens || EndParser->Pos >= &ILine->Tokens[ILine->NumBytes]); ILine = ILine->Next)
             MemSize += ILine->NumBytes - TokenDataOffset;
          assert(ILine != NULL);
          MemSize += EndParser->Pos - ILine->Tokens;
          NewTokens = VariableAlloc(pc, StartParser, MemSize + TokenDataOffset, true);
-         CopySize = &pc->InteractiveCurrentLine->Tokens[pc->InteractiveCurrentLine->NumBytes - TokenDataOffset] - Pos;
+         int CopySize = &pc->InteractiveCurrentLine->Tokens[pc->InteractiveCurrentLine->NumBytes - TokenDataOffset] - Pos;
          memcpy(NewTokens, Pos, CopySize);
-         NewTokenPos = NewTokens + CopySize;
+         unsigned char *NewTokenPos = NewTokens + CopySize;
          for (ILine = pc->InteractiveCurrentLine->Next; ILine != NULL && (EndParser->Pos < ILine->Tokens || EndParser->Pos >= &ILine->Tokens[ILine->NumBytes]); ILine = ILine->Next) {
             memcpy(NewTokenPos, ILine->Tokens, ILine->NumBytes - TokenDataOffset);
             NewTokenPos += ILine->NumBytes - TokenDataOffset;

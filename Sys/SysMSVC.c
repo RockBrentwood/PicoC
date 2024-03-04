@@ -35,25 +35,21 @@ void PlatformPutc(unsigned char OutCh, OutputStreamInfo Stream) {
 // Read a file into memory.
 char *PlatformReadFile(State pc, const char *FileName) {
    struct stat FileInfo;
-   char *ReadText;
-   FILE *InFile;
-   int BytesRead;
-   char *p;
    if (stat(FileName, &FileInfo))
       ProgramFailNoParser(pc, "can't read file %s\n", FileName);
-   ReadText = malloc(FileInfo.st_size + 1);
+   char *ReadText = malloc(FileInfo.st_size + 1);
    if (ReadText == NULL)
       ProgramFailNoParser(pc, "out of memory\n");
-   InFile = fopen(FileName, "r");
+   FILE *InFile = fopen(FileName, "r");
    if (InFile == NULL)
       ProgramFailNoParser(pc, "can't read file %s\n", FileName);
-   BytesRead = fread(ReadText, 1, FileInfo.st_size, InFile);
+   int BytesRead = fread(ReadText, 1, FileInfo.st_size, InFile);
    if (BytesRead == 0)
       ProgramFailNoParser(pc, "can't read file %s\n", FileName);
    ReadText[BytesRead] = '\0';
    fclose(InFile);
    if (ReadText[0] == '#' && ReadText[1] == '!') {
-      for (p = ReadText; *p != '\r' && *p != '\n'; ++p) {
+      for (char *p = ReadText; *p != '\r' && *p != '\n'; ++p) {
          *p = ' ';
       }
    }
